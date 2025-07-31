@@ -21,6 +21,14 @@ export class EmailAuthProvider extends BaseAuthProvider {
     this.config = config;
   }
 
+  private createToken(data: { accessToken: string; refreshToken: string; expiresAt?: number }): Token {
+    return {
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      expiresAt: data.expiresAt ? Date.now() + data.expiresAt * 1000 : undefined
+    };
+  }
+
   async login(request: LoginRequest): Promise<LoginResponse> {
     try {
       // 타입 가드로 이메일 로그인 요청인지 확인
@@ -61,11 +69,7 @@ export class EmailAuthProvider extends BaseAuthProvider {
       }
 
       // 토큰 생성
-      const token: Token = {
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        expiresAt: data.expiresAt ? Date.now() + data.expiresAt * 1000 : undefined
-      };
+      const token: Token = this.createToken(data);
 
       // 사용자 정보 생성
       const userInfo: UserInfo = {
@@ -127,11 +131,7 @@ export class EmailAuthProvider extends BaseAuthProvider {
         );
       }
 
-      const token: Token = {
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken,
-        expiresAt: data.expiresAt ? Date.now() + data.expiresAt * 1000 : undefined
-      };
+      const token: Token = this.createToken(data);
 
       return this.createRefreshTokenSuccessResponse(token);
 
