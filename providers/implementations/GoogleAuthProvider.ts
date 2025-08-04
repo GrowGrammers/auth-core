@@ -6,7 +6,7 @@
 
 import { AuthProviderConfig, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, EmailVerificationRequest, EmailVerificationResponse } from '../interfaces/AuthProvider';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
-import { Token, UserInfo } from '../../types';
+import { Token, UserInfo, BaseResponse } from '../../types';
 
 export class GoogleAuthProvider extends BaseAuthProvider {
   readonly providerName = 'google' as const;
@@ -17,38 +17,54 @@ export class GoogleAuthProvider extends BaseAuthProvider {
     this.config = config;
   }
 
-  // TODO: 구현 예정
+  // OAuth 제공자는 이메일 인증코드를 지원하지 않음
   async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
-    // Google OAuth는 이메일 인증코드가 필요하지 않음
-    return {
-      success: false,
-      error: 'Google OAuth는 이메일 인증코드를 지원하지 않습니다.',
-      errorCode: 'UNSUPPORTED_FEATURE'
-    };
+    return this.createResponse<EmailVerificationResponse>(
+      false,
+      'Google OAuth는 이메일 인증코드를 지원하지 않습니다.',
+      'UNSUPPORTED_FEATURE'
+    );
   }
-  // 기능별 인터페이스 분리 예정 -> 이메일 인증 코드 삭제 가능.
 
   async login(request: LoginRequest): Promise<LoginResponse> {
-    throw new Error('GoogleAuthProvider는 아직 구현되지 않았습니다.');
+    // TODO: OAuth 인증 코드를 받아서 토큰으로 교환하는 로직 구현
+    return this.createResponse<LoginResponse>(
+      false,
+      'GoogleAuthProvider는 아직 구현되지 않았습니다.',
+      'NOT_IMPLEMENTED'
+    );
   }
 
   async logout(request: LogoutRequest): Promise<LogoutResponse> {
-    throw new Error('GoogleAuthProvider는 아직 구현되지 않았습니다.');
+    // TODO: Google OAuth 로그아웃 구현
+    return this.createResponse<LogoutResponse>(
+      false,
+      'GoogleAuthProvider는 아직 구현되지 않았습니다.',
+      'NOT_IMPLEMENTED'
+    );
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
-    throw new Error('GoogleAuthProvider는 아직 구현되지 않았습니다.');
+    // TODO: Google OAuth 토큰 갱신 구현
+    return this.createResponse<RefreshTokenResponse>(
+      false,
+      'GoogleAuthProvider는 아직 구현되지 않았습니다.',
+      'NOT_IMPLEMENTED'
+    );
   }
 
   async validateToken(token: Token): Promise<boolean> {
-    throw new Error('GoogleAuthProvider는 아직 구현되지 않았습니다.');
+    // TODO: Google OAuth 토큰 검증 구현
+    return false;
   }
 
   async getUserInfo(token: Token): Promise<UserInfo | null> {
-    throw new Error('GoogleAuthProvider는 아직 구현되지 않았습니다.');
+    // TODO: Google OAuth 사용자 정보 조회 구현
+    return null;
   }
 
   async isAvailable(): Promise<boolean> {
-    return false; // 아직 구현되지 않음
+    // TODO: Google OAuth 서비스 가용성 확인
+    return false;
   }
 }
