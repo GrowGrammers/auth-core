@@ -4,7 +4,7 @@
 // - Google 사용자 정보 조회
 // - 서버 토큰 발급
 
-import { AuthProviderConfig, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse } from '../interfaces/AuthProvider';
+import { AuthProviderConfig, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, EmailVerificationRequest, EmailVerificationResponse } from '../interfaces/AuthProvider';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
 import { Token, UserInfo } from '../../types';
 
@@ -18,6 +18,16 @@ export class GoogleAuthProvider extends BaseAuthProvider {
   }
 
   // TODO: 구현 예정
+  async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
+    // Google OAuth는 이메일 인증코드가 필요하지 않음
+    return {
+      success: false,
+      error: 'Google OAuth는 이메일 인증코드를 지원하지 않습니다.',
+      errorCode: 'UNSUPPORTED_FEATURE'
+    };
+  }
+  // 기능별 인터페이스 분리 예정 -> 이메일 인증 코드 삭제 가능.
+
   async login(request: LoginRequest): Promise<LoginResponse> {
     throw new Error('GoogleAuthProvider는 아직 구현되지 않았습니다.');
   }

@@ -1,8 +1,5 @@
 // 인증 제공자 인터페이스 및 DTO 정의
-import { Token, UserInfo } from '../../types';
-
-// 인증 제공자 타입 정의
-export type AuthProviderType = 'email' | 'google' ;
+import { Token, UserInfo, AuthProviderType } from '../../types';
 
 // 인증 제공자 설정 인터페이스
 export interface AuthProviderConfig {
@@ -11,11 +8,23 @@ export interface AuthProviderConfig {
   retryCount?: number;
 }
 
+// 이메일 인증번호 요청 DTO
+export interface EmailVerificationRequest {
+  email: string;
+}
+
+// 이메일 인증번호 요청 응답 DTO
+export interface EmailVerificationResponse {
+  success: boolean;
+  error?: string;
+  errorCode?: string;
+}
+
 // 이메일 로그인 요청 DTO
 export interface EmailLoginRequest {
   provider: 'email';
   email: string;
-  password: string;
+  verificationCode: string;
   rememberMe?: boolean;
 }
 
@@ -68,7 +77,11 @@ export interface RefreshTokenResponse {
 export interface RequestOptions {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: Record<string, string>;
-  body?: any;
+  // 요청 본문 - 다양한 형태의 데이터를 지원
+  // Record<string, unknown>: JSON 객체 (로그인, 토큰 갱신 등)
+  // string: 문자열 데이터
+  // FormData: 파일 업로드 등 멀티파트 데이터
+  body?: Record<string, unknown> | string | FormData;
   timeout?: number;
 }
 
@@ -83,6 +96,13 @@ export interface AuthProvider {
    * 제공자 설정
    */
   readonly config: AuthProviderConfig;
+  
+  /**
+   * 이메일 인증번호를 요청합니다.
+   * @param request 이메일 인증번호 요청 정보
+   * @returns 인증번호 요청 결과
+   */
+  requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse>;
   
   /**
    * 로그인을 수행합니다.

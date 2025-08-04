@@ -1,8 +1,7 @@
 // 주어진 타입과 설정(config)에 따라 적절한 인증 제공자 인스턴스를 생성합니다.
 
-import { AuthProvider, AuthProviderType, AuthProviderConfig } from '../providers/interfaces/AuthProvider';
-import { EmailAuthProvider } from '../providers/implementations/EmailAuthProvider';
-import { GoogleAuthProvider } from '../providers/implementations/GoogleAuthProvider';
+import { AuthProvider, AuthProviderConfig, EmailAuthProvider, GoogleAuthProvider } from '../providers';
+import { AuthProviderType } from '../types';
 
 /**
  * 인증 제공자 타입과 설정을 받아서 해당하는 인증 제공자 인스턴스를 반환합니다.
