@@ -1,8 +1,10 @@
-// 기본 인증 제공자 추상 클래스
+// 기본 인증 제공자 추상 클래스 : 중복되는 공통 로직을 추출한 추상 클래스
 import { Token, UserInfo } from '../../types';
 import { 
   AuthProvider, 
   AuthProviderConfig, 
+  EmailVerificationRequest,
+  EmailVerificationResponse,
   LoginRequest, 
   LoginResponse, 
   LogoutRequest, 
@@ -119,7 +121,60 @@ export abstract class BaseAuthProvider implements AuthProvider {
     };
   }
 
+  /**
+   * 공통 HTTP 응답 처리 - 성공/실패 판단 및 에러 응답 생성
+   */
+  protected async handleHttpResponse<T>(
+    response: Response, 
+    errorMessage: string,
+    createErrorResponse: (error: string, errorCode?: string) => T
+  ): Promise<T> {
+    if (!response.ok) {
+      try {
+        const data = await response.json();
+        return createErrorResponse(
+          data.message || errorMessage,
+          data.errorCode
+        );
+      } catch {
+        return createErrorResponse(errorMessage, 'UNKNOWN_ERROR');
+      }
+    }
+    
+    throw new Error('Response is ok but no success handler provided');
+  }
+
+  /**
+   * 공통 HTTP 응답 처리 - 성공 시 데이터 반환
+   */
+  protected async handleHttpResponseWithData<T>(
+    response: Response,
+    errorMessage: string,
+    createErrorResponse: (error: string, errorCode?: string) => T,
+    successHandler: (data: any) => T
+  ): Promise<T> {
+    if (!response.ok) {
+      try {
+        const data = await response.json();
+        return createErrorResponse(
+          data.message || errorMessage,
+          data.errorCode
+        );
+      } catch {
+        return createErrorResponse(errorMessage, 'UNKNOWN_ERROR');
+      }
+    }
+
+    try {
+      const data = await response.json();
+      return successHandler(data);
+    } catch (error) {
+      return createErrorResponse('응답 데이터 파싱에 실패했습니다.', 'PARSE_ERROR');
+    }
+  }
+
   // 추상 메서드들 - 하위 클래스에서 구현
+  abstract requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse>;
   abstract login(request: LoginRequest): Promise<LoginResponse>;
   abstract logout(request: LogoutRequest): Promise<LogoutResponse>;
   abstract refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse>;
