@@ -1,5 +1,5 @@
 // 기본 인증 제공자 추상 클래스 : 중복되는 공통 로직을 추출한 추상 클래스
-import { Token, UserInfo } from '../../types';
+import { Token, UserInfo, BaseResponse } from '../../types';
 import { 
   AuthProvider, 
   AuthProviderConfig, 
@@ -70,61 +70,26 @@ export abstract class BaseAuthProvider implements AuthProvider {
   }
 
   /**
-   * 공통 에러 응답 생성
+   * 공통 응답 생성 메서드 - 제네릭을 사용하여 타입 안전성 확보
    */
-  protected createErrorResponse(error: string, errorCode?: string): LoginResponse {
+  protected createResponse<T extends BaseResponse>(
+    success: boolean, 
+    error?: string, 
+    errorCode?: string,
+    additionalData?: Partial<T>
+  ): T {
     return {
-      success: false,
+      success,
       error,
       errorCode,
-    };
-  }
-
-  /**
-   * 공통 성공 응답 생성
-   */
-  protected createSuccessResponse(token: Token, userInfo: UserInfo): LoginResponse {
-    return {
-      success: true,
-      token,
-      userInfo,
-    };
-  }
-
-  /**
-   * 공통 로그아웃 에러 응답 생성
-   */
-  protected createLogoutErrorResponse(error: string): LogoutResponse {
-    return {
-      success: false,
-      error,
-    };
-  }
-
-  /**
-   * 공통 토큰 갱신 에러 응답 생성
-   */
-  protected createRefreshTokenErrorResponse(error: string): RefreshTokenResponse {
-    return {
-      success: false,
-      error,
-    };
-  }
-
-  /**
-   * 공통 토큰 갱신 성공 응답 생성
-   */
-  protected createRefreshTokenSuccessResponse(token: Token): RefreshTokenResponse {
-    return {
-      success: true,
-      token,
-    };
+      ...additionalData
+    } as T;
   }
 
   /**
    * 공통 HTTP 응답 처리 - 성공/실패 판단 및 에러 응답 생성
    */
-  protected async handleHttpResponse<T>(
+  protected async handleHttpResponse<T extends BaseResponse>(
     response: Response, 
     errorMessage: string,
     createErrorResponse: (error: string, errorCode?: string) => T
@@ -147,7 +112,7 @@ export abstract class BaseAuthProvider implements AuthProvider {
   /**
    * 공통 HTTP 응답 처리 - 성공 시 데이터 반환
    */
-  protected async handleHttpResponseWithData<T>(
+  protected async handleHttpResponseWithData<T extends BaseResponse>(
     response: Response,
     errorMessage: string,
     createErrorResponse: (error: string, errorCode?: string) => T,
