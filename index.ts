@@ -9,14 +9,24 @@ export {
   AuthProviderConfig,
   EmailVerificationRequest,
   EmailVerificationResponse,
-  BaseAuthProvider,
-  EmailAuthProvider,
-  GoogleAuthProvider
+  LoginRequest,
+  LoginResponse,
+  LogoutRequest,
+  LogoutResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  RequestOptions
 } from './providers';
-export { TokenStore } from './storage/TokenStore.interface';
+
+// 구현체들
+export { EmailAuthProvider, GoogleAuthProvider } from './providers';
+export { BaseAuthProvider } from './providers/base/BaseAuthProvider';
+
+// 토큰 저장소 관련
+export { TokenStore, WebTokenStore, MobileTokenStore, FakeTokenStore } from './storage';
 
 // 타입들
-export { Token, UserInfo, AuthProviderType } from './types';
+export { Token, UserInfo, AuthProviderType, BaseResponse, BaseRequest } from './types';
 
 // 팩토리 함수들
 export { createAuthProvider } from './factories/AuthProviderFactory';
@@ -24,9 +34,4 @@ export { createTokenStore, TokenStoreType } from './factories/TokenStoreFactory'
 export { 
   createAuthManager, 
   createAuthManagerFromInstances
-} from './factories/AuthManagerFactory';
-
-// 저장소 구현체들 (필요시에만 export)
-export { WebTokenStore } from './storage/WebTokenStore';
-export { MobileTokenStore } from './storage/MobileTokenStore';
-export { FakeTokenStore } from './storage/FakeTokenStore'; 
+} from './factories/AuthManagerFactory'; 
