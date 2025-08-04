@@ -7,8 +7,8 @@ export interface Token {
     expiresAt?: number; // unix timestamp
   }
   
-  // 인증 제공자 타입 (AuthProvider.ts와 동기화)
-  export type AuthProviderType = 'email' | 'google' ;
+  // 인증 제공자 타입
+  export type AuthProviderType = 'email' | 'google';
   
   // 사용자 정보 인터페이스
   export interface UserInfo {
