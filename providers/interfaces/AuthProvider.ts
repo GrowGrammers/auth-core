@@ -73,18 +73,6 @@ export interface RefreshTokenResponse {
   error?: string;
 }
 
-// HTTP 요청 옵션
-export interface RequestOptions {
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  headers?: Record<string, string>;
-  // 요청 본문 - 다양한 형태의 데이터를 지원
-  // Record<string, unknown>: JSON 객체 (로그인, 토큰 갱신 등)
-  // string: 문자열 데이터
-  // FormData: 파일 업로드 등 멀티파트 데이터
-  body?: Record<string, unknown> | string | FormData;
-  timeout?: number;
-}
-
 // 인증 제공자 인터페이스
 export interface AuthProvider {
   /**
