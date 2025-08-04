@@ -8,7 +8,9 @@ import {
   LogoutResponse,
   RefreshTokenRequest,
   RefreshTokenResponse,
-  EmailLoginRequest
+  EmailLoginRequest,
+  EmailVerificationRequest,
+  EmailVerificationResponse
 } from '../interfaces/AuthProvider';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
 
@@ -42,9 +44,9 @@ export class EmailAuthProvider extends BaseAuthProvider {
       const emailRequest = request as EmailLoginRequest;
 
       // 이메일 로그인 검증
-      if (!emailRequest.email || !emailRequest.password) {
+      if (!emailRequest.email || !emailRequest.verificationCode) {
         return this.createErrorResponse(
-          '이메일과 비밀번호가 필요합니다.',
+          '이메일과 인증코드가 필요합니다.',
           'INVALID_CREDENTIALS'
         );
       }
@@ -54,32 +56,26 @@ export class EmailAuthProvider extends BaseAuthProvider {
         method: 'POST',
         body: {
           email: emailRequest.email,
-          password: emailRequest.password,
+          verificationCode: emailRequest.verificationCode,
           rememberMe: emailRequest.rememberMe
         },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        return this.createErrorResponse(
-          data.message || '로그인에 실패했습니다.',
-          data.errorCode
-        );
-      }
-
-      // 토큰 생성
-      const token: Token = this.createToken(data);
-
-      // 사용자 정보 생성
-      const userInfo: UserInfo = {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name,
-        provider: 'email'
-      };
-
-      return this.createSuccessResponse(token, userInfo);
+      return this.handleHttpResponseWithData(
+        response,
+        '로그인에 실패했습니다.',
+        this.createErrorResponse.bind(this),
+        (data) => {
+          const token: Token = this.createToken(data);
+          const userInfo: UserInfo = {
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.name,
+            provider: 'email'
+          };
+          return this.createSuccessResponse(token, userInfo);
+        }
+      );
 
     } catch (error) {
       return this.createErrorResponse(
@@ -103,11 +99,11 @@ export class EmailAuthProvider extends BaseAuthProvider {
         },
       });
 
-      if (!response.ok) {
-        return this.createLogoutErrorResponse('로그아웃에 실패했습니다.');
-      }
-
-      return { success: true };
+      return this.handleHttpResponse(
+        response,
+        '로그아웃에 실패했습니다.',
+        this.createLogoutErrorResponse.bind(this)
+      );
 
     } catch (error) {
       return this.createLogoutErrorResponse('네트워크 오류가 발생했습니다.');
@@ -123,17 +119,15 @@ export class EmailAuthProvider extends BaseAuthProvider {
         },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        return this.createRefreshTokenErrorResponse(
-          data.message || '토큰 갱신에 실패했습니다.'
-        );
-      }
-
-      const token: Token = this.createToken(data);
-
-      return this.createRefreshTokenSuccessResponse(token);
+      return this.handleHttpResponseWithData(
+        response,
+        '토큰 갱신에 실패했습니다.',
+        this.createRefreshTokenErrorResponse.bind(this),
+        (data) => {
+          const token: Token = this.createToken(data);
+          return this.createRefreshTokenSuccessResponse(token);
+        }
+      );
 
     } catch (error) {
       return this.createRefreshTokenErrorResponse('네트워크 오류가 발생했습니다.');
@@ -179,6 +173,42 @@ export class EmailAuthProvider extends BaseAuthProvider {
 
     } catch (error) {
       return null;
+    }
+  }
+
+  async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
+    try {
+      if (!request.email) {
+        return {
+          success: false,
+          error: '이메일이 필요합니다.',
+          errorCode: 'INVALID_EMAIL'
+        };
+      }
+
+      const response = await this.makeRequestWithRetry('/auth/request-verification', {
+        method: 'POST',
+        body: {
+          email: request.email
+        },
+      });
+
+      return this.handleHttpResponse(
+        response,
+        '인증번호 요청에 실패했습니다.',
+        (error, errorCode) => ({
+          success: false,
+          error,
+          errorCode
+        })
+      );
+
+    } catch (error) {
+      return {
+        success: false,
+        error: '네트워크 오류가 발생했습니다.',
+        errorCode: 'NETWORK_ERROR'
+      };
     }
   }
 
