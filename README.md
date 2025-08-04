@@ -6,20 +6,32 @@
 
 ```
 auth-core/
+├── api/                          # API 호출 로직 분리
+│   ├── authApi.ts                # 인증 관련 API 함수들
+│   ├── types.ts                  # API 모듈 공통 타입
+│   └── index.ts                  # API 모듈 진입점
+│
 ├── providers/                     # 로그인 방식 전략 모음 (Strategy)
-│   ├── AuthProvider.ts            # 공통 인터페이스
-│   ├── EmailAuthProvider.ts       # 이메일 로그인 구현
-│   ├── GoogleAuthProvider.ts      # 구글 로그인 구현
-│   └── KakaoAuthProvider.ts       # 카카오 로그인 구현 (예정)
+│   ├── interfaces/                # 인터페이스 정의
+│   │   └── AuthProvider.ts       # 공통 인터페이스
+│   ├── base/                     # 기본 클래스
+│   │   └── BaseAuthProvider.ts   # 공통 로직 추상 클래스
+│   ├── implementations/           # 구체적 구현체
+│   │   ├── EmailAuthProvider.ts  # 이메일 로그인 구현
+│   │   └── GoogleAuthProvider.ts # 구글 로그인 구현
+│   └── index.ts                  # Provider 모듈 진입점
 │
 ├── factories/                     # 전략 객체 생성 책임 (Factory)
-│   └── AuthProviderFactory.ts     # 문자열 or config 기반으로 전략 생성
+│   ├── AuthProviderFactory.ts    # 문자열 or config 기반으로 전략 생성
+│   ├── TokenStoreFactory.ts      # 토큰 저장소 팩토리
+│   └── AuthManagerFactory.ts     # AuthManager 팩토리
 │
 ├── storage/                       # 토큰 저장 전략
-│   ├── TokenStore.interface.ts    # 저장 전략 인터페이스
-│   ├── WebTokenStore.ts           # 웹 환경 저장소 (ex: localStorage)
-│   ├── MobileTokenStore.ts        # 모바일 환경 저장소 (ex: SecureStore)
-│   └── FakeTokenStore.ts          # 테스트용 가짜 저장소
+│   ├── TokenStore.interface.ts   # 저장 전략 인터페이스
+│   ├── WebTokenStore.ts          # 웹 환경 저장소 (ex: localStorage)
+│   ├── MobileTokenStore.ts       # 모바일 환경 저장소 (ex: SecureStore)
+│   ├── FakeTokenStore.ts         # 테스트용 가짜 저장소
+│   └── index.ts                  # Storage 모듈 진입점
 │
 ├── AuthManager.ts                 # 전략들을 주입받아 로그인 흐름 제어
 ├── types.ts                       # 공통 타입 모음
@@ -31,6 +43,7 @@ auth-core/
 - **Strategy Pattern**: 다양한 로그인 방식을 전략으로 구현
 - **Factory Pattern**: 설정에 따라 적절한 인증 제공자 생성
 - **Dependency Injection**: 토큰 저장소와 인증 제공자를 주입받아 사용
+- **Single Responsibility Principle (SRP)**: API 호출 로직을 외부 모듈로 분리하여 각 클래스의 책임을 명확히 분리
 
 ## 사용 예정 환경
 
