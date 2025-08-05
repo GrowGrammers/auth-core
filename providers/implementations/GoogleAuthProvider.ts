@@ -1,7 +1,7 @@
 // 구글 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
-import { AuthProviderConfig, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, EmailVerificationRequest, EmailVerificationResponse } from '../interfaces/AuthProvider';
-import { BaseAuthProvider } from '../base/BaseAuthProvider';
-import { Token, UserInfo } from '../../types';
+import { AuthProviderConfig, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse } from '../interfaces/AuthProvider';
+import { ILoginProvider } from '../interfaces';
+import { Token, UserInfo, BaseResponse } from '../../types';
 import {
   loginByGoogle,
   logoutByGoogle,
@@ -11,22 +11,29 @@ import {
   checkGoogleServiceAvailability
 } from '../../api';
 
-export class GoogleAuthProvider extends BaseAuthProvider {
+export class GoogleAuthProvider implements ILoginProvider {
   readonly providerName = 'google' as const;
   readonly config: AuthProviderConfig;
   
   constructor(config: AuthProviderConfig) {
-    super();
     this.config = config;
   }
 
-  // OAuth 제공자는 이메일 인증코드를 지원하지 않음
-  async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
-    return this.createResponse<EmailVerificationResponse>(
-      false,
-      'Google OAuth는 이메일 인증코드를 지원하지 않습니다.',
-      'UNSUPPORTED_FEATURE'
-    );
+  /**
+   * 공통 응답 생성 메서드 - 제네릭을 사용하여 타입 안전성 확보
+   */
+  protected createResponse<T extends BaseResponse>(
+    success: boolean, 
+    error?: string, 
+    errorCode?: string,
+    additionalData?: Partial<T>
+  ): T {
+    return {
+      success,
+      error,
+      errorCode,
+      ...additionalData
+    } as T;
   }
 
   async login(request: LoginRequest): Promise<LoginResponse> {
