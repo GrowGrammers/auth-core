@@ -10,6 +10,13 @@ export {
   createUserInfo
 } from './utils/httpUtils';
 
+// 설정 유틸리티 함수들
+export {
+  getDefaultEndpoints,
+  getDefaultApiConfig,
+  mergeApiConfig
+} from './utils/configUtils';
+
 // 이메일 인증 API 함수들
 export {
   requestEmailVerification,
