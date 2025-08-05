@@ -1,5 +1,6 @@
 // HTTP 클라이언트 인터페이스
 export interface HttpRequestConfig {
+  url: string; // 추가: URL 정보 명시
   method: string;
   headers?: Record<string, string>;
   body?: any;

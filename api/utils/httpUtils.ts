@@ -16,6 +16,7 @@ export async function makeRequest(
 
   try {
     const httpConfig: HttpRequestConfig = {
+      url: `${config.apiBaseUrl}${endpoint}`, // apiBaseUrl로 수정
       method: options.method,
       headers: {
         'Content-Type': 'application/json',
