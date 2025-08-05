@@ -21,15 +21,19 @@ export {
 export { EmailAuthProvider, GoogleAuthProvider } from './providers';
 export { BaseAuthProvider } from './providers/base/BaseAuthProvider';
 
-// 토큰 저장소 관련
-export { TokenStore, WebTokenStore, MobileTokenStore, FakeTokenStore } from './storage';
+// 토큰 저장소 관련 - 인터페이스만 export
+export { TokenStore } from './storage';
+export { FakeTokenStore } from './storage';
+
+// HTTP 클라이언트 인터페이스
+export { HttpClient, HttpRequestConfig, HttpResponse } from './api/interfaces/HttpClient';
 
 // 타입들
 export { Token, UserInfo, AuthProviderType, BaseResponse, BaseRequest } from './types';
 
 // 팩토리 함수들
 export { createAuthProvider } from './factories/AuthProviderFactory';
-export { createTokenStore, TokenStoreType } from './factories/TokenStoreFactory';
+export { createTokenStore, TokenStoreType, TokenStoreRegistry } from './factories/TokenStoreFactory';
 export { 
   createAuthManager, 
   createAuthManagerFromInstances
