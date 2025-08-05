@@ -1,7 +1,8 @@
 // 구글 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
 import { AuthProviderConfig, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse } from '../interfaces/AuthProvider';
 import { ILoginProvider } from '../interfaces';
-import { Token, UserInfo, BaseResponse } from '../../types';
+import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
+import { HttpClient } from '../../api/interfaces/HttpClient';
 import {
   loginByGoogle,
   logoutByGoogle,
@@ -14,9 +15,13 @@ import {
 export class GoogleAuthProvider implements ILoginProvider {
   readonly providerName = 'google' as const;
   readonly config: AuthProviderConfig;
+  private httpClient: HttpClient;
+  private apiConfig: ApiConfig;
   
-  constructor(config: AuthProviderConfig) {
+  constructor(config: AuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
     this.config = config;
+    this.httpClient = httpClient;
+    this.apiConfig = apiConfig;
   }
 
   /**
@@ -37,7 +42,7 @@ export class GoogleAuthProvider implements ILoginProvider {
   }
 
   async login(request: LoginRequest): Promise<LoginResponse> {
-    const apiResponse = await loginByGoogle(this.config, request);
+    const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
       return this.createResponse<LoginResponse>(
@@ -56,7 +61,7 @@ export class GoogleAuthProvider implements ILoginProvider {
   }
 
   async logout(request: LogoutRequest): Promise<LogoutResponse> {
-    const apiResponse = await logoutByGoogle(this.config, request);
+    const apiResponse = await logoutByGoogle(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
       return this.createResponse<LogoutResponse>(
@@ -70,7 +75,7 @@ export class GoogleAuthProvider implements ILoginProvider {
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
-    const apiResponse = await refreshTokenByGoogle(this.config, request);
+    const apiResponse = await refreshTokenByGoogle(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
       return this.createResponse<RefreshTokenResponse>(
@@ -89,14 +94,14 @@ export class GoogleAuthProvider implements ILoginProvider {
   }
 
   async validateToken(token: Token): Promise<boolean> {
-    return validateTokenByGoogle(this.config, token);
+    return await validateTokenByGoogle(this.httpClient, this.apiConfig, token);
   }
 
   async getUserInfo(token: Token): Promise<UserInfo | null> {
-    return getUserInfoByGoogle(this.config, token);
+    return await getUserInfoByGoogle(this.httpClient, this.apiConfig, token);
   }
 
   async isAvailable(): Promise<boolean> {
-    return checkGoogleServiceAvailability(this.config);
+    return await checkGoogleServiceAvailability(this.httpClient, this.apiConfig);
   }
 }
