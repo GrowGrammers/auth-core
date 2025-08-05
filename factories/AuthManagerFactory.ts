@@ -3,25 +3,32 @@
 
 import { AuthManager } from '../AuthManager';
 import { AuthProvider, AuthProviderConfig } from '../providers';
-import { AuthProviderType } from '../types';
+import { AuthProviderType, ApiConfig } from '../types';
 import { TokenStore } from '../storage/TokenStore.interface';
+import { HttpClient } from '../api/interfaces/HttpClient';
 import { createAuthProvider } from './AuthProviderFactory';
-import { createTokenStore, TokenStoreType } from './TokenStoreFactory';
+import { createTokenStore, TokenStoreType, TokenStoreRegistry } from './TokenStoreFactory';
 
 /**
  * 타입과 설정을 받아서 AuthManager 인스턴스를 생성합니다.
  * @param providerType - 인증 제공자 타입 ('email' | 'google')
  * @param tokenStoreType - 토큰 저장소 타입 ('web' | 'mobile' | 'fake')
  * @param config - 인증 제공자 설정
+ * @param httpClient - HTTP 클라이언트 인스턴스
+ * @param apiConfig - API 설정 객체
+ * @param tokenStoreRegistry - 토큰 저장소 레지스트리 (선택사항)
  * @returns AuthManager 인스턴스
  */
 export function createAuthManager(
   providerType: AuthProviderType,
   tokenStoreType: TokenStoreType,
-  config: AuthProviderConfig
+  config: AuthProviderConfig,
+  httpClient: HttpClient,
+  apiConfig: ApiConfig,
+  tokenStoreRegistry?: TokenStoreRegistry
 ): AuthManager {
-  const provider = createAuthProvider(providerType, config);
-  const tokenStore = createTokenStore(tokenStoreType);
+  const provider = createAuthProvider(providerType, config, httpClient, apiConfig);
+  const tokenStore = createTokenStore(tokenStoreType, tokenStoreRegistry);
   
   return new AuthManager(provider, tokenStore);
 }

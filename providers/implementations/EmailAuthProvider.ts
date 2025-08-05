@@ -1,5 +1,6 @@
 // 이메일 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
-import { Token, UserInfo, BaseResponse } from '../../types';
+import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
+import { HttpClient } from '../../api/interfaces/HttpClient';
 import { 
   AuthProviderConfig,
   LoginRequest, 
@@ -26,9 +27,13 @@ import {
 export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
   readonly providerName = 'email' as const;
   readonly config: AuthProviderConfig;
+  private httpClient: HttpClient;
+  private apiConfig: ApiConfig;
   
-  constructor(config: AuthProviderConfig) {
+  constructor(config: AuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
     this.config = config;
+    this.httpClient = httpClient;
+    this.apiConfig = apiConfig;
   }
 
   /**
@@ -49,7 +54,7 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
   }
 
   async login(request: LoginRequest): Promise<LoginResponse> {
-    const apiResponse = await loginByEmail(this.config, request);
+    const apiResponse = await loginByEmail(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
       return this.createResponse<LoginResponse>(
@@ -68,7 +73,7 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
   }
 
   async logout(request: LogoutRequest): Promise<LogoutResponse> {
-    const apiResponse = await logoutByEmail(this.config, request);
+    const apiResponse = await logoutByEmail(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
       return this.createResponse<LogoutResponse>(
@@ -82,7 +87,7 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
-    const apiResponse = await refreshTokenByEmail(this.config, request);
+    const apiResponse = await refreshTokenByEmail(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
       return this.createResponse<RefreshTokenResponse>(
@@ -101,15 +106,15 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
   }
 
   async validateToken(token: Token): Promise<boolean> {
-    return validateTokenByEmail(this.config, token);
+    return await validateTokenByEmail(this.httpClient, this.apiConfig, token);
   }
 
   async getUserInfo(token: Token): Promise<UserInfo | null> {
-    return getUserInfoByEmail(this.config, token);
+    return await getUserInfoByEmail(this.httpClient, this.apiConfig, token);
   }
 
   async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
-    const apiResponse = await requestEmailVerification(this.config, request);
+    const apiResponse = await requestEmailVerification(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
       return this.createResponse<EmailVerificationResponse>(
@@ -123,6 +128,6 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
   }
 
   async isAvailable(): Promise<boolean> {
-    return checkEmailServiceAvailability(this.config);
+    return await checkEmailServiceAvailability(this.httpClient, this.apiConfig);
   }
 } 

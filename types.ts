@@ -33,9 +33,21 @@ export interface BaseRequest {
   rememberMe?: boolean;
 }
 
+// API 엔드포인트 설정
+export interface ApiEndpoints {
+  requestVerification: string;
+  login: string;
+  logout: string;
+  refresh: string;
+  validate: string;
+  me: string;
+  health: string;
+}
+
 // API 모듈 공통 타입 정의
 export interface ApiConfig {
   apiBaseUrl: string;
+  endpoints: ApiEndpoints;
   timeout?: number;
   retryCount?: number;
 }
