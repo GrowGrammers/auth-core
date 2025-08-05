@@ -1,5 +1,6 @@
 // Google OAuth 관련 API 함수들 (향후 구현 예정)
 import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
+import { HttpClient } from './interfaces/HttpClient';
 import { 
   LoginRequest, 
   LogoutRequest, 
@@ -10,6 +11,7 @@ import {
  * Google OAuth 로그인 (향후 구현)
  */
 export async function loginByGoogle(
+  httpClient: HttpClient,
   config: ApiConfig,
   request: LoginRequest
 ): Promise<ApiResponse<{ token: Token; userInfo: UserInfo }>> {
@@ -25,6 +27,7 @@ export async function loginByGoogle(
  * Google OAuth 로그아웃 (향후 구현)
  */
 export async function logoutByGoogle(
+  httpClient: HttpClient,
   config: ApiConfig,
   request: LogoutRequest
 ): Promise<ApiResponse> {
@@ -40,6 +43,7 @@ export async function logoutByGoogle(
  * Google OAuth 토큰 갱신 (향후 구현)
  */
 export async function refreshTokenByGoogle(
+  httpClient: HttpClient,
   config: ApiConfig,
   request: RefreshTokenRequest
 ): Promise<ApiResponse<{ token: Token }>> {
@@ -55,6 +59,7 @@ export async function refreshTokenByGoogle(
  * Google OAuth 토큰 검증 (향후 구현)
  */
 export async function validateTokenByGoogle(
+  httpClient: HttpClient,
   config: ApiConfig,
   token: Token
 ): Promise<boolean> {
@@ -66,6 +71,7 @@ export async function validateTokenByGoogle(
  * Google OAuth 사용자 정보 조회 (향후 구현)
  */
 export async function getUserInfoByGoogle(
+  httpClient: HttpClient,
   config: ApiConfig,
   token: Token
 ): Promise<UserInfo | null> {
@@ -77,6 +83,7 @@ export async function getUserInfoByGoogle(
  * Google OAuth 서비스 가용성 확인 (향후 구현)
  */
 export async function checkGoogleServiceAvailability(
+  httpClient: HttpClient,
   config: ApiConfig
 ): Promise<boolean> {
   // TODO: Google OAuth 구현

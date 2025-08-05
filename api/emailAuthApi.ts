@@ -1,5 +1,6 @@
 // 이메일 인증 관련 API 함수들
 import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
+import { HttpClient } from './interfaces/HttpClient';
 import { 
   LoginRequest, 
   LogoutRequest, 
@@ -19,6 +20,7 @@ import {
  * 이메일 인증번호 요청
  */
 export async function requestEmailVerification(
+  httpClient: HttpClient,
   config: ApiConfig,
   request: EmailVerificationRequest
 ): Promise<ApiResponse> {
@@ -31,7 +33,7 @@ export async function requestEmailVerification(
       };
     }
 
-    const response = await makeRequestWithRetry(config, '/auth/request-verification', {
+    const response = await makeRequestWithRetry(httpClient, config, config.endpoints.requestVerification, {
       method: 'POST',
       body: { email: request.email }
     });
@@ -56,6 +58,7 @@ export async function requestEmailVerification(
  * 이메일 로그인
  */
 export async function loginByEmail(
+  httpClient: HttpClient,
   config: ApiConfig,
   request: LoginRequest
 ): Promise<ApiResponse<{ token: Token; userInfo: UserInfo }>> {
@@ -80,7 +83,7 @@ export async function loginByEmail(
       };
     }
 
-    const response = await makeRequestWithRetry(config, '/auth/login', {
+    const response = await makeRequestWithRetry(httpClient, config, config.endpoints.login, {
       method: 'POST',
       body: {
         email: emailRequest.email,
@@ -114,6 +117,7 @@ export async function loginByEmail(
  * 이메일 로그아웃
  */
 export async function logoutByEmail(
+  httpClient: HttpClient,
   config: ApiConfig,
   request: LogoutRequest
 ): Promise<ApiResponse> {
@@ -125,7 +129,7 @@ export async function logoutByEmail(
       };
     }
 
-    const response = await makeRequestWithRetry(config, '/auth/logout', {
+    const response = await makeRequestWithRetry(httpClient, config, config.endpoints.logout, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${request.token.accessToken}`,
@@ -151,11 +155,12 @@ export async function logoutByEmail(
  * 토큰 갱신
  */
 export async function refreshTokenByEmail(
+  httpClient: HttpClient,
   config: ApiConfig,
   request: RefreshTokenRequest
 ): Promise<ApiResponse<{ token: Token }>> {
   try {
-    const response = await makeRequestWithRetry(config, '/auth/refresh', {
+    const response = await makeRequestWithRetry(httpClient, config, config.endpoints.refresh, {
       method: 'POST',
       body: { refreshToken: request.refreshToken }
     });
@@ -183,11 +188,12 @@ export async function refreshTokenByEmail(
  * 토큰 검증
  */
 export async function validateTokenByEmail(
+  httpClient: HttpClient,
   config: ApiConfig,
   token: Token
 ): Promise<boolean> {
   try {
-    const response = await makeRequest(config, '/auth/validate', {
+    const response = await makeRequest(httpClient, config, config.endpoints.validate, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token.accessToken}`,
@@ -204,11 +210,12 @@ export async function validateTokenByEmail(
  * 사용자 정보 조회
  */
 export async function getUserInfoByEmail(
+  httpClient: HttpClient,
   config: ApiConfig,
   token: Token
 ): Promise<UserInfo | null> {
   try {
-    const response = await makeRequest(config, '/auth/me', {
+    const response = await makeRequest(httpClient, config, config.endpoints.me, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token.accessToken}`,
@@ -231,10 +238,11 @@ export async function getUserInfoByEmail(
  * 서비스 가용성 확인
  */
 export async function checkEmailServiceAvailability(
+  httpClient: HttpClient,
   config: ApiConfig
 ): Promise<boolean> {
   try {
-    const response = await makeRequest(config, '/health', {
+    const response = await makeRequest(httpClient, config, config.endpoints.health, {
       method: 'GET'
     });
     return response.ok;

@@ -1,28 +1,31 @@
 // 공통 HTTP 유틸리티 함수들
 import { ApiConfig, RequestOptions, ApiResponse, ApiSuccessResponse, ApiErrorResponse, Token, UserInfo, AuthProviderType } from '../../types';
+import { HttpClient, HttpRequestConfig, HttpResponse } from '../interfaces/HttpClient';
 
 /**
  * 공통 HTTP 요청 함수
  */
 export async function makeRequest(
+  httpClient: HttpClient,
   config: ApiConfig,
   endpoint: string, 
   options: RequestOptions
-): Promise<Response> {
+): Promise<HttpResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), options.timeout || config.timeout || 10000);
 
   try {
-    const response = await fetch(`${config.apiBaseUrl}${endpoint}`, {
+    const httpConfig: HttpRequestConfig = {
       method: options.method,
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: controller.signal,
-    });
+      timeout: options.timeout || config.timeout || 10000,
+    };
 
+    const response = await httpClient.request(httpConfig);
     clearTimeout(timeoutId);
     return response;
   } catch (error) {
@@ -35,16 +38,17 @@ export async function makeRequest(
  * 재시도 로직이 포함된 HTTP 요청 함수
  */
 export async function makeRequestWithRetry(
+  httpClient: HttpClient,
   config: ApiConfig,
   endpoint: string, 
   options: RequestOptions
-): Promise<Response> {
+): Promise<HttpResponse> {
   const maxRetries = config.retryCount || 3;
   let lastError: Error;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      return await makeRequest(config, endpoint, options);
+      return await makeRequest(httpClient, config, endpoint, options);
     } catch (error) {
       lastError = error as Error;
       
@@ -64,7 +68,7 @@ export async function makeRequestWithRetry(
  * 공통 HTTP 응답 처리 함수 - 타입 안전성 개선
  */
 export async function handleHttpResponse<T>(
-  response: Response,
+  response: HttpResponse,
   errorMessage: string,
   createErrorResponse: (error: string, errorCode?: string) => ApiErrorResponse,
   createSuccessResponse: (data: unknown) => ApiSuccessResponse<T>
