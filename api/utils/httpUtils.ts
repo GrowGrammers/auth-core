@@ -1,0 +1,113 @@
+// 공통 HTTP 유틸리티 함수들
+import { ApiConfig, RequestOptions, ApiResponse, ApiSuccessResponse, ApiErrorResponse, Token, UserInfo, AuthProviderType } from '../../types';
+
+/**
+ * 공통 HTTP 요청 함수
+ */
+export async function makeRequest(
+  config: ApiConfig,
+  endpoint: string, 
+  options: RequestOptions
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout || config.timeout || 10000);
+
+  try {
+    const response = await fetch(`${config.apiBaseUrl}${endpoint}`, {
+      method: options.method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
+/**
+ * 재시도 로직이 포함된 HTTP 요청 함수
+ */
+export async function makeRequestWithRetry(
+  config: ApiConfig,
+  endpoint: string, 
+  options: RequestOptions
+): Promise<Response> {
+  const maxRetries = config.retryCount || 3;
+  let lastError: Error;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await makeRequest(config, endpoint, options);
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+      
+      // 지수 백오프: 1초, 2초, 4초...
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt - 1) * 1000));
+    }
+  }
+
+  throw lastError!;
+}
+
+/**
+ * 공통 HTTP 응답 처리 함수 - 타입 안전성 개선
+ */
+export async function handleHttpResponse<T>(
+  response: Response,
+  errorMessage: string,
+  createErrorResponse: (error: string, errorCode?: string) => ApiErrorResponse,
+  createSuccessResponse: (data: unknown) => ApiSuccessResponse<T>
+): Promise<ApiResponse<T>> {
+  if (!response.ok) {
+    try {
+      const data = await response.json();
+      return createErrorResponse(
+        data.message || errorMessage,
+        data.errorCode
+      );
+    } catch {
+      return createErrorResponse(errorMessage, 'UNKNOWN_ERROR');
+    }
+  }
+
+  try {
+    const data = await response.json();
+    return createSuccessResponse(data);
+  } catch (error) {
+    return createErrorResponse('응답 데이터 파싱에 실패했습니다.', 'PARSE_ERROR');
+  }
+}
+
+/**
+ * 토큰 생성 헬퍼 함수
+ */
+export function createToken(data: { accessToken: string; refreshToken: string; expiresAt?: number }): Token {
+  return {
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
+    expiresAt: data.expiresAt ? Date.now() + data.expiresAt * 1000 : undefined
+  };
+}
+
+/**
+ * 사용자 정보 생성 헬퍼 함수
+ */
+export function createUserInfo(data: { id: string; email: string; name: string }, provider: AuthProviderType): UserInfo {
+  return {
+    id: data.id,
+    email: data.email,
+    name: data.name,
+    provider
+  };
+} 

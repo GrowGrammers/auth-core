@@ -14,8 +14,7 @@ export {
   LogoutRequest,
   LogoutResponse,
   RefreshTokenRequest,
-  RefreshTokenResponse,
-  RequestOptions
+  RefreshTokenResponse
 } from './providers';
 
 // 구현체들
@@ -34,4 +33,7 @@ export { createTokenStore, TokenStoreType } from './factories/TokenStoreFactory'
 export { 
   createAuthManager, 
   createAuthManagerFromInstances
-} from './factories/AuthManagerFactory'; 
+} from './factories/AuthManagerFactory';
+
+// API 모듈
+export * from './api'; 

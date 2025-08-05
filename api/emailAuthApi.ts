@@ -1,0 +1,244 @@
+// 이메일 인증 관련 API 함수들
+import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
+import { 
+  LoginRequest, 
+  LogoutRequest, 
+  RefreshTokenRequest,
+  EmailVerificationRequest,
+  EmailLoginRequest
+} from '../providers/interfaces/AuthProvider';
+import { 
+  makeRequestWithRetry, 
+  makeRequest, 
+  handleHttpResponse, 
+  createToken, 
+  createUserInfo 
+} from './utils/httpUtils';
+
+/**
+ * 이메일 인증번호 요청
+ */
+export async function requestEmailVerification(
+  config: ApiConfig,
+  request: EmailVerificationRequest
+): Promise<ApiResponse> {
+  try {
+    if (!request.email) {
+      return {
+        success: false,
+        error: '이메일이 필요합니다.',
+        errorCode: 'INVALID_EMAIL'
+      };
+    }
+
+    const response = await makeRequestWithRetry(config, '/auth/request-verification', {
+      method: 'POST',
+      body: { email: request.email }
+    });
+
+    return handleHttpResponse(
+      response,
+      '인증번호 요청에 실패했습니다.',
+      (error, errorCode) => ({ success: false, error, errorCode }),
+      () => ({ success: true, data: undefined })
+    );
+
+  } catch (error) {
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다.',
+      errorCode: 'NETWORK_ERROR'
+    };
+  }
+}
+
+/**
+ * 이메일 로그인
+ */
+export async function loginByEmail(
+  config: ApiConfig,
+  request: LoginRequest
+): Promise<ApiResponse<{ token: Token; userInfo: UserInfo }>> {
+  try {
+    // 타입 가드로 이메일 로그인 요청인지 확인
+    if (request.provider !== 'email') {
+      return {
+        success: false,
+        error: '잘못된 인증 제공자입니다.',
+        errorCode: 'INVALID_PROVIDER'
+      };
+    }
+
+    const emailRequest = request as EmailLoginRequest;
+
+    // 이메일 로그인 검증
+    if (!emailRequest.email || !emailRequest.verificationCode) {
+      return {
+        success: false,
+        error: '이메일과 인증코드가 필요합니다.',
+        errorCode: 'INVALID_CREDENTIALS'
+      };
+    }
+
+    const response = await makeRequestWithRetry(config, '/auth/login', {
+      method: 'POST',
+      body: {
+        email: emailRequest.email,
+        verificationCode: emailRequest.verificationCode,
+        rememberMe: emailRequest.rememberMe
+      }
+    });
+
+    return handleHttpResponse(
+      response,
+      '로그인에 실패했습니다.',
+      (error: string, errorCode?: string) => ({ success: false, error, errorCode }),
+      (data: unknown) => {
+        const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number; user: { id: string; email: string; name: string } };
+        const token = createToken(typedData);
+        const userInfo = createUserInfo(typedData.user, 'email');
+        return { success: true, data: { token, userInfo } };
+      }
+    );
+
+  } catch (error) {
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다.',
+      errorCode: 'NETWORK_ERROR'
+    };
+  }
+}
+
+/**
+ * 이메일 로그아웃
+ */
+export async function logoutByEmail(
+  config: ApiConfig,
+  request: LogoutRequest
+): Promise<ApiResponse> {
+  try {
+    if (!request.token?.accessToken) {
+      return {
+        success: false,
+        error: '토큰이 필요합니다.'
+      };
+    }
+
+    const response = await makeRequestWithRetry(config, '/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${request.token.accessToken}`,
+      }
+    });
+
+    return handleHttpResponse(
+      response,
+      '로그아웃에 실패했습니다.',
+      (error, errorCode) => ({ success: false, error, errorCode }),
+      () => ({ success: true, data: undefined })
+    );
+
+  } catch (error) {
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다.'
+    };
+  }
+}
+
+/**
+ * 토큰 갱신
+ */
+export async function refreshTokenByEmail(
+  config: ApiConfig,
+  request: RefreshTokenRequest
+): Promise<ApiResponse<{ token: Token }>> {
+  try {
+    const response = await makeRequestWithRetry(config, '/auth/refresh', {
+      method: 'POST',
+      body: { refreshToken: request.refreshToken }
+    });
+
+    return handleHttpResponse(
+      response,
+      '토큰 갱신에 실패했습니다.',
+      (error: string, errorCode?: string) => ({ success: false, error, errorCode }),
+      (data: unknown) => {
+        const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number };
+        const token = createToken(typedData);
+        return { success: true, data: { token } };
+      }
+    );
+
+  } catch (error) {
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다.'
+    };
+  }
+}
+
+/**
+ * 토큰 검증
+ */
+export async function validateTokenByEmail(
+  config: ApiConfig,
+  token: Token
+): Promise<boolean> {
+  try {
+    const response = await makeRequest(config, '/auth/validate', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token.accessToken}`,
+      }
+    });
+
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * 사용자 정보 조회
+ */
+export async function getUserInfoByEmail(
+  config: ApiConfig,
+  token: Token
+): Promise<UserInfo | null> {
+  try {
+    const response = await makeRequest(config, '/auth/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token.accessToken}`,
+      }
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return createUserInfo(data, 'email');
+
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * 서비스 가용성 확인
+ */
+export async function checkEmailServiceAvailability(
+  config: ApiConfig
+): Promise<boolean> {
+  try {
+    const response = await makeRequest(config, '/health', {
+      method: 'GET'
+    });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+} 
