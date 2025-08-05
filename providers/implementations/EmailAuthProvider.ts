@@ -1,5 +1,5 @@
 // 이메일 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
-import { Token, UserInfo } from '../../types';
+import { Token, UserInfo, BaseResponse } from '../../types';
 import { 
   AuthProviderConfig,
   LoginRequest, 
@@ -12,7 +12,7 @@ import {
   EmailVerificationRequest,
   EmailVerificationResponse
 } from '../interfaces/AuthProvider';
-import { BaseAuthProvider } from '../base/BaseAuthProvider';
+import { ILoginProvider, IEmailVerifiable } from '../interfaces';
 import {
   loginByEmail,
   logoutByEmail,
@@ -23,13 +23,29 @@ import {
   checkEmailServiceAvailability
 } from '../../api/';
 
-export class EmailAuthProvider extends BaseAuthProvider {
+export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
   readonly providerName = 'email' as const;
   readonly config: AuthProviderConfig;
   
   constructor(config: AuthProviderConfig) {
-    super();
     this.config = config;
+  }
+
+  /**
+   * 공통 응답 생성 메서드 - 제네릭을 사용하여 타입 안전성 확보
+   */
+  protected createResponse<T extends BaseResponse>(
+    success: boolean, 
+    error?: string, 
+    errorCode?: string,
+    additionalData?: Partial<T>
+  ): T {
+    return {
+      success,
+      error,
+      errorCode,
+      ...additionalData
+    } as T;
   }
 
   async login(request: LoginRequest): Promise<LoginResponse> {
