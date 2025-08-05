@@ -1,5 +1,6 @@
 // 인증 + 저장 전략들을 주입받아 로그인 흐름 제어 
 import { AuthProvider, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, EmailVerificationRequest, EmailVerificationResponse } from './providers';
+import { IEmailVerifiable } from './providers/interfaces';
 import { TokenStore } from './storage/TokenStore.interface';
 import { Token, UserInfo } from './types';
 
@@ -19,6 +20,15 @@ export class AuthManager {
    */
   async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
     try {
+      // 타입 가드를 통해 IEmailVerifiable을 구현한 provider인지 확인
+      if (!this.isEmailVerifiable(this.provider)) {
+        return {
+          success: false,
+          error: '이 제공자는 이메일 인증을 지원하지 않습니다.',
+          errorCode: 'UNSUPPORTED_FEATURE'
+        };
+      }
+
       const verificationResponse = await this.provider.requestEmailVerification(request);
       
       if (verificationResponse.success) {
@@ -35,6 +45,13 @@ export class AuthManager {
         error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
       };
     }
+  }
+
+  /**
+   * 타입 가드: provider가 IEmailVerifiable을 구현했는지 확인
+   */
+  private isEmailVerifiable(provider: AuthProvider): provider is AuthProvider & IEmailVerifiable {
+    return 'requestEmailVerification' in provider;
   }
 
   /**
