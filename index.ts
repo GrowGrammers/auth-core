@@ -29,7 +29,7 @@ export { FakeTokenStore } from './storage';
 export { HttpClient, HttpRequestConfig, HttpResponse } from './api/interfaces/HttpClient';
 
 // 타입들
-export { Token, UserInfo, AuthProviderType, BaseResponse, BaseRequest } from './types';
+export { Token, UserInfo, AuthProviderType, BaseResponse, BaseRequest, ApiConfig, ApiEndpoints } from './types';
 
 // 팩토리 함수들
 export { createAuthProvider } from './factories/AuthProviderFactory';
