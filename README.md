@@ -43,7 +43,6 @@ auth-core/
 - **Strategy Pattern**: 다양한 로그인 방식을 전략으로 구현
 - **Factory Pattern**: 설정에 따라 적절한 인증 제공자 생성
 - **Dependency Injection**: 토큰 저장소와 인증 제공자를 주입받아 사용
-- **Single Responsibility Principle (SRP)**: API 호출 로직을 외부 모듈로 분리하여 각 클래스의 책임을 명확히 분리
 
 ## 사용 예정 환경
 
