@@ -1,8 +1,8 @@
 // 이메일 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
 import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
 import { HttpClient } from '../../network/interfaces/HttpClient';
+import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { 
-  AuthProviderConfig,
   LoginRequest, 
   LoginResponse, 
   LogoutRequest, 
@@ -12,7 +12,7 @@ import {
   EmailLoginRequest,
   EmailVerificationRequest,
   EmailVerificationResponse
-} from '../interfaces/AuthProvider';
+} from '../interfaces/dtos/auth.dto';
 import { ILoginProvider, IEmailVerifiable } from '../interfaces';
 import {
   loginByEmail,

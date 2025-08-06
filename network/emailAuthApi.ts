@@ -6,7 +6,7 @@ import {
   RefreshTokenRequest,
   EmailVerificationRequest,
   EmailLoginRequest
-} from '../providers/interfaces/AuthProvider';
+} from '../providers/interfaces/dtos/auth.dto';
 import { 
   makeRequestWithRetry, 
   makeRequest, 
