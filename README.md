@@ -61,22 +61,33 @@ auth-core/
 ```typescript
 import { 
   createAuthManager, 
-  getDefaultApiConfig,
-  FakeTokenStore 
+  AuthManagerConfig 
 } from 'auth-core';
 
-// AuthManager 생성
-const authManager = createAuthManager({
+// API 설정 (서비스에서 정의)
+const apiConfig = {
+  apiBaseUrl: 'https://api.myservice.com',
+  endpoints: {
+    login: '/api/v1/login',
+    logout: '/api/v1/logout',
+    refresh: '/token/refresh',
+    me: '/user/me',
+    requestVerification: '/email/verify',
+    validate: '/token/validate',
+    health: '/health'
+  },
+  timeout: 10000,
+  retryCount: 3
+};
+
+// AuthManager 설정
+const authManagerConfig: AuthManagerConfig = {
   providerType: 'email',
-  tokenStoreType: 'fake',
-  apiConfig: getDefaultApiConfig('https://api.example.com'),
-  httpClient: new MockHttpClient(),
-  tokenStoreRegistry: {
-    web: FakeTokenStore,
-    mobile: FakeTokenStore,
-    fake: FakeTokenStore
-  }
-});
+  apiConfig
+};
+
+// AuthManager 생성
+const authManager = createAuthManager(authManagerConfig);
 
 // 로그인 사용
 const result = await authManager.login({
@@ -86,21 +97,24 @@ const result = await authManager.login({
 });
 ```
 
-### API 설정
+### 커스텀 엔드포인트 설정
 
 ```typescript
-import { getDefaultApiConfig, mergeApiConfig } from 'auth-core';
-
-// 기본 설정
-const baseConfig = getDefaultApiConfig('https://api.example.com');
-
-// 커스텀 설정
-const customConfig = mergeApiConfig(baseConfig, {
+// 백엔드 개발자가 다른 엔드포인트를 사용할 때
+const customApiConfig = {
+  apiBaseUrl: 'https://api.myservice.com',
   endpoints: {
-    login: '/custom/auth/login',
-    logout: '/custom/auth/logout'
-  }
-});
+    login: '/user/signin',           // 백엔드 마음대로
+    logout: '/user/signout',         // 백엔드 마음대로
+    requestVerification: '/email/send-code', // 백엔드 마음대로
+    refresh: '/token/refresh',
+    validate: '/token/validate',
+    me: '/user/profile',
+    health: '/status'
+  },
+  timeout: 15000,
+  retryCount: 5
+};
 ```
 
 ## 📚 주요 기능

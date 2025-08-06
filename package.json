@@ -1,5 +1,17 @@
 {
+  "name": "auth-core",
+  "version": "1.0.0",
+  "description": "플랫폼 독립적인 인증 모듈",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:check": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean"
+  },
   "devDependencies": {
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "rimraf": "^5.0.0"
   }
 }
