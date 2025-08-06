@@ -2,7 +2,7 @@
 import { 
   EmailVerificationRequest,
   EmailVerificationResponse
-} from './AuthProvider';
+} from './dtos/auth.dto';
 
 export interface IEmailVerifiable {
   /**

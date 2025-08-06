@@ -26,7 +26,7 @@ export { TokenStore } from './storage';
 export { FakeTokenStore } from './storage';
 
 // HTTP 클라이언트 인터페이스
-export { HttpClient, HttpRequestConfig, HttpResponse } from './api/interfaces/HttpClient';
+export { HttpClient, HttpRequestConfig, HttpResponse } from './network/interfaces/HttpClient';
 
 // 타입들
 export { Token, UserInfo, AuthProviderType, BaseResponse, BaseRequest, ApiConfig, ApiEndpoints } from './types';
@@ -36,8 +36,11 @@ export { createAuthProvider } from './factories/AuthProviderFactory';
 export { createTokenStore, TokenStoreType, TokenStoreRegistry } from './factories/TokenStoreFactory';
 export { 
   createAuthManager, 
-  createAuthManagerFromInstances
+  createAuthManagerLegacy
 } from './factories/AuthManagerFactory';
 
-// API 모듈
-export * from './api'; 
+// AuthManager 설정 타입
+export { AuthManagerConfig } from './AuthManager';
+
+// Network 모듈
+export * from './network'; 

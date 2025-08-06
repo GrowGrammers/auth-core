@@ -5,7 +5,7 @@ import {
   LoginRequest, 
   LogoutRequest, 
   RefreshTokenRequest
-} from '../providers/interfaces/AuthProvider';
+} from '../providers/interfaces/dtos/auth.dto';
 
 /**
  * Google OAuth 로그인 (향후 구현)

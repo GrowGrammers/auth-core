@@ -1,14 +1,14 @@
 // 공통 로그인 기능 인터페이스
 import { Token, UserInfo } from '../../types';
+import { AuthProviderConfig } from './config/auth-config';
 import { 
-  AuthProviderConfig,
   LoginRequest, 
   LoginResponse, 
   LogoutRequest, 
   LogoutResponse,
   RefreshTokenRequest,
   RefreshTokenResponse
-} from './AuthProvider';
+} from './dtos/auth.dto';
 
 export interface ILoginProvider {
   /**
