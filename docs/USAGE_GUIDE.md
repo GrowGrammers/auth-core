@@ -2,14 +2,9 @@
 
 ## 📋 목차
 
-1. [개요](#개요)
 2. [기본 사용법](#기본-사용법)
 3. [플랫폼별 구현](#플랫폼별-구현)
 4. [고급 사용법](#고급-사용법)
-
-## 개요
-
-Auth Core는 **플랫폼 독립적인 인증 라이브러리**입니다. 웹, 모바일, 백엔드 등 모든 환경에서 동일한 인증 로직을 사용할 수 있도록 설계되었습니다.
 
 
 ## 기본 사용법
@@ -18,14 +13,17 @@ Auth Core는 **플랫폼 독립적인 인증 라이브러리**입니다. 웹, �
 
 ```typescript
 import { 
-  createAuthManager, 
-  getDefaultApiConfig,
-  FakeTokenStore 
+  createAuthManager,
+  AuthManagerConfig,
+  FakeTokenStore,
+  HttpClient,
+  HttpRequestConfig,
+  HttpResponse
 } from 'auth-core';
 
-// Mock HTTP 클라이언트 (실제로는 플랫폼별 구현체 사용)
-class MockHttpClient {
-  async request(config) {
+// Mock HTTP 클라이언트 구현
+class MockHttpClient implements HttpClient {
+  async request(config: HttpRequestConfig): Promise<HttpResponse> {
     return {
       ok: true,
       status: 200,
@@ -40,18 +38,34 @@ class MockHttpClient {
   }
 }
 
-// AuthManager 생성
-const authManager = createAuthManager({
+// API 설정
+const apiConfig = {
+  apiBaseUrl: 'https://api.example.com',
+  endpoints: {
+    requestVerification: '/auth/email/verification',
+    login: '/auth/login',
+    logout: '/auth/logout',
+    refresh: '/auth/refresh',
+    validate: '/auth/validate',
+    me: '/auth/me',
+    health: '/auth/health'
+  },
+  timeout: 10000,
+  retryCount: 3
+};
+
+// AuthManager 설정
+const authManagerConfig: AuthManagerConfig = {
   providerType: 'email',
-  tokenStoreType: 'fake',
-  apiConfig: getDefaultApiConfig('https://api.example.com'),
-  httpClient: new MockHttpClient(),
-  tokenStoreRegistry: {
-    web: FakeTokenStore,
-    mobile: FakeTokenStore,
-    fake: FakeTokenStore
-  }
-});
+  apiConfig,
+  httpClient: new MockHttpClient()
+};
+
+// AuthManager 생성
+const authManager = createAuthManager(
+  authManagerConfig,
+  new MockHttpClient()
+);
 ```
 
 ### 2. 인증 플로우 사용
@@ -110,19 +124,9 @@ console.log('로그아웃 결과:', logoutResult);
 ### 3. 토큰 관리
 
 ```typescript
-// 토큰 저장
-await authManager.saveToken({
-  accessToken: 'access-token',
-  refreshToken: 'refresh-token',
-  expiresAt: Date.now() + 3600000 // 1시간 후 만료
-});
-
 // 토큰 조회
 const token = await authManager.getToken();
 console.log('현재 토큰:', token);
-
-// 토큰 삭제
-await authManager.removeToken();
 
 // 토큰 만료 확인
 const isExpired = await authManager.isTokenExpired();
@@ -131,6 +135,9 @@ console.log('토큰 만료 여부:', isExpired);
 // 인증 상태 확인
 const isAuthenticated = await authManager.isAuthenticated();
 console.log('인증 상태:', isAuthenticated);
+
+// 모든 인증 데이터 정리
+await authManager.clear();
 ```
 
 ## 플랫폼별 구현
@@ -236,31 +243,42 @@ export const WebTokenStore: TokenStore = {
 ```typescript
 // src/auth/authManager.ts
 import { 
-  createAuthManager, 
-  getDefaultApiConfig, 
-  TokenStoreRegistry 
+  createAuthManager,
+  AuthManagerConfig
 } from 'auth-core';
 import { FetchHttpClient } from '../http/FetchHttpClient';
 import { WebTokenStore } from '../storage/WebTokenStore';
 
-// 토큰 저장소 레지스트리 생성
-const tokenStoreRegistry: TokenStoreRegistry = {
-  web: WebTokenStore,
-  mobile: WebTokenStore, // 웹에서는 모바일용도 웹용으로 사용
-  fake: WebTokenStore    // 테스트용도 웹용으로 사용
+// API 설정
+const apiConfig = {
+  apiBaseUrl: 'https://api.example.com',
+  endpoints: {
+    requestVerification: '/auth/email/verification',
+    login: '/auth/login',
+    logout: '/auth/logout',
+    refresh: '/auth/refresh',
+    validate: '/auth/validate',
+    me: '/auth/me',
+    health: '/auth/health'
+  },
+  timeout: 10000,
+  retryCount: 3
 };
 
-// API 설정
-const apiConfig = getDefaultApiConfig('https://api.example.com');
-
-// AuthManager 생성
-export const authManager = createAuthManager({
+// AuthManager 설정
+const authManagerConfig: AuthManagerConfig = {
   providerType: 'email',
-  tokenStoreType: 'web',
   apiConfig,
   httpClient: new FetchHttpClient(),
-  tokenStoreRegistry
-});
+  tokenStore: WebTokenStore
+};
+
+// AuthManager 생성
+export const authManager = createAuthManager(
+  authManagerConfig,
+  new FetchHttpClient(),
+  'web'
+);
 ```
 
 #### React 컴포넌트에서 사용
@@ -477,28 +495,39 @@ export const MobileTokenStore: TokenStore = {
 ```typescript
 // src/auth/authManager.ts
 import { 
-  createAuthManager, 
-  getDefaultApiConfig, 
-  TokenStoreRegistry 
+  createAuthManager,
+  AuthManagerConfig
 } from 'auth-core';
 import { AxiosHttpClient } from '../http/AxiosHttpClient';
 import { MobileTokenStore } from '../storage/MobileTokenStore';
 
-const tokenStoreRegistry: TokenStoreRegistry = {
-  web: MobileTokenStore,   // 모바일에서는 웹용도 모바일용으로 사용
-  mobile: MobileTokenStore,
-  fake: MobileTokenStore
+const apiConfig = {
+  apiBaseUrl: 'https://api.example.com',
+  endpoints: {
+    requestVerification: '/auth/email/verification',
+    login: '/auth/login',
+    logout: '/auth/logout',
+    refresh: '/auth/refresh',
+    validate: '/auth/validate',
+    me: '/auth/me',
+    health: '/auth/health'
+  },
+  timeout: 15000,
+  retryCount: 3
 };
 
-const apiConfig = getDefaultApiConfig('https://api.example.com');
-
-export const authManager = createAuthManager({
+const authManagerConfig: AuthManagerConfig = {
   providerType: 'email',
-  tokenStoreType: 'mobile',
   apiConfig,
   httpClient: new AxiosHttpClient(),
-  tokenStoreRegistry
-});
+  tokenStore: MobileTokenStore
+};
+
+export const authManager = createAuthManager(
+  authManagerConfig,
+  new AxiosHttpClient(),
+  'mobile'
+);
 ```
 
 ## 고급 사용법
@@ -506,30 +535,37 @@ export const authManager = createAuthManager({
 ### 1. 커스텀 API 설정
 
 ```typescript
-import { getDefaultApiConfig, mergeApiConfig } from 'auth-core';
+import { AuthManagerConfig } from 'auth-core';
 
-// 기본 설정
-const baseConfig = getDefaultApiConfig('https://api.example.com');
-
-// 커스텀 엔드포인트 설정
-const customConfig = mergeApiConfig(baseConfig, {
+// 커스텀 API 설정
+const customApiConfig = {
+  apiBaseUrl: 'https://api.example.com',
   endpoints: {
+    requestVerification: '/custom/auth/email/verification',
     login: '/custom/auth/login',
     logout: '/custom/auth/logout',
-    refresh: '/custom/auth/refresh'
+    refresh: '/custom/auth/refresh',
+    validate: '/custom/auth/validate',
+    me: '/custom/auth/me',
+    health: '/custom/auth/health'
   },
   timeout: 15000,  // 15초 타임아웃
   retryCount: 5    // 5번 재시도
-});
+};
 
 // AuthManager에 커스텀 설정 적용
-const authManager = createAuthManager({
+const authManagerConfig: AuthManagerConfig = {
   providerType: 'email',
-  tokenStoreType: 'web',
-  apiConfig: customConfig,
+  apiConfig: customApiConfig,
   httpClient: new FetchHttpClient(),
-  tokenStoreRegistry
-});
+  tokenStore: WebTokenStore
+};
+
+const authManager = createAuthManager(
+  authManagerConfig,
+  new FetchHttpClient(),
+  'web'
+);
 ```
 
 ### 2. 토큰 자동 갱신
@@ -654,7 +690,6 @@ export const useAuth = () => {
 };
 ```
 
-
 ### 4. 보안 고려사항
 
 ```typescript
@@ -695,6 +730,67 @@ class EncryptedWebTokenStore implements TokenStore {
 
   // 다른 메서드들도 구현...
 }
+```
+
+### 5. 테스트 환경 설정
+
+```typescript
+// src/test/testAuthManager.ts
+import { 
+  createAuthManager,
+  AuthManagerConfig,
+  FakeTokenStore
+} from 'auth-core';
+
+// 테스트용 Mock HTTP 클라이언트
+class TestHttpClient implements HttpClient {
+  async request(config: HttpRequestConfig): Promise<HttpResponse> {
+    // 테스트 시나리오에 따라 다른 응답 반환
+    return {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      json: () => Promise.resolve({ 
+        accessToken: 'test-token',
+        refreshToken: 'test-refresh-token',
+        user: { id: '1', email: 'test@example.com' }
+      }),
+      text: () => Promise.resolve('{"accessToken": "test-token"}')
+    };
+  }
+}
+
+// 테스트용 AuthManager 생성
+export const createTestAuthManager = () => {
+  const testApiConfig = {
+    apiBaseUrl: 'https://test-api.example.com',
+    endpoints: {
+      requestVerification: '/auth/email/verification',
+      login: '/auth/login',
+      logout: '/auth/logout',
+      refresh: '/auth/refresh',
+      validate: '/auth/validate',
+      me: '/auth/me',
+      health: '/auth/health'
+    },
+    timeout: 5000,
+    retryCount: 1
+  };
+
+  const authManagerConfig: AuthManagerConfig = {
+    providerType: 'email',
+    apiConfig: testApiConfig,
+    httpClient: new TestHttpClient(),
+    tokenStore: FakeTokenStore
+  };
+
+  return createAuthManager(
+    authManagerConfig,
+    new TestHttpClient(),
+    'fake'
+  );
+};
 ```
 
 이 가이드를 따라하면 Auth Core를 각 플랫폼에서 효과적으로 사용할 수 있습니다! 
