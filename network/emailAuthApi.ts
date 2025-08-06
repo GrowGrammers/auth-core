@@ -1,5 +1,4 @@
-// 이메일 인증 관련 API 함수들
-import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
+// EmailAuthProvider를 위한 실제 HTTP 통신 함수 모음
 import { HttpClient } from './interfaces/HttpClient';
 import { 
   LoginRequest, 
@@ -15,6 +14,7 @@ import {
   createToken, 
   createUserInfo 
 } from './utils/httpUtils';
+import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
 
 /**
  * 이메일 인증번호 요청

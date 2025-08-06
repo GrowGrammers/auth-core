@@ -1,4 +1,4 @@
-// 공통 HTTP 유틸리티 함수들
+// 인증 관련 네트워크 요청을 구성·처리하는 유틸 함수 모음
 import { ApiConfig, RequestOptions, ApiResponse, ApiSuccessResponse, ApiErrorResponse, Token, UserInfo, AuthProviderType } from '../../types';
 import { HttpClient, HttpRequestConfig, HttpResponse } from '../interfaces/HttpClient';
 
