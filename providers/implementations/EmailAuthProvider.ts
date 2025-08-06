@@ -1,6 +1,6 @@
 // 이메일 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
 import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
-import { HttpClient } from '../../api/interfaces/HttpClient';
+import { HttpClient } from '../../network/interfaces/HttpClient';
 import { 
   AuthProviderConfig,
   LoginRequest, 
@@ -22,7 +22,7 @@ import {
   getUserInfoByEmail,
   requestEmailVerification,
   checkEmailServiceAvailability
-} from '../../api/';
+} from '../../network';
 
 export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
   readonly providerName = 'email' as const;

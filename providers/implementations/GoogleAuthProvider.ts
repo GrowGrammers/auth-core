@@ -2,7 +2,7 @@
 import { AuthProviderConfig, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse } from '../interfaces/AuthProvider';
 import { ILoginProvider } from '../interfaces';
 import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
-import { HttpClient } from '../../api/interfaces/HttpClient';
+import { HttpClient } from '../../network/interfaces/HttpClient';
 import {
   loginByGoogle,
   logoutByGoogle,
@@ -10,7 +10,7 @@ import {
   validateTokenByGoogle,
   getUserInfoByGoogle,
   checkGoogleServiceAvailability
-} from '../../api';
+} from '../../network';
 
 export class GoogleAuthProvider implements ILoginProvider {
   readonly providerName = 'google' as const;
