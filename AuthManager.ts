@@ -2,15 +2,39 @@
 import { AuthProvider, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, EmailVerificationRequest, EmailVerificationResponse } from './providers';
 import { IEmailVerifiable } from './providers/interfaces';
 import { TokenStore } from './storage/TokenStore.interface';
-import { Token, UserInfo } from './types';
+import { Token, UserInfo, ApiConfig } from './types';
+import { createAuthProvider } from './factories/AuthProviderFactory';
+import { FakeTokenStore } from './storage/FakeTokenStore';
+import { HttpClient } from './network/interfaces/HttpClient';
+
+export interface AuthManagerConfig {
+  providerType: 'email' | 'google';
+  apiConfig: ApiConfig;
+  httpClient: HttpClient;  // HttpClient를 필수로 추가
+  tokenStore?: TokenStore;
+}
 
 export class AuthManager {
   private provider: AuthProvider; // ① 어떤 방식(이메일, 구글...)으로 로그인할 건지 저장
   private tokenStore: TokenStore; // ② 어떤 방식으로 토큰을 저장할 건지 저장
 
-  constructor(provider: AuthProvider, tokenStore: TokenStore) {
-    this.provider = provider; // ③ 생성자에서 로그인 전략(Provider)을 받아 저장해둠
-    this.tokenStore = tokenStore; // ④ 생성자에서 저장 전략(TokenStore)을 받아 저장해둠
+  constructor(config: AuthManagerConfig) {
+    // Provider 생성 (apiConfig 주입)
+    this.provider = this.createProvider(config.providerType, config.apiConfig, config.httpClient);
+    // TokenStore 생성 (기본값 또는 주입받은 값 사용)
+    this.tokenStore = config.tokenStore || this.createDefaultTokenStore();
+  }
+
+  private createProvider(providerType: 'email' | 'google', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
+    // Provider 팩토리 로직 (apiConfig 주입)
+    const config = { timeout: 10000, retryCount: 3 }; // 기본 설정
+    
+    return createAuthProvider(providerType, config, httpClient, apiConfig);
+  }
+
+  private createDefaultTokenStore(): TokenStore {
+    // 기본 TokenStore 생성 (FakeTokenStore 사용)
+    return FakeTokenStore;
   }
 
   /**
