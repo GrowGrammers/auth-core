@@ -1,47 +1,47 @@
-// 폴더구조 수정 예정 -> AuthManagerFactory가 상위 팩토리임을 나타내는 구조
 // AuthManager를 쉽게 생성할 수 있는 팩토리 함수들
+// API 설정은 외부에서 주입받도록 수정
 
-import { AuthManager } from '../AuthManager';
-import { AuthProvider, AuthProviderConfig } from '../providers';
+import { AuthManager, AuthManagerConfig } from '../AuthManager';
 import { AuthProviderType, ApiConfig } from '../types';
 import { TokenStore } from '../storage/TokenStore.interface';
-import { HttpClient } from '../api/interfaces/HttpClient';
+import { HttpClient } from '../network/interfaces/HttpClient';
 import { createAuthProvider } from './AuthProviderFactory';
 import { createTokenStore, TokenStoreType, TokenStoreRegistry } from './TokenStoreFactory';
 
 /**
- * 타입과 설정을 받아서 AuthManager 인스턴스를 생성합니다.
- * @param providerType - 인증 제공자 타입 ('email' | 'google')
- * @param tokenStoreType - 토큰 저장소 타입 ('web' | 'mobile' | 'fake')
- * @param config - 인증 제공자 설정
+ * 새로운 AuthManager 생성 방식 - API 설정을 외부에서 주입받음
+ * @param config - AuthManager 설정 (providerType, apiConfig 포함)
  * @param httpClient - HTTP 클라이언트 인스턴스
- * @param apiConfig - API 설정 객체
+ * @param tokenStoreType - 토큰 저장소 타입 (선택사항)
  * @param tokenStoreRegistry - 토큰 저장소 레지스트리 (선택사항)
  * @returns AuthManager 인스턴스
  */
 export function createAuthManager(
+  config: AuthManagerConfig,
+  httpClient: HttpClient,
+  tokenStoreType?: TokenStoreType,
+  tokenStoreRegistry?: TokenStoreRegistry
+): AuthManager {
+  return new AuthManager(config);
+}
+
+/**
+ * 기존 방식과의 호환성을 위한 함수 (deprecated)
+ * @deprecated 새로운 createAuthManager 사용을 권장합니다.
+ */
+export function createAuthManagerLegacy(
   providerType: AuthProviderType,
   tokenStoreType: TokenStoreType,
-  config: AuthProviderConfig,
+  config: any,
   httpClient: HttpClient,
   apiConfig: ApiConfig,
   tokenStoreRegistry?: TokenStoreRegistry
 ): AuthManager {
-  const provider = createAuthProvider(providerType, config, httpClient, apiConfig);
-  const tokenStore = createTokenStore(tokenStoreType, tokenStoreRegistry);
+  const authManagerConfig: AuthManagerConfig = {
+    providerType,
+    apiConfig,
+    httpClient
+  };
   
-  return new AuthManager(provider, tokenStore);
-}
-
-/**
- * 이미 생성된 Provider와 TokenStore를 받아서 AuthManager를 생성합니다.
- * @param provider - 인증 제공자 인스턴스
- * @param tokenStore - 토큰 저장소 인스턴스
- * @returns AuthManager 인스턴스
- */
-export function createAuthManagerFromInstances(
-  provider: AuthProvider,
-  tokenStore: TokenStore
-): AuthManager {
-  return new AuthManager(provider, tokenStore);
+  return new AuthManager(authManagerConfig);
 } 

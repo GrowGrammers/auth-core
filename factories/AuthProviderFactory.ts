@@ -2,7 +2,7 @@
 
 import { AuthProvider, AuthProviderConfig, EmailAuthProvider, GoogleAuthProvider } from '../providers';
 import { AuthProviderType, ApiConfig } from '../types';
-import { HttpClient } from '../api/interfaces/HttpClient';
+import { HttpClient } from '../network/interfaces/HttpClient';
 
 /**
  * 인증 제공자 타입과 설정을 받아서 해당하는 인증 제공자 인스턴스를 반환합니다.
