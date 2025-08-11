@@ -1,5 +1,5 @@
 // 인증 관련 DTO 정의
-import { Token, UserInfo, BaseResponse, BaseRequest } from '../../../types';
+import { Token, UserInfo, BaseResponse, BaseRequest } from '../../../shared/types';
 
 // 이메일 인증번호 요청 DTO
 export interface EmailVerificationRequest {

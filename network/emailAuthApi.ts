@@ -14,7 +14,7 @@ import {
   createToken, 
   createUserInfo 
 } from './utils/httpUtils';
-import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
+import { ApiConfig, ApiResponse, Token, UserInfo } from '../shared/types';
 
 /**
  * 이메일 인증번호 요청

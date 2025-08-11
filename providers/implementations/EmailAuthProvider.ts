@@ -1,5 +1,5 @@
 // 이메일 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
-import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
+import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { 

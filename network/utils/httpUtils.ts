@@ -1,5 +1,5 @@
 // 인증 관련 네트워크 요청을 구성·처리하는 유틸 함수 모음
-import { ApiConfig, RequestOptions, ApiResponse, ApiSuccessResponse, ApiErrorResponse, Token, UserInfo, AuthProviderType } from '../../types';
+import { ApiConfig, RequestOptions, ApiResponse, ApiSuccessResponse, ApiErrorResponse, Token, UserInfo, AuthProviderType } from '../../shared/types';
 import { HttpClient, HttpRequestConfig, HttpResponse } from '../interfaces/HttpClient';
 
 /**

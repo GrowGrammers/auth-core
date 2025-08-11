@@ -1,5 +1,5 @@
 // 공통 로그인 기능 인터페이스
-import { Token, UserInfo } from '../../types';
+import { Token, UserInfo } from '../../shared/types';
 import { AuthProviderConfig } from './config/auth-config';
 import { 
   LoginRequest, 

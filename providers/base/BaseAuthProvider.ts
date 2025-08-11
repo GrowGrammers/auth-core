@@ -1,5 +1,5 @@
 // 기본 인증 제공자 유틸리티 클래스 - 공통 응답 생성 메서드 제공
-import { BaseResponse } from '../../types';
+import { BaseResponse } from '../../shared/types';
 
 export abstract class BaseAuthProvider {
   /**

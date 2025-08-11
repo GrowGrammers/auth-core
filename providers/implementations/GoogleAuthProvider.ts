@@ -2,7 +2,7 @@
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse } from '../interfaces/dtos/auth.dto';
 import { ILoginProvider } from '../interfaces';
-import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
+import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import {
   loginByGoogle,

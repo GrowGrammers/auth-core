@@ -1,5 +1,5 @@
 // Google OAuth 관련 API 함수들 (v2.0에서 구현 예정)
-import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
+import { ApiConfig, ApiResponse, Token, UserInfo } from '../shared/types';
 import { HttpClient } from './interfaces/HttpClient';
 import { 
   LoginRequest, 

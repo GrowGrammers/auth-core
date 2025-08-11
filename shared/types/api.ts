@@ -1,38 +1,7 @@
-// 공통 타입 모음 
-// types.ts
+// API 관련 타입 정의
+// shared/types/api.ts
 
-// 기본 토큰 인터페이스
-export interface Token {
-  accessToken: string;
-  refreshToken?: string;
-  expiresAt?: number; // unix timestamp
-}
-
-// 인증 제공자 타입
-export type AuthProviderType = 'email' | 'google';
-
-// 사용자 정보 인터페이스
-export interface UserInfo {
-  id: string;
-  email: string;
-  nickname?: string;
-  provider: AuthProviderType;
-  // 추가 사용자 정보 필요시 확장
-}
-
-// 공통 응답 인터페이스
-export interface BaseResponse<T = unknown> {
-  success: boolean;
-  error?: string;
-  message: string;
-  data?: T | null;
-}
-
-// 공통 요청 인터페이스
-export interface BaseRequest {
-  provider: AuthProviderType;
-  rememberMe?: boolean;
-}
+import { BaseResponse } from './common';
 
 // API 엔드포인트 설정
 export interface ApiEndpoints {
@@ -77,4 +46,3 @@ export interface ApiErrorResponse extends BaseResponse<never> {
 
 // 통합 API 응답 타입
 export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
-  

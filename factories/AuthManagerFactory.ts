@@ -2,7 +2,7 @@
 // API 설정은 외부에서 주입받도록 수정
 
 import { AuthManager, AuthManagerConfig } from '../AuthManager';
-import { AuthProviderType, ApiConfig } from '../types';
+import { AuthProviderType, ApiConfig } from '../shared/types';
 import { TokenStore } from '../storage/TokenStore.interface';
 import { HttpClient } from '../network/interfaces/HttpClient';
 import { createAuthProvider } from './AuthProviderFactory';

@@ -2,7 +2,7 @@
 import { AuthProvider, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, EmailVerificationRequest, EmailVerificationResponse } from './providers';
 import { IEmailVerifiable } from './providers/interfaces';
 import { TokenStore } from './storage/TokenStore.interface';
-import { Token, UserInfo, ApiConfig } from './types';
+import { Token, UserInfo, ApiConfig } from './shared/types';
 import { createAuthProvider } from './factories/AuthProviderFactory';
 import { FakeTokenStore } from './storage/FakeTokenStore';
 import { HttpClient } from './network/interfaces/HttpClient';
