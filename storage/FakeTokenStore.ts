@@ -1,6 +1,6 @@
 // 테스트용 가짜 저장소
 // 테스트 전용 - 절대 프로덕션 환경에 사용하지 마세요
-import { Token } from '../types';
+import { Token } from '../shared/types';
 import { TokenStore } from './TokenStore.interface';
 
 let memoryToken: Token | null = null;

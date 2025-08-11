@@ -2,7 +2,7 @@
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse } from '../interfaces/dtos/auth.dto';
 import { ILoginProvider } from '../interfaces';
-import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
+import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import {
   loginByGoogle,
@@ -30,14 +30,14 @@ export class GoogleAuthProvider implements ILoginProvider {
    */
   protected createResponse<T extends BaseResponse>(
     success: boolean, 
+    message: string,
     error?: string, 
-    errorCode?: string,
     additionalData?: Partial<T>
   ): T {
     return {
       success,
+      message,
       error,
-      errorCode,
       ...additionalData
     } as T;
   }
@@ -48,14 +48,14 @@ export class GoogleAuthProvider implements ILoginProvider {
     if (!apiResponse.success) {
       return this.createResponse<LoginResponse>(
         false,
-        apiResponse.error,
-        apiResponse.errorCode
+        apiResponse.error || 'Google 로그인에 실패했습니다.',
+        apiResponse.error
       );
     }
 
     return this.createResponse<LoginResponse>(
       true,
-      undefined,
+      'Google 로그인에 성공했습니다.',
       undefined,
       apiResponse.data
     );
@@ -67,12 +67,12 @@ export class GoogleAuthProvider implements ILoginProvider {
     if (!apiResponse.success) {
       return this.createResponse<LogoutResponse>(
         false,
-        apiResponse.error,
-        apiResponse.errorCode
+        apiResponse.error || 'Google 로그아웃에 실패했습니다.',
+        apiResponse.error
       );
     }
 
-    return this.createResponse<LogoutResponse>(true);
+    return this.createResponse<LogoutResponse>(true, 'Google 로그아웃에 성공했습니다.');
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
@@ -81,14 +81,14 @@ export class GoogleAuthProvider implements ILoginProvider {
     if (!apiResponse.success) {
       return this.createResponse<RefreshTokenResponse>(
         false,
-        apiResponse.error,
-        apiResponse.errorCode
+        apiResponse.error || 'Google 토큰 갱신에 실패했습니다.',
+        apiResponse.error
       );
     }
 
     return this.createResponse<RefreshTokenResponse>(
       true,
-      undefined,
+      'Google 토큰 갱신에 성공했습니다.',
       undefined,
       apiResponse.data
     );

@@ -14,7 +14,7 @@ import {
   createToken, 
   createUserInfo 
 } from './utils/httpUtils';
-import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
+import { ApiConfig, ApiResponse, Token, UserInfo } from '../shared/types';
 
 /**
  * 이메일 인증번호 요청
@@ -29,7 +29,8 @@ export async function requestEmailVerification(
       return {
         success: false,
         error: '이메일이 필요합니다.',
-        errorCode: 'INVALID_EMAIL'
+        message: '이메일이 필요합니다.',
+        data: null
       };
     }
 
@@ -41,15 +42,16 @@ export async function requestEmailVerification(
     return handleHttpResponse(
       response,
       '인증번호 요청에 실패했습니다.',
-      (error, errorCode) => ({ success: false, error, errorCode }),
-      () => ({ success: true, data: undefined })
+      (error) => ({ success: false, error, message: error, data: null }),
+      () => ({ success: true, data: undefined, message: '인증번호가 전송되었습니다.' })
     );
 
   } catch (error) {
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다.',
-      errorCode: 'NETWORK_ERROR'
+      message: '네트워크 오류가 발생했습니다.',
+      data: null
     };
   }
 }
@@ -68,7 +70,8 @@ export async function loginByEmail(
       return {
         success: false,
         error: '잘못된 인증 제공자입니다.',
-        errorCode: 'INVALID_PROVIDER'
+        message: '잘못된 인증 제공자입니다.',
+        data: null
       };
     }
 
@@ -79,7 +82,8 @@ export async function loginByEmail(
       return {
         success: false,
         error: '이메일과 인증코드가 필요합니다.',
-        errorCode: 'INVALID_CREDENTIALS'
+        message: '이메일과 인증코드가 필요합니다.',
+        data: null
       };
     }
 
@@ -95,12 +99,12 @@ export async function loginByEmail(
     return handleHttpResponse(
       response,
       '로그인에 실패했습니다.',
-      (error: string, errorCode?: string) => ({ success: false, error, errorCode }),
+      (error: string) => ({ success: false, error, message: error, data: null }),
       (data: unknown) => {
         const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number; user: { id: string; email: string; name: string } };
         const token = createToken(typedData);
         const userInfo = createUserInfo(typedData.user, 'email');
-        return { success: true, data: { token, userInfo } };
+        return { success: true, data: { token, userInfo }, message: '로그인에 성공했습니다.' };
       }
     );
 
@@ -108,7 +112,8 @@ export async function loginByEmail(
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다.',
-      errorCode: 'NETWORK_ERROR'
+      message: '네트워크 오류가 발생했습니다.',
+      data: null
     };
   }
 }
@@ -125,7 +130,9 @@ export async function logoutByEmail(
     if (!request.token?.accessToken) {
       return {
         success: false,
-        error: '토큰이 필요합니다.'
+        error: '토큰이 필요합니다.',
+        message: '토큰이 필요합니다.',
+        data: null
       };
     }
 
@@ -139,14 +146,16 @@ export async function logoutByEmail(
     return handleHttpResponse(
       response,
       '로그아웃에 실패했습니다.',
-      (error, errorCode) => ({ success: false, error, errorCode }),
-      () => ({ success: true, data: undefined })
+      (error) => ({ success: false, error, message: error, data: null }),
+      () => ({ success: true, data: undefined, message: '로그아웃에 성공했습니다.' })
     );
 
   } catch (error) {
     return {
       success: false,
-      error: '네트워크 오류가 발생했습니다.'
+      error: '네트워크 오류가 발생했습니다.',
+      message: '네트워크 오류가 발생했습니다.',
+      data: null
     };
   }
 }
@@ -168,18 +177,20 @@ export async function refreshTokenByEmail(
     return handleHttpResponse(
       response,
       '토큰 갱신에 실패했습니다.',
-      (error: string, errorCode?: string) => ({ success: false, error, errorCode }),
+      (error: string) => ({ success: false, error, message: error, data: null }),
       (data: unknown) => {
         const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number };
         const token = createToken(typedData);
-        return { success: true, data: { token } };
+        return { success: true, data: { token }, message: '토큰이 갱신되었습니다.' };
       }
     );
 
   } catch (error) {
     return {
       success: false,
-      error: '네트워크 오류가 발생했습니다.'
+      error: '네트워크 오류가 발생했습니다.',
+      message: '네트워크 오류가 발생했습니다.',
+      data: null
     };
   }
 }

@@ -1,5 +1,5 @@
 // 이메일 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
-import { Token, UserInfo, BaseResponse, ApiConfig } from '../../types';
+import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { 
@@ -41,14 +41,14 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
    */
   protected createResponse<T extends BaseResponse>(
     success: boolean, 
+    message: string,
     error?: string, 
-    errorCode?: string,
     additionalData?: Partial<T>
   ): T {
     return {
       success,
+      message,
       error,
-      errorCode,
       ...additionalData
     } as T;
   }
@@ -59,14 +59,14 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
     if (!apiResponse.success) {
       return this.createResponse<LoginResponse>(
         false,
-        apiResponse.error,
-        apiResponse.errorCode
+        apiResponse.error || '로그인에 실패했습니다.',
+        apiResponse.error
       );
     }
 
     return this.createResponse<LoginResponse>(
       true,
-      undefined,
+      '로그인에 성공했습니다.',
       undefined,
       apiResponse.data
     );
@@ -78,12 +78,12 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
     if (!apiResponse.success) {
       return this.createResponse<LogoutResponse>(
         false,
-        apiResponse.error,
-        apiResponse.errorCode
+        apiResponse.error || '로그아웃에 실패했습니다.',
+        apiResponse.error
       );
     }
 
-    return this.createResponse<LogoutResponse>(true);
+    return this.createResponse<LogoutResponse>(true, '로그아웃에 성공했습니다.');
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
@@ -92,14 +92,14 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
     if (!apiResponse.success) {
       return this.createResponse<RefreshTokenResponse>(
         false,
-        apiResponse.error,
-        apiResponse.errorCode
+        apiResponse.error || '토큰 갱신에 실패했습니다.',
+        apiResponse.error
       );
     }
 
     return this.createResponse<RefreshTokenResponse>(
       true,
-      undefined,
+      '토큰 갱신에 성공했습니다.',
       undefined,
       apiResponse.data
     );
@@ -119,12 +119,12 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
     if (!apiResponse.success) {
       return this.createResponse<EmailVerificationResponse>(
         false,
-        apiResponse.error,
-        apiResponse.errorCode
+        apiResponse.error || '이메일 인증번호 요청에 실패했습니다.',
+        apiResponse.error
       );
     }
 
-    return this.createResponse<EmailVerificationResponse>(true);
+    return this.createResponse<EmailVerificationResponse>(true, '이메일 인증번호가 전송되었습니다.');
   }
 
   async isAvailable(): Promise<boolean> {

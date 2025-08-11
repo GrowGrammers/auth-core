@@ -1,5 +1,5 @@
 // 저장 전략 인터페이스 
-import { Token } from '../types';
+import { Token } from '../shared/types';
 
 export interface TokenStore {
   /**

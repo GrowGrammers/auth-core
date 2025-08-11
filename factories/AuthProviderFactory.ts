@@ -1,7 +1,7 @@
 // 주어진 타입과 설정(config)에 따라 적절한 인증 제공자 인스턴스를 생성합니다.
 
 import { AuthProvider, AuthProviderConfig, EmailAuthProvider, GoogleAuthProvider } from '../providers';
-import { AuthProviderType, ApiConfig } from '../types';
+import { AuthProviderType, ApiConfig } from '../shared/types';
 import { HttpClient } from '../network/interfaces/HttpClient';
 
 /**

@@ -1,5 +1,5 @@
 // Google OAuth 관련 API 함수들 (v2.0에서 구현 예정)
-import { ApiConfig, ApiResponse, Token, UserInfo } from '../types';
+import { ApiConfig, ApiResponse, Token, UserInfo } from '../shared/types';
 import { HttpClient } from './interfaces/HttpClient';
 import { 
   LoginRequest, 
@@ -15,11 +15,11 @@ export async function loginByGoogle(
   config: ApiConfig,
   request: LoginRequest
 ): Promise<ApiResponse<{ token: Token; userInfo: UserInfo }>> {
-  // TODO: v2.0에서 Google OAuth 구현
   return {
     success: false,
-    error: 'Google OAuth는 v2.0에서 구현될 예정입니다.',
-    errorCode: 'NOT_IMPLEMENTED'
+    error: 'Google 로그인은 아직 구현되지 않았습니다.',
+    message: 'Google 로그인은 아직 구현되지 않았습니다.',
+    data: null
   };
 }
 
@@ -31,11 +31,11 @@ export async function logoutByGoogle(
   config: ApiConfig,
   request: LogoutRequest
 ): Promise<ApiResponse> {
-  // TODO: v2.0에서 Google OAuth 구현
   return {
     success: false,
-    error: 'Google OAuth는 v2.0에서 구현될 예정입니다.',
-    errorCode: 'NOT_IMPLEMENTED'
+    error: 'Google 로그아웃은 아직 구현되지 않았습니다.',
+    message: 'Google 로그아웃은 아직 구현되지 않았습니다.',
+    data: null
   };
 }
 
@@ -47,11 +47,11 @@ export async function refreshTokenByGoogle(
   config: ApiConfig,
   request: RefreshTokenRequest
 ): Promise<ApiResponse<{ token: Token }>> {
-  // TODO: v2.0에서 Google OAuth 구현
   return {
     success: false,
-    error: 'Google OAuth는 v2.0에서 구현될 예정입니다.',
-    errorCode: 'NOT_IMPLEMENTED'
+    error: 'Google 토큰 갱신은 아직 구현되지 않았습니다.',
+    message: 'Google 토큰 갱신은 아직 구현되지 않았습니다.',
+    data: null
   };
 }
 
