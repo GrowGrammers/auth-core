@@ -15,16 +15,17 @@ export type AuthProviderType = 'email' | 'google';
 export interface UserInfo {
   id: string;
   email: string;
-  name?: string;
+  nickname?: string;
   provider: AuthProviderType;
   // 추가 사용자 정보 필요시 확장
 }
 
 // 공통 응답 인터페이스
-export interface BaseResponse {
+export interface BaseResponse<T = unknown> {
   success: boolean;
   error?: string;
-  errorCode?: string;
+  message: string;
+  data?: T | null;
 }
 
 // 공통 요청 인터페이스
