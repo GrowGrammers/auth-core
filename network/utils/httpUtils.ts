@@ -71,18 +71,17 @@ export async function makeRequestWithRetry(
 export async function handleHttpResponse<T>(
   response: HttpResponse,
   errorMessage: string,
-  createErrorResponse: (error: string, errorCode?: string) => ApiErrorResponse,
+  createErrorResponse: (error: string) => ApiErrorResponse,
   createSuccessResponse: (data: unknown) => ApiSuccessResponse<T>
 ): Promise<ApiResponse<T>> {
   if (!response.ok) {
     try {
       const data = await response.json();
       return createErrorResponse(
-        data.message || errorMessage,
-        data.errorCode
+        data.message || errorMessage
       );
     } catch {
-      return createErrorResponse(errorMessage, 'UNKNOWN_ERROR');
+      return createErrorResponse(errorMessage);
     }
   }
 
@@ -90,7 +89,7 @@ export async function handleHttpResponse<T>(
     const data = await response.json();
     return createSuccessResponse(data);
   } catch (error) {
-    return createErrorResponse('응답 데이터 파싱에 실패했습니다.', 'PARSE_ERROR');
+    return createErrorResponse('응답 데이터 파싱에 실패했습니다.');
   }
 }
 
@@ -112,7 +111,7 @@ export function createUserInfo(data: { id: string; email: string; name: string }
   return {
     id: data.id,
     email: data.email,
-    name: data.name,
+    nickname: data.name,
     provider
   };
 } 

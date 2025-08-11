@@ -49,7 +49,7 @@ export class AuthManager {
         return {
           success: false,
           error: '이 제공자는 이메일 인증을 지원하지 않습니다.',
-          errorCode: 'UNSUPPORTED_FEATURE'
+          message: '이 제공자는 이메일 인증을 지원하지 않습니다.'
         };
       }
 
@@ -66,7 +66,8 @@ export class AuthManager {
       console.error('인증번호 요청 중 오류 발생:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+        message: '인증번호 요청 중 오류가 발생했습니다.'
       };
     }
   }
@@ -101,7 +102,8 @@ export class AuthManager {
       console.error('로그인 중 오류 발생:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+        message: '로그인 중 오류가 발생했습니다.'
       };
     }
   }
@@ -129,7 +131,8 @@ export class AuthManager {
       console.error('로그아웃 중 오류 발생:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+        message: '로그아웃 중 오류가 발생했습니다.'
       };
     }
   }
@@ -162,7 +165,8 @@ export class AuthManager {
       console.error('토큰 갱신 중 오류 발생:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+        message: '토큰 갱신 중 오류가 발생했습니다.'
       };
     }
   }

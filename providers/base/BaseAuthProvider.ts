@@ -7,14 +7,14 @@ export abstract class BaseAuthProvider {
    */
   protected createResponse<T extends BaseResponse>(
     success: boolean, 
+    message: string,
     error?: string, 
-    errorCode?: string,
     additionalData?: Partial<T>
   ): T {
     return {
       success,
+      message,
       error,
-      errorCode,
       ...additionalData
     } as T;
   }
