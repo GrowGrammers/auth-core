@@ -61,16 +61,18 @@ export interface RequestOptions {
 }
 
 // 성공 응답 타입
-export interface ApiSuccessResponse<T = unknown> {
+export interface ApiSuccessResponse<T = unknown> extends BaseResponse<T> {
   success: true;
   data: T;
+  message: string;
 }
 
 // 실패 응답 타입
-export interface ApiErrorResponse {
+export interface ApiErrorResponse extends BaseResponse<never> {
   success: false;
   error: string;
-  errorCode?: string;
+  message: string;
+  data: null;
 }
 
 // 통합 API 응답 타입
