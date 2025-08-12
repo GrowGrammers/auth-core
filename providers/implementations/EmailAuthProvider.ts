@@ -2,6 +2,7 @@
 import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
+import { BaseAuthProvider } from '../base/BaseAuthProvider';
 import { 
   LoginRequest, 
   LoginResponse, 
@@ -24,50 +25,32 @@ import {
   checkEmailServiceAvailability
 } from '../../network';
 
-export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
+export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvider, IEmailVerifiable {
   readonly providerName = 'email' as const;
   readonly config: AuthProviderConfig;
   private httpClient: HttpClient;
   private apiConfig: ApiConfig;
   
   constructor(config: AuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
+    super();
     this.config = config;
     this.httpClient = httpClient;
     this.apiConfig = apiConfig;
-  }
-
-  /**
-   * 공통 응답 생성 메서드 - 제네릭을 사용하여 타입 안전성 확보
-   */
-  protected createResponse<T extends BaseResponse>(
-    success: boolean, 
-    message: string,
-    error?: string, 
-    additionalData?: Partial<T>
-  ): T {
-    return {
-      success,
-      message,
-      error,
-      ...additionalData
-    } as T;
   }
 
   async login(request: LoginRequest): Promise<LoginResponse> {
     const apiResponse = await loginByEmail(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
-      return this.createResponse<LoginResponse>(
-        false,
+      return this.createErrorResponse(
         apiResponse.error || '로그인에 실패했습니다.',
-        apiResponse.error
-      );
+        apiResponse.error || '로그인에 실패했습니다.'
+      ) as LoginResponse;
     }
 
-    return this.createResponse<LoginResponse>(
-      true,
+    // apiResponse.data는 { token: Token; userInfo: UserInfo } 형태
+    return this.createSuccessResponse<LoginResponse>(
       '로그인에 성공했습니다.',
-      undefined,
       apiResponse.data
     );
   }
@@ -76,31 +59,28 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
     const apiResponse = await logoutByEmail(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
-      return this.createResponse<LogoutResponse>(
-        false,
+      return this.createErrorResponse(
         apiResponse.error || '로그아웃에 실패했습니다.',
-        apiResponse.error
-      );
+        apiResponse.error || '로그아웃에 실패했습니다.'
+      ) as LogoutResponse;
     }
 
-    return this.createResponse<LogoutResponse>(true, '로그아웃에 성공했습니다.');
+    return this.createSuccessResponse<LogoutResponse>('로그아웃에 성공했습니다.');
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
     const apiResponse = await refreshTokenByEmail(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
-      return this.createResponse<RefreshTokenResponse>(
-        false,
+      return this.createErrorResponse(
         apiResponse.error || '토큰 갱신에 실패했습니다.',
-        apiResponse.error
-      );
+        apiResponse.error || '토큰 갱신에 실패했습니다.'
+      ) as RefreshTokenResponse;
     }
 
-    return this.createResponse<RefreshTokenResponse>(
-      true,
+    // apiResponse.data는 { token: Token } 형태
+    return this.createSuccessResponse<RefreshTokenResponse>(
       '토큰 갱신에 성공했습니다.',
-      undefined,
       apiResponse.data
     );
   }
@@ -117,14 +97,13 @@ export class EmailAuthProvider implements ILoginProvider, IEmailVerifiable {
     const apiResponse = await requestEmailVerification(this.httpClient, this.apiConfig, request);
     
     if (!apiResponse.success) {
-      return this.createResponse<EmailVerificationResponse>(
-        false,
+      return this.createErrorResponse(
         apiResponse.error || '이메일 인증번호 요청에 실패했습니다.',
-        apiResponse.error
-      );
+        apiResponse.error || '이메일 인증번호 요청에 실패했습니다.'
+      ) as EmailVerificationResponse;
     }
 
-    return this.createResponse<EmailVerificationResponse>(true, '이메일 인증번호가 전송되었습니다.');
+    return this.createSuccessResponse<EmailVerificationResponse>('이메일 인증번호가 전송되었습니다.');
   }
 
   async isAvailable(): Promise<boolean> {
