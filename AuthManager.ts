@@ -2,7 +2,7 @@
 import { AuthProvider, IEmailVerifiable, ILoginProvider } from './providers/interfaces';
 import { TokenStore } from './storage/TokenStore.interface';
 import { Token, UserInfo, ApiConfig, ErrorResponse } from './shared/types';
-import { createAuthProvider } from './factories/AuthProviderFactory';
+import { createAuthProvider, AuthProviderFactoryResult } from './factories/AuthProviderFactory';
 import { FakeTokenStore } from './storage/FakeTokenStore';
 import { HttpClient } from './network/interfaces/HttpClient';
 import { 
@@ -42,7 +42,15 @@ export class AuthManager {
     // Provider 팩토리 로직 (apiConfig 주입)
     const config = { timeout: 10000, retryCount: 3 }; // 기본 설정
     
-    return createAuthProvider(providerType, config, httpClient, apiConfig);
+    const result = createAuthProvider(providerType, config, httpClient, apiConfig);
+    
+    // 팩토리 에러 처리
+    if ('success' in result && !result.success) {
+      console.error('인증 제공자 생성 실패:', result.error);
+      throw new Error(result.message);
+    }
+    
+    return result as AuthProvider;
   }
 
   private createDefaultTokenStore(): TokenStore {
