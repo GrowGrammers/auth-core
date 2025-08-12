@@ -48,3 +48,48 @@ export function createNetworkErrorResponse(): ErrorResponse {
 export function createValidationErrorResponse(field: string): ErrorResponse {
   return createErrorResponse(`${field}가 필요합니다.`);
 }
+
+/**
+ * 토큰 검증 실패 응답을 생성하는 헬퍼 함수
+ * @param reason 실패 이유 (기본값: '토큰이 유효하지 않습니다.')
+ * @returns 토큰 검증 실패 ErrorResponse 객체
+ */
+export function createTokenValidationErrorResponse(reason?: string): ErrorResponse {
+  return createErrorResponse('토큰 검증 실패', reason || '토큰이 유효하지 않습니다.');
+}
+
+/**
+ * 사용자 정보 조회 실패 응답을 생성하는 헬퍼 함수
+ * @param reason 실패 이유 (기본값: '사용자 정보를 가져올 수 없습니다.')
+ * @returns 사용자 정보 조회 실패 ErrorResponse 객체
+ */
+export function createUserInfoErrorResponse(reason?: string): ErrorResponse {
+  return createErrorResponse('사용자 정보 조회 실패', reason || '사용자 정보를 가져올 수 없습니다.');
+}
+
+/**
+ * 서비스 가용성 확인 실패 응답을 생성하는 헬퍼 함수
+ * @param reason 실패 이유 (기본값: '서비스를 사용할 수 없습니다.')
+ * @returns 서비스 가용성 확인 실패 ErrorResponse 객체
+ */
+export function createServiceAvailabilityErrorResponse(reason?: string): ErrorResponse {
+  return createErrorResponse('서비스 가용성 확인 실패', reason || '서비스를 사용할 수 없습니다.');
+}
+
+/**
+ * 타임아웃 오류 응답을 생성하는 헬퍼 함수
+ * @returns 타임아웃 오류 ErrorResponse 객체
+ */
+export function createTimeoutErrorResponse(): ErrorResponse {
+  return createErrorResponse('요청 시간이 초과되었습니다.');
+}
+
+/**
+ * 서버 오류 응답을 생성하는 헬퍼 함수
+ * @param statusCode HTTP 상태 코드
+ * @returns 서버 오류 ErrorResponse 객체
+ */
+export function createServerErrorResponse(statusCode: number): ErrorResponse {
+  const message = `서버 오류가 발생했습니다. (${statusCode})`;
+  return createErrorResponse('서버 오류', message);
+}
