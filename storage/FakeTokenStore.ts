@@ -6,9 +6,9 @@ import {
   createTokenSaveErrorResponse, 
   createTokenReadErrorResponse, 
   createTokenDeleteErrorResponse, 
-  createStorageClearErrorResponse,
-  createSuccessResponse
+  createStorageClearErrorResponse
 } from '../shared/utils/errorUtils';
+import { createStorageSuccessResponse } from './index';
 
 let memoryToken: Token | null = null;
 
@@ -20,7 +20,7 @@ export const FakeTokenStore: TokenStore = {
       }
 
       memoryToken = { ...token };
-      return createSuccessResponse('토큰이 성공적으로 저장되었습니다.', undefined);
+      return createStorageSuccessResponse('토큰이 성공적으로 저장되었습니다.', undefined);
     } catch (error) {
       console.error('토큰 저장 중 오류 발생:', error);
       return createTokenSaveErrorResponse('토큰 저장 중 오류가 발생했습니다.');
@@ -30,10 +30,10 @@ export const FakeTokenStore: TokenStore = {
   async getToken(): Promise<GetTokenResponse> {
     try {
       if (!memoryToken) {
-        return createSuccessResponse('저장된 토큰이 없습니다.', null);
+        return createStorageSuccessResponse('저장된 토큰이 없습니다.', null);
       }
 
-      return createSuccessResponse('토큰을 성공적으로 가져왔습니다.', { ...memoryToken });
+      return createStorageSuccessResponse('토큰을 성공적으로 가져왔습니다.', { ...memoryToken });
     } catch (error) {
       console.error('토큰 읽기 중 오류 발생:', error);
       return createTokenReadErrorResponse('토큰 읽기 중 오류가 발생했습니다.');
@@ -44,7 +44,7 @@ export const FakeTokenStore: TokenStore = {
     try {
       // 현재 사용자의 토큰만 제거 (로그아웃 시 사용)
       memoryToken = null;
-      return createSuccessResponse('토큰이 성공적으로 삭제되었습니다.', undefined);
+      return createStorageSuccessResponse('토큰이 성공적으로 삭제되었습니다.', undefined);
     } catch (error) {
       console.error('토큰 삭제 중 오류 발생:', error);
       return createTokenDeleteErrorResponse('토큰 삭제 중 오류가 발생했습니다.');
@@ -54,7 +54,7 @@ export const FakeTokenStore: TokenStore = {
   async hasToken(): Promise<HasTokenResponse> {
     try {
       const hasToken = memoryToken !== null;
-      return createSuccessResponse(
+      return createStorageSuccessResponse(
         hasToken ? '토큰이 존재합니다.' : '토큰이 존재하지 않습니다.',
         hasToken
       );
@@ -72,11 +72,11 @@ export const FakeTokenStore: TokenStore = {
   async isTokenExpired(): Promise<IsTokenExpiredResponse> {
     try {
       if (!memoryToken || !memoryToken.expiresAt) {
-        return createSuccessResponse('토큰 만료 시간이 설정되지 않았습니다.', false);
+        return createStorageSuccessResponse('토큰 만료 시간이 설정되지 않았습니다.', false);
       }
 
       const isExpired = Date.now() > memoryToken.expiresAt;
-      return createSuccessResponse(
+      return createStorageSuccessResponse(
         isExpired ? '토큰이 만료되었습니다.' : '토큰이 유효합니다.',
         isExpired
       );
@@ -95,10 +95,10 @@ export const FakeTokenStore: TokenStore = {
     try {
       // 모든 토큰 관련 데이터를 완전히 정리 (앱 초기화나 데이터 완전 삭제 시 사용)
       memoryToken = null;
-      return createSuccessResponse('저장소가 성공적으로 초기화되었습니다.', undefined);
+      return createStorageSuccessResponse('저장소가 성공적으로 초기화되었습니다.', undefined);
     } catch (error) {
       console.error('저장소 초기화 중 오류 발생:', error);
       return createStorageClearErrorResponse('저장소 초기화 중 오류가 발생했습니다.');
     }
-  },
+  }
 }; 

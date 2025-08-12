@@ -130,19 +130,4 @@ export function createStorageClearErrorResponse(reason?: string): ErrorResponse 
   return createErrorResponse('저장소 초기화 실패', reason || '저장소 초기화에 실패했습니다.');
 }
 
-/**
- * 성공 응답을 생성하는 헬퍼 함수
- * @param message 성공 메시지
- * @param data 응답 데이터
- * @returns SuccessResponse 객체
- */
-export function createSuccessResponse<T>(
-  message: string,
-  data: T
-): SuccessResponse<T> {
-  return {
-    success: true,
-    message,
-    data
-  };
-}
+
