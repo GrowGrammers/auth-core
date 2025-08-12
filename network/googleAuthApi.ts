@@ -7,7 +7,10 @@ import {
   RefreshTokenRequest,
   LoginApiResponse,
   LogoutApiResponse,
-  RefreshTokenApiResponse
+  RefreshTokenApiResponse,
+  TokenValidationApiResponse,
+  UserInfoApiResponse,
+  ServiceAvailabilityApiResponse
 } from '../providers/interfaces/dtos/auth.dto';
 import { 
   makeRequestWithRetry, 
@@ -15,6 +18,7 @@ import {
   createToken, 
   createUserInfo 
 } from './utils/httpUtils';
+import { createErrorResponse } from '../shared/utils/errorUtils';
 
 /**
  * Google OAuth 로그인 (v2.0에서 구현 예정)
@@ -24,12 +28,7 @@ export async function loginByGoogle(
   config: ApiConfig,
   request: LoginRequest
 ): Promise<LoginApiResponse> {
-  return {
-    success: false,
-    error: 'Google 로그인은 아직 구현되지 않았습니다.',
-    message: 'Google 로그인은 아직 구현되지 않았습니다.',
-    data: null
-  };
+  return createErrorResponse('Google 로그인은 아직 구현되지 않았습니다.');
 }
 
 /**
@@ -40,12 +39,7 @@ export async function logoutByGoogle(
   config: ApiConfig,
   request: LogoutRequest
 ): Promise<LogoutApiResponse> {
-  return {
-    success: false,
-    error: 'Google 로그아웃은 아직 구현되지 않았습니다.',
-    message: 'Google 로그아웃은 아직 구현되지 않았습니다.',
-    data: null
-  };
+  return createErrorResponse('Google 로그아웃은 아직 구현되지 않았습니다.');
 }
 
 /**
@@ -56,12 +50,7 @@ export async function refreshTokenByGoogle(
   config: ApiConfig,
   request: RefreshTokenRequest
 ): Promise<RefreshTokenApiResponse> {
-  return {
-    success: false,
-    error: 'Google 토큰 갱신은 아직 구현되지 않았습니다.',
-    message: 'Google 토큰 갱신은 아직 구현되지 않았습니다.',
-    data: null
-  };
+  return createErrorResponse('Google 토큰 갱신은 아직 구현되지 않았습니다.');
 }
 
 /**
@@ -71,9 +60,9 @@ export async function validateTokenByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
   token: Token
-): Promise<boolean> {
+): Promise<TokenValidationApiResponse> {
   // TODO: v2.0에서 Google OAuth 구현
-  return false;
+  return createErrorResponse('Google 토큰 검증은 아직 구현되지 않았습니다.');
 }
 
 /**
@@ -83,9 +72,9 @@ export async function getUserInfoByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
   token: Token
-): Promise<UserInfo | null> {
+): Promise<UserInfoApiResponse> {
   // TODO: v2.0에서 Google OAuth 구현
-  return null;
+  return createErrorResponse('Google 사용자 정보 조회는 아직 구현되지 않았습니다.');
 }
 
 /**
@@ -94,7 +83,7 @@ export async function getUserInfoByGoogle(
 export async function checkGoogleServiceAvailability(
   httpClient: HttpClient,
   config: ApiConfig
-): Promise<boolean> {
+): Promise<ServiceAvailabilityApiResponse> {
   // TODO: v2.0에서 Google OAuth 구현
-  return false;
+  return createErrorResponse('Google 서비스 가용성 확인은 아직 구현되지 않았습니다.');
 } 

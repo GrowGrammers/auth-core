@@ -10,10 +10,21 @@ import {
   EmailVerificationRequest,
   LoginRequest,
   LogoutRequest,
-  RefreshTokenRequest
+  RefreshTokenRequest,
+  TokenValidationApiResponse,
+  UserInfoApiResponse,
+  ServiceAvailabilityApiResponse
 } from '../providers/interfaces/dtos/auth.dto';
 import { makeRequest, makeRequestWithRetry, handleHttpResponse, createToken, createUserInfo } from './utils/httpUtils';
-import { createErrorResponse, createNetworkErrorResponse, createValidationErrorResponse } from '../shared/utils/errorUtils';
+import { 
+  createErrorResponse, 
+  createNetworkErrorResponse, 
+  createValidationErrorResponse,
+  createTokenValidationErrorResponse,
+  createUserInfoErrorResponse,
+  createServiceAvailabilityErrorResponse,
+  createServerErrorResponse
+} from '../shared/utils/errorUtils';
 import { Token, UserInfo } from '../shared/types';
 
 /**
@@ -167,8 +178,12 @@ export async function validateTokenByEmail(
   httpClient: HttpClient,
   config: ApiConfig,
   token: Token
-): Promise<boolean> {
+): Promise<TokenValidationApiResponse> {
   try {
+    if (!token.accessToken) {
+      return createValidationErrorResponse('액세스 토큰');
+    }
+
     const response = await makeRequest(httpClient, config, config.endpoints.validate, {
       method: 'GET',
       headers: {
@@ -176,9 +191,13 @@ export async function validateTokenByEmail(
       }
     });
 
-    return response.ok;
+    if (response.ok) {
+      return { success: true, data: true, message: '토큰이 유효합니다.' };
+    } else {
+      return createTokenValidationErrorResponse(`HTTP ${response.status}: ${response.statusText}`);
+    }
   } catch (error) {
-    return false;
+    return createNetworkErrorResponse();
   }
 }
 
@@ -189,8 +208,12 @@ export async function getUserInfoByEmail(
   httpClient: HttpClient,
   config: ApiConfig,
   token: Token
-): Promise<UserInfo | null> {
+): Promise<UserInfoApiResponse> {
   try {
+    if (!token.accessToken) {
+      return createValidationErrorResponse('액세스 토큰');
+    }
+
     const response = await makeRequest(httpClient, config, config.endpoints.me, {
       method: 'GET',
       headers: {
@@ -199,14 +222,25 @@ export async function getUserInfoByEmail(
     });
 
     if (!response.ok) {
-      return null;
+      if (response.status >= 500) {
+        return createServerErrorResponse(response.status);
+      } else if (response.status === 401) {
+        return createTokenValidationErrorResponse('인증이 필요합니다.');
+      } else {
+        return createUserInfoErrorResponse(`HTTP ${response.status}: ${response.statusText}`);
+      }
     }
 
-    const data = await response.json();
-    return createUserInfo(data, 'email');
+    try {
+      const data = await response.json();
+      const userInfo = createUserInfo(data, 'email');
+      return { success: true, data: userInfo, message: '사용자 정보를 성공적으로 가져왔습니다.' };
+    } catch (parseError) {
+      return createUserInfoErrorResponse('응답 데이터 파싱에 실패했습니다.');
+    }
 
   } catch (error) {
-    return null;
+    return createNetworkErrorResponse();
   }
 }
 
@@ -216,13 +250,22 @@ export async function getUserInfoByEmail(
 export async function checkEmailServiceAvailability(
   httpClient: HttpClient,
   config: ApiConfig
-): Promise<boolean> {
+): Promise<ServiceAvailabilityApiResponse> {
   try {
     const response = await makeRequest(httpClient, config, config.endpoints.health, {
       method: 'GET'
     });
-    return response.ok;
+
+    if (response.ok) {
+      return { success: true, data: true, message: '서비스가 정상적으로 작동하고 있습니다.' };
+    } else {
+      if (response.status >= 500) {
+        return createServerErrorResponse(response.status);
+      } else {
+        return createServiceAvailabilityErrorResponse(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    }
   } catch (error) {
-    return false;
+    return createNetworkErrorResponse();
   }
 } 
