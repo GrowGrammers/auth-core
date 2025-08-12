@@ -1,5 +1,5 @@
 // 인증 관련 네트워크 요청을 구성·처리하는 유틸 함수 모음
-import { ApiConfig, RequestOptions, ApiResponse, ApiSuccessResponse, ApiErrorResponse, Token, UserInfo, AuthProviderType } from '../../shared/types';
+import { ApiConfig, RequestOptions, ApiResponse, ApiSuccessResponse, Token, UserInfo, AuthProviderType, ErrorResponse } from '../../shared/types';
 import { HttpClient, HttpRequestConfig, HttpResponse } from '../interfaces/HttpClient';
 
 /**
@@ -71,7 +71,7 @@ export async function makeRequestWithRetry(
 export async function handleHttpResponse<T>(
   response: HttpResponse,
   errorMessage: string,
-  createErrorResponse: (error: string) => ApiErrorResponse,
+  createErrorResponse: (error: string) => ErrorResponse,
   createSuccessResponse: (data: unknown) => ApiSuccessResponse<T>
 ): Promise<ApiResponse<T>> {
   if (!response.ok) {

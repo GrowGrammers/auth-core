@@ -14,7 +14,7 @@ import {
   createToken, 
   createUserInfo 
 } from './utils/httpUtils';
-import { ApiConfig, ApiResponse, Token, UserInfo } from '../shared/types';
+import { ApiConfig, ApiResponse, Token, UserInfo, ErrorResponse } from '../shared/types';
 
 /**
  * 이메일 인증번호 요청
@@ -31,7 +31,7 @@ export async function requestEmailVerification(
         error: '이메일이 필요합니다.',
         message: '이메일이 필요합니다.',
         data: null
-      };
+      } as ErrorResponse;
     }
 
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.requestVerification, {
@@ -42,7 +42,7 @@ export async function requestEmailVerification(
     return handleHttpResponse(
       response,
       '인증번호 요청에 실패했습니다.',
-      (error) => ({ success: false, error, message: error, data: null }),
+      (error) => ({ success: false, error, message: error, data: null } as ErrorResponse),
       () => ({ success: true, data: undefined, message: '인증번호가 전송되었습니다.' })
     );
 
@@ -52,7 +52,7 @@ export async function requestEmailVerification(
       error: '네트워크 오류가 발생했습니다.',
       message: '네트워크 오류가 발생했습니다.',
       data: null
-    };
+    } as ErrorResponse;
   }
 }
 
@@ -72,7 +72,7 @@ export async function loginByEmail(
         error: '잘못된 인증 제공자입니다.',
         message: '잘못된 인증 제공자입니다.',
         data: null
-      };
+      } as ErrorResponse;
     }
 
     const emailRequest = request as EmailLoginRequest;
@@ -84,7 +84,7 @@ export async function loginByEmail(
         error: '이메일과 인증코드가 필요합니다.',
         message: '이메일과 인증코드가 필요합니다.',
         data: null
-      };
+      } as ErrorResponse;
     }
 
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.login, {
@@ -99,7 +99,7 @@ export async function loginByEmail(
     return handleHttpResponse(
       response,
       '로그인에 실패했습니다.',
-      (error: string) => ({ success: false, error, message: error, data: null }),
+      (error: string) => ({ success: false, error, message: error, data: null } as ErrorResponse),
       (data: unknown) => {
         const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number; user: { id: string; email: string; name: string } };
         const token = createToken(typedData);
@@ -114,7 +114,7 @@ export async function loginByEmail(
       error: '네트워크 오류가 발생했습니다.',
       message: '네트워크 오류가 발생했습니다.',
       data: null
-    };
+    } as ErrorResponse;
   }
 }
 
@@ -133,7 +133,7 @@ export async function logoutByEmail(
         error: '토큰이 필요합니다.',
         message: '토큰이 필요합니다.',
         data: null
-      };
+      } as ErrorResponse;
     }
 
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.logout, {
@@ -146,7 +146,7 @@ export async function logoutByEmail(
     return handleHttpResponse(
       response,
       '로그아웃에 실패했습니다.',
-      (error) => ({ success: false, error, message: error, data: null }),
+      (error) => ({ success: false, error, message: error, data: null } as ErrorResponse),
       () => ({ success: true, data: undefined, message: '로그아웃에 성공했습니다.' })
     );
 
@@ -156,7 +156,7 @@ export async function logoutByEmail(
       error: '네트워크 오류가 발생했습니다.',
       message: '네트워크 오류가 발생했습니다.',
       data: null
-    };
+    } as ErrorResponse;
   }
 }
 
@@ -177,7 +177,7 @@ export async function refreshTokenByEmail(
     return handleHttpResponse(
       response,
       '토큰 갱신에 실패했습니다.',
-      (error: string) => ({ success: false, error, message: error, data: null }),
+      (error: string) => ({ success: false, error, message: error, data: null } as ErrorResponse),
       (data: unknown) => {
         const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number };
         const token = createToken(typedData);
@@ -191,7 +191,7 @@ export async function refreshTokenByEmail(
       error: '네트워크 오류가 발생했습니다.',
       message: '네트워크 오류가 발생했습니다.',
       data: null
-    };
+    } as ErrorResponse;
   }
 }
 

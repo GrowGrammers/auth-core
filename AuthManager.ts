@@ -2,10 +2,16 @@
 import { AuthProvider, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, EmailVerificationRequest, EmailVerificationResponse } from './providers';
 import { IEmailVerifiable } from './providers/interfaces';
 import { TokenStore } from './storage/TokenStore.interface';
-import { Token, UserInfo, ApiConfig } from './shared/types';
+import { Token, UserInfo, ApiConfig, ErrorResponse } from './shared/types';
 import { createAuthProvider } from './factories/AuthProviderFactory';
 import { FakeTokenStore } from './storage/FakeTokenStore';
 import { HttpClient } from './network/interfaces/HttpClient';
+import { 
+  EmailVerificationApiResponse, 
+  LoginApiResponse, 
+  LogoutApiResponse, 
+  RefreshTokenApiResponse 
+} from './providers/interfaces/dtos/auth.dto';
 
 export interface AuthManagerConfig {
   providerType: 'email' | 'google';
@@ -42,23 +48,30 @@ export class AuthManager {
    * @param request 이메일 인증번호 요청 정보
    * @returns 인증번호 요청 결과
    */
-  async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse> {
+  async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationApiResponse> {
     try {
-      // 타입 가드를 통해 IEmailVerifiable을 구현한 provider인지 확인
+      // ① 이메일 인증 가능한 제공자인지 확인
       if (!this.isEmailVerifiable(this.provider)) {
         return {
           success: false,
-          error: '이 제공자는 이메일 인증을 지원하지 않습니다.',
-          message: '이 제공자는 이메일 인증을 지원하지 않습니다.'
-        };
+          error: '이메일 인증을 지원하지 않는 제공자입니다.',
+          message: '이메일 인증을 지원하지 않는 제공자입니다.',
+          data: null
+        } as ErrorResponse;
       }
 
-      const verificationResponse = await this.provider.requestEmailVerification(request);
+      // ② 이메일 인증 가능한 제공자로 캐스팅
+      const emailProvider = this.provider as IEmailVerifiable;
+      
+      // ③ 이메일 인증번호 요청
+      const verificationResponse = await emailProvider.requestEmailVerification(request);
       
       if (verificationResponse.success) {
-        console.log('인증번호 요청 성공:', request.email);
+        console.log('인증번호 요청 성공');
       } else {
-        console.log('인증번호 요청 실패:', verificationResponse.error);
+        // 타입 가드를 통해 error 속성에 안전하게 접근
+        const errorMessage = 'error' in verificationResponse ? verificationResponse.error : '알 수 없는 오류';
+        console.log('인증번호 요청 실패:', errorMessage);
       }
       
       return verificationResponse;
@@ -67,8 +80,9 @@ export class AuthManager {
       return {
         success: false,
         error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
-        message: '인증번호 요청 중 오류가 발생했습니다.'
-      };
+        message: '인증번호 요청 중 오류가 발생했습니다.',
+        data: null
+      } as ErrorResponse;
     }
   }
 
@@ -84,17 +98,19 @@ export class AuthManager {
    * @param request 로그인 요청 정보
    * @returns 로그인 결과
    */
-  async login(request: LoginRequest): Promise<LoginResponse> {
+  async login(request: LoginRequest): Promise<LoginApiResponse> {
     try {
-      // ⑤ 로그인 시도 (누가? 전달받은 provider가!)
+      // ④ 로그인 시도 (누가? 전달받은 provider가!)
       const loginResponse = await this.provider.login(request);
       
       if (loginResponse.success && loginResponse.token) {
-        // ⑥ 로그인 성공 시 토큰을 저장 전략을 통해 저장
+        // ⑤ 로그인 성공 시 토큰 저장
         await this.tokenStore.saveToken(loginResponse.token);
         console.log('로그인 성공, 토큰 저장됨:', loginResponse.token);
       } else {
-        console.log('로그인 실패:', loginResponse.error);
+        // 타입 가드를 통해 error 속성에 안전하게 접근
+        const errorMessage = 'error' in loginResponse ? loginResponse.error : '알 수 없는 오류';
+        console.log('로그인 실패:', errorMessage);
       }
       
       return loginResponse;
@@ -103,8 +119,9 @@ export class AuthManager {
       return {
         success: false,
         error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
-        message: '로그인 중 오류가 발생했습니다.'
-      };
+        message: '로그인 중 오류가 발생했습니다.',
+        data: null
+      } as ErrorResponse;
     }
   }
 
@@ -113,7 +130,7 @@ export class AuthManager {
    * @param request 로그아웃 요청 정보
    * @returns 로그아웃 결과
    */
-  async logout(request: LogoutRequest): Promise<LogoutResponse> {
+  async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
     try {
       // ⑦ 로그아웃 시도 (누가? 전달받은 provider가!)
       const logoutResponse = await this.provider.logout(request);
@@ -123,7 +140,9 @@ export class AuthManager {
         await this.tokenStore.removeToken();
         console.log('로그아웃 성공, 토큰 삭제됨');
       } else {
-        console.log('로그아웃 실패:', logoutResponse.error);
+        // 타입 가드를 통해 error 속성에 안전하게 접근
+        const errorMessage = 'error' in logoutResponse ? logoutResponse.error : '알 수 없는 오류';
+        console.log('로그아웃 실패:', errorMessage);
       }
       
       return logoutResponse;
@@ -132,8 +151,9 @@ export class AuthManager {
       return {
         success: false,
         error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
-        message: '로그아웃 중 오류가 발생했습니다.'
-      };
+        message: '로그아웃 중 오류가 발생했습니다.',
+        data: null
+      } as ErrorResponse;
     }
   }
   
@@ -150,7 +170,7 @@ export class AuthManager {
    * @param request 토큰 갱신 요청 정보
    * @returns 토큰 갱신 결과
    */
-  async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse> {
+  async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse> {
     try {
       const refreshResponse = await this.provider.refreshToken(request);
       
@@ -166,8 +186,9 @@ export class AuthManager {
       return {
         success: false,
         error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
-        message: '토큰 갱신 중 오류가 발생했습니다.'
-      };
+        message: '토큰 갱신 중 오류가 발생했습니다.',
+        data: null
+      } as ErrorResponse;
     }
   }
 
