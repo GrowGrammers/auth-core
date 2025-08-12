@@ -1,4 +1,4 @@
-import { ErrorResponse } from '../types/common';
+import { ErrorResponse, SuccessResponse } from '../types/common';
 
 /**
  * 에러 응답 객체를 생성하는 헬퍼 함수
@@ -92,4 +92,57 @@ export function createTimeoutErrorResponse(): ErrorResponse {
 export function createServerErrorResponse(statusCode: number): ErrorResponse {
   const message = `서버 오류가 발생했습니다. (${statusCode})`;
   return createErrorResponse('서버 오류', message);
+}
+
+/**
+ * 토큰 저장 실패 응답을 생성하는 헬퍼 함수
+ * @param reason 실패 이유 (기본값: '토큰 저장에 실패했습니다.')
+ * @returns 토큰 저장 실패 ErrorResponse 객체
+ */
+export function createTokenSaveErrorResponse(reason?: string): ErrorResponse {
+  return createErrorResponse('토큰 저장 실패', reason || '토큰 저장에 실패했습니다.');
+}
+
+/**
+ * 토큰 읽기 실패 응답을 생성하는 헬퍼 함수
+ * @param reason 실패 이유 (기본값: '토큰 읽기에 실패했습니다.')
+ * @returns 토큰 읽기 실패 ErrorResponse 객체
+ */
+export function createTokenReadErrorResponse(reason?: string): ErrorResponse {
+  return createErrorResponse('토큰 읽기 실패', reason || '토큰 읽기에 실패했습니다.');
+}
+
+/**
+ * 토큰 삭제 실패 응답을 생성하는 헬퍼 함수
+ * @param reason 실패 이유 (기본값: '토큰 삭제에 실패했습니다.')
+ * @returns 토큰 삭제 실패 ErrorResponse 객체
+ */
+export function createTokenDeleteErrorResponse(reason?: string): ErrorResponse {
+  return createErrorResponse('토큰 삭제 실패', reason || '토큰 삭제에 실패했습니다.');
+}
+
+/**
+ * 저장소 초기화 실패 응답을 생성하는 헬퍼 함수
+ * @param reason 실패 이유 (기본값: '저장소 초기화에 실패했습니다.')
+ * @returns 저장소 초기화 실패 ErrorResponse 객체
+ */
+export function createStorageClearErrorResponse(reason?: string): ErrorResponse {
+  return createErrorResponse('저장소 초기화 실패', reason || '저장소 초기화에 실패했습니다.');
+}
+
+/**
+ * 성공 응답을 생성하는 헬퍼 함수
+ * @param message 성공 메시지
+ * @param data 응답 데이터
+ * @returns SuccessResponse 객체
+ */
+export function createSuccessResponse<T>(
+  message: string,
+  data: T
+): SuccessResponse<T> {
+  return {
+    success: true,
+    message,
+    data
+  };
 }

@@ -110,8 +110,12 @@ export class AuthManager {
       
       if (loginResponse.success && loginResponse.data?.token) {
         // ⑤ 로그인 성공 시 토큰 저장
-        await this.tokenStore.saveToken(loginResponse.data.token);
-        console.log('로그인 성공, 토큰 저장됨:');
+        const saveResult = await this.tokenStore.saveToken(loginResponse.data.token);
+        if (saveResult.success) {
+          console.log('로그인 성공, 토큰 저장됨');
+        } else {
+          console.error('토큰 저장 실패:', saveResult.error);
+        }
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in loginResponse ? loginResponse.error : '알 수 없는 오류';
@@ -137,8 +141,12 @@ export class AuthManager {
       
       if (logoutResponse.success) {
         // ⑧ 로그아웃 성공 시 저장된 토큰 삭제
-        await this.tokenStore.removeToken();
-        console.log('로그아웃 성공, 토큰 삭제됨');
+        const removeResult = await this.tokenStore.removeToken();
+        if (removeResult.success) {
+          console.log('로그아웃 성공, 토큰 삭제됨');
+        } else {
+          console.error('토큰 삭제 실패:', removeResult.error);
+        }
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in logoutResponse ? logoutResponse.error : '알 수 없는 오류';
@@ -157,7 +165,13 @@ export class AuthManager {
    * @returns 저장된 토큰 또는 null
    */
   async getToken(): Promise<Token | null> {
-    return await this.tokenStore.getToken();
+    const result = await this.tokenStore.getToken();
+    if (result.success) {
+      return result.data;
+    } else {
+      console.error('토큰 가져오기 실패:', result.error);
+      return null;
+    }
   }
 
   /**
@@ -171,8 +185,12 @@ export class AuthManager {
       
       if (refreshResponse.success && refreshResponse.data) {
         // 토큰 갱신 성공 시 새로운 토큰 저장
-        await this.tokenStore.saveToken(refreshResponse.data);
-        console.log('토큰 갱신 성공, 새 토큰 저장됨');
+        const saveResult = await this.tokenStore.saveToken(refreshResponse.data);
+        if (saveResult.success) {
+          console.log('토큰 갱신 성공, 새 토큰 저장됨');
+        } else {
+          console.error('새 토큰 저장 실패:', saveResult.error);
+        }
       }
       
       return refreshResponse;
@@ -187,18 +205,19 @@ export class AuthManager {
    * @returns 유효성 검증 결과
    */
   async validateCurrentToken(): Promise<TokenValidationApiResponse> {
-    const token = await this.tokenStore.getToken();
-    if (!token) {
+    const tokenResult = await this.tokenStore.getToken();
+    if (!tokenResult.success || !tokenResult.data) {
       return createErrorResponse('저장된 토큰이 없습니다.');
     }
     
     // 토큰이 만료되었는지 먼저 확인
-    if (await this.tokenStore.isTokenExpired()) {
+    const expiredResult = await this.tokenStore.isTokenExpired();
+    if (expiredResult.success && expiredResult.data) {
       return createErrorResponse('토큰이 만료되었습니다.');
     }
     
     // Provider를 통해 토큰 유효성 검증
-    return await this.provider.validateToken(token);
+    return await this.provider.validateToken(tokenResult.data);
   }
 
   /**
@@ -206,12 +225,12 @@ export class AuthManager {
    * @returns 사용자 정보 응답
    */
   async getCurrentUserInfo(): Promise<UserInfoApiResponse> {
-    const token = await this.tokenStore.getToken();
-    if (!token) {
+    const tokenResult = await this.tokenStore.getToken();
+    if (!tokenResult.success || !tokenResult.data) {
       return createErrorResponse('저장된 토큰이 없습니다.');
     }
     
-    return await this.provider.getUserInfo(token);
+    return await this.provider.getUserInfo(tokenResult.data);
   }
 
   /**
@@ -219,8 +238,8 @@ export class AuthManager {
    * @returns 인증 상태
    */
   async isAuthenticated(): Promise<boolean> {
-    const hasToken = await this.tokenStore.hasToken();
-    if (!hasToken) {
+    const hasTokenResult = await this.tokenStore.hasToken();
+    if (!hasTokenResult.success || !hasTokenResult.data) {
       return false;
     }
     
@@ -233,7 +252,8 @@ export class AuthManager {
    * @returns 초기화 성공 여부
    */
   async clear(): Promise<boolean> {
-    return await this.tokenStore.clear();
+    const clearResult = await this.tokenStore.clear();
+    return clearResult.success;
   }
 }
 
