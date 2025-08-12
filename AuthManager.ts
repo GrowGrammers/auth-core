@@ -106,7 +106,7 @@ export class AuthManager {
       if (loginResponse.success && loginResponse.data?.token) {
         // ⑤ 로그인 성공 시 토큰 저장
         await this.tokenStore.saveToken(loginResponse.data.token);
-        console.log('로그인 성공, 토큰 저장됨:', loginResponse.data.token);
+        console.log('로그인 성공, 토큰 저장됨:');
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in loginResponse ? loginResponse.error : '알 수 없는 오류';
