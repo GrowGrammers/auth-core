@@ -1,7 +1,7 @@
 // API 관련 타입 정의
 // shared/types/api.ts
 
-import { BaseResponse } from './common';
+import { BaseResponse, ErrorResponse } from './common';
 
 // API 엔드포인트 설정
 export interface ApiEndpoints {
@@ -37,11 +37,8 @@ export interface ApiSuccessResponse<T = unknown> extends BaseResponse<T> {
 }
 
 // 실패 응답 타입
-export interface ApiErrorResponse extends BaseResponse<never> {
-  success: false;
-  error: string;
-  message: string;
-  data: null;
+export interface ApiErrorResponse extends ErrorResponse {
+  // ErrorResponse를 상속받아 error 필드 포함
 }
 
 // 통합 API 응답 타입
