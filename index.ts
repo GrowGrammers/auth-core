@@ -32,8 +32,20 @@ export { HttpClient, HttpRequestConfig, HttpResponse } from './network/interface
 export { Token, UserInfo, AuthProviderType, BaseResponse, BaseRequest, ApiConfig, ApiEndpoints } from './shared/types';
 
 // 팩토리 함수들
-export { createAuthProvider } from './factories/AuthProviderFactory';
-export { createTokenStore, TokenStoreType, TokenStoreRegistry } from './factories/TokenStoreFactory';
+export { 
+  createAuthProvider, 
+  AuthProviderFactoryResult,
+  isAuthProviderFactorySuccess,
+  isAuthProviderFactoryError
+} from './factories/AuthProviderFactory';
+export { 
+  createTokenStore, 
+  TokenStoreType, 
+  TokenStoreRegistry,
+  TokenStoreFactoryResult,
+  isTokenStoreFactorySuccess,
+  isTokenStoreFactoryError
+} from './factories/TokenStoreFactory';
 export { 
   createAuthManager, 
   createAuthManagerLegacy

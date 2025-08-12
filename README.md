@@ -79,7 +79,7 @@ auth-core/
 ```typescript
 import { AuthManager } from 'auth-core';
 
-// 1. AuthManager 인스턴스 생성
+// 1. AuthManager 인스턴스 생성 (기본 사용법)
 const authManager = new AuthManager({
   providerType: 'email',
   apiConfig: {
@@ -90,7 +90,17 @@ const authManager = new AuthManager({
       requestVerification: '/email/verify'
     }
   },
-  httpClient: myHttpClient  // 서비스에서 주입
+  httpClient: myHttpClient,  // 서비스에서 주입
+  tokenStoreType: 'web'      // 웹용 토큰 저장소 사용
+});
+
+// 또는 직접 TokenStore 인스턴스 제공
+const customTokenStore = new CustomTokenStore();
+const authManagerWithCustomStore = new AuthManager({
+  providerType: 'email',
+  apiConfig: { /* ... */ },
+  httpClient: myHttpClient,
+  tokenStore: customTokenStore  // 직접 TokenStore 인스턴스 제공
 });
 
 // 2. 이메일 인증 요청
@@ -137,6 +147,34 @@ interface TokenStore {
   removeToken(): Promise<boolean>;
 }
 ```
+
+## 🛡️ 타입 안전성
+
+이 모듈은 TypeScript의 타입 가드를 활용하여 런타임 안전성을 보장합니다:
+
+### 팩토리 결과 처리
+```typescript
+// ❌ 위험한 강제 캐스팅 (이전 방식)
+const result = createAuthProvider(providerType, config, httpClient, apiConfig);
+return result as AuthProvider; // 런타임 에러 가능성
+
+// ✅ 안전한 타입 가드 사용 (현재 방식)
+const result = createAuthProvider(providerType, config, httpClient, apiConfig);
+
+if (isAuthProviderFactoryError(result)) {
+  console.error('인증 제공자 생성 실패:', result.error);
+  throw new Error(result.message);
+}
+
+// 여기서부터 result는 AuthProvider 타입으로 안전하게 좁혀짐
+return result;
+```
+
+### 타입 가드 함수들
+- `isAuthProviderFactoryError()`: 인증 제공자 팩토리 에러 확인
+- `isTokenStoreFactoryError()`: 토큰 저장소 팩토리 에러 확인
+- `isFactorySuccess()`: 팩토리 성공 결과 확인
+- `isFactoryError()`: 팩토리 에러 결과 확인
 
 ## 🎨 설계 원칙
 
