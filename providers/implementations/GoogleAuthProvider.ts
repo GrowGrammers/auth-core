@@ -9,7 +9,10 @@ import {
   RefreshTokenRequest,
   LoginApiResponse,
   LogoutApiResponse,
-  RefreshTokenApiResponse
+  RefreshTokenApiResponse,
+  TokenValidationApiResponse,
+  UserInfoApiResponse,
+  ServiceAvailabilityApiResponse
 } from '../interfaces/dtos/auth.dto';
 import { ILoginProvider } from '../interfaces';
 import { 
@@ -77,18 +80,30 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
     );
   }
 
-  async validateToken(token: Token): Promise<boolean> {
+  async validateToken(token: Token): Promise<TokenValidationApiResponse> {
     // Google 토큰 검증 로직 구현
-    return true; // 임시 구현
+    // TODO: v2.0에서 Google OAuth 구현
+    return this.createErrorResponse(
+      'Google 토큰 검증은 아직 구현되지 않았습니다.',
+      'Google 토큰 검증은 아직 구현되지 않았습니다.'
+    );
   }
 
-  async getUserInfo(token: Token): Promise<UserInfo | null> {
+  async getUserInfo(token: Token): Promise<UserInfoApiResponse> {
     // Google 사용자 정보 조회 로직 구현
-    return null; // 임시 구현
+    // TODO: v2.0에서 Google OAuth 구현
+    return this.createErrorResponse(
+      'Google 사용자 정보 조회는 아직 구현되지 않았습니다.',
+      'Google 사용자 정보 조회는 아직 구현되지 않았습니다.'
+    );
   }
 
-  async isAvailable(): Promise<boolean> {
+  async isAvailable(): Promise<ServiceAvailabilityApiResponse> {
     // Google 서비스 가용성 확인 로직 구현
-    return true; // 임시 구현
+    // TODO: v2.0에서 Google OAuth 구현
+    return this.createErrorResponse(
+      'Google 서비스 가용성 확인은 아직 구현되지 않았습니다.',
+      'Google 서비스 가용성 확인은 아직 구현되지 않았습니다.'
+    );
   }
 }

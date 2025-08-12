@@ -16,7 +16,10 @@ import {
   LoginApiResponse,
   LogoutApiResponse,
   RefreshTokenApiResponse,
-  EmailVerificationApiResponse
+  EmailVerificationApiResponse,
+  TokenValidationApiResponse,
+  UserInfoApiResponse,
+  ServiceAvailabilityApiResponse
 } from '../interfaces/dtos/auth.dto';
 import { ILoginProvider, IEmailVerifiable } from '../interfaces';
 import {
@@ -89,11 +92,11 @@ export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvide
     );
   }
 
-  async validateToken(token: Token): Promise<boolean> {
+  async validateToken(token: Token): Promise<TokenValidationApiResponse> {
     return await validateTokenByEmail(this.httpClient, this.apiConfig, token);
   }
 
-  async getUserInfo(token: Token): Promise<UserInfo | null> {
+  async getUserInfo(token: Token): Promise<UserInfoApiResponse> {
     return await getUserInfoByEmail(this.httpClient, this.apiConfig, token);
   }
 
@@ -110,7 +113,7 @@ export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvide
     return this.createSuccessResponse<void>('이메일 인증번호가 전송되었습니다.', undefined);
   }
 
-  async isAvailable(): Promise<boolean> {
+  async isAvailable(): Promise<ServiceAvailabilityApiResponse> {
     return await checkEmailServiceAvailability(this.httpClient, this.apiConfig);
   }
 } 
