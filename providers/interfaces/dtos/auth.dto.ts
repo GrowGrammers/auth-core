@@ -26,10 +26,7 @@ export interface OAuthLoginRequest extends BaseRequest {
 export type LoginRequest = EmailLoginRequest | OAuthLoginRequest;
 
 // 로그인 응답 DTO
-export interface LoginResponse extends BaseResponse<{ token: Token; userInfo: UserInfo }> {
-  token?: Token;
-  userInfo?: UserInfo;
-}
+export interface LoginResponse extends BaseResponse<{ token: Token; userInfo: UserInfo }> {}
 
 // 로그아웃 요청 DTO
 export interface LogoutRequest extends BaseRequest {
@@ -47,9 +44,7 @@ export interface RefreshTokenRequest extends BaseRequest {
 }
 
 // 토큰 갱신 응답 DTO
-export interface RefreshTokenResponse extends BaseResponse<Token> {
-  token?: Token;
-}
+export interface RefreshTokenResponse extends BaseResponse<Token> {}
 
 // 응답 타입들을 ErrorResponse와의 유니온 타입으로 정의
 export type EmailVerificationApiResponse = EmailVerificationResponse | ErrorResponse;

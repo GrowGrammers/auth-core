@@ -103,10 +103,10 @@ export class AuthManager {
       // ④ 로그인 시도 (누가? 전달받은 provider가!)
       const loginResponse = await this.provider.login(request);
       
-      if (loginResponse.success && loginResponse.token) {
+      if (loginResponse.success && loginResponse.data?.token) {
         // ⑤ 로그인 성공 시 토큰 저장
-        await this.tokenStore.saveToken(loginResponse.token);
-        console.log('로그인 성공, 토큰 저장됨:', loginResponse.token);
+        await this.tokenStore.saveToken(loginResponse.data.token);
+        console.log('로그인 성공, 토큰 저장됨:', loginResponse.data.token);
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in loginResponse ? loginResponse.error : '알 수 없는 오류';
@@ -174,9 +174,9 @@ export class AuthManager {
     try {
       const refreshResponse = await this.provider.refreshToken(request);
       
-      if (refreshResponse.success && refreshResponse.token) {
+      if (refreshResponse.success && refreshResponse.data) {
         // 토큰 갱신 성공 시 새로운 토큰 저장
-        await this.tokenStore.saveToken(refreshResponse.token);
+        await this.tokenStore.saveToken(refreshResponse.data);
         console.log('토큰 갱신 성공, 새 토큰 저장됨');
       }
       
