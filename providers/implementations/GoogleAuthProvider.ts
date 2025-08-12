@@ -1,5 +1,5 @@
 // Google OAuth 인증 제공자 구현
-import { HttpClient } from '../../network/interfaces';
+import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
 import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';

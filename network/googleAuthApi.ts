@@ -12,12 +12,7 @@ import {
   UserInfoApiResponse,
   ServiceAvailabilityApiResponse
 } from '../providers/interfaces/dtos/auth.dto';
-import { 
-  makeRequestWithRetry, 
-  handleHttpResponse, 
-  createToken, 
-  createUserInfo 
-} from './utils/httpUtils';
+
 import { createErrorResponse } from '../shared/utils/errorUtils';
 
 /**
