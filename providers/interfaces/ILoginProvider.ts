@@ -10,7 +10,10 @@ import {
   RefreshTokenResponse,
   LoginApiResponse,
   LogoutApiResponse,
-  RefreshTokenApiResponse
+  RefreshTokenApiResponse,
+  TokenValidationApiResponse,
+  UserInfoApiResponse,
+  ServiceAvailabilityApiResponse
 } from './dtos/auth.dto';
 
 export interface ILoginProvider {
@@ -50,18 +53,18 @@ export interface ILoginProvider {
    * @param token 검증할 토큰
    * @returns 유효성 검증 결과
    */
-  validateToken(token: Token): Promise<boolean>;
+  validateToken(token: Token): Promise<TokenValidationApiResponse>;
   
   /**
    * 사용자 정보를 가져옵니다.
    * @param token 인증 토큰
    * @returns 사용자 정보
    */
-  getUserInfo(token: Token): Promise<UserInfo | null>;
+  getUserInfo(token: Token): Promise<UserInfoApiResponse>;
   
   /**
    * 제공자가 사용 가능한지 확인합니다.
    * @returns 사용 가능 여부
    */
-  isAvailable(): Promise<boolean>;
+  isAvailable(): Promise<ServiceAvailabilityApiResponse>;
 } 
