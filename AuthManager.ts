@@ -1,17 +1,22 @@
 // 인증 + 저장 전략들을 주입받아 로그인 흐름 제어 
-import { AuthProvider, LoginRequest, LoginResponse, LogoutRequest, LogoutResponse, RefreshTokenRequest, RefreshTokenResponse, EmailVerificationRequest, EmailVerificationResponse } from './providers';
-import { IEmailVerifiable } from './providers/interfaces';
+import { AuthProvider, IEmailVerifiable, ILoginProvider } from './providers/interfaces';
 import { TokenStore } from './storage/TokenStore.interface';
 import { Token, UserInfo, ApiConfig, ErrorResponse } from './shared/types';
 import { createAuthProvider } from './factories/AuthProviderFactory';
 import { FakeTokenStore } from './storage/FakeTokenStore';
 import { HttpClient } from './network/interfaces/HttpClient';
 import { 
+  EmailVerificationRequest,
+  EmailVerificationResponse,
   EmailVerificationApiResponse, 
+  LoginRequest,
   LoginApiResponse, 
+  LogoutRequest,
   LogoutApiResponse, 
+  RefreshTokenRequest,
   RefreshTokenApiResponse 
 } from './providers/interfaces/dtos/auth.dto';
+import { createErrorResponse, createErrorResponseFromException } from './shared/utils/errorUtils';
 
 export interface AuthManagerConfig {
   providerType: 'email' | 'google';
@@ -52,12 +57,7 @@ export class AuthManager {
     try {
       // ① 이메일 인증 가능한 제공자인지 확인
       if (!this.isEmailVerifiable(this.provider)) {
-        return {
-          success: false,
-          error: '이메일 인증을 지원하지 않는 제공자입니다.',
-          message: '이메일 인증을 지원하지 않는 제공자입니다.',
-          data: null
-        } as ErrorResponse;
+        return createErrorResponse('이메일 인증을 지원하지 않는 제공자입니다.');
       }
 
       // ② 이메일 인증 가능한 제공자로 캐스팅
@@ -77,12 +77,7 @@ export class AuthManager {
       return verificationResponse;
     } catch (error) {
       console.error('인증번호 요청 중 오류 발생:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
-        message: '인증번호 요청 중 오류가 발생했습니다.',
-        data: null
-      } as ErrorResponse;
+      return createErrorResponseFromException(error, '인증번호 요청 중 오류가 발생했습니다.');
     }
   }
 
@@ -116,12 +111,7 @@ export class AuthManager {
       return loginResponse;
     } catch (error) {
       console.error('로그인 중 오류 발생:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
-        message: '로그인 중 오류가 발생했습니다.',
-        data: null
-      } as ErrorResponse;
+      return createErrorResponseFromException(error, '로그인 중 오류가 발생했습니다.');
     }
   }
 
@@ -148,12 +138,7 @@ export class AuthManager {
       return logoutResponse;
     } catch (error) {
       console.error('로그아웃 중 오류 발생:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
-        message: '로그아웃 중 오류가 발생했습니다.',
-        data: null
-      } as ErrorResponse;
+      return createErrorResponseFromException(error, '로그아웃 중 오류가 발생했습니다.');
     }
   }
   
@@ -183,12 +168,7 @@ export class AuthManager {
       return refreshResponse;
     } catch (error) {
       console.error('토큰 갱신 중 오류 발생:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
-        message: '토큰 갱신 중 오류가 발생했습니다.',
-        data: null
-      } as ErrorResponse;
+      return createErrorResponseFromException(error, '토큰 갱신 중 오류가 발생했습니다.');
     }
   }
 
