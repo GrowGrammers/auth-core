@@ -2,7 +2,8 @@
 import { AuthProvider, IEmailVerifiable, ILoginProvider } from './providers/interfaces';
 import { TokenStore } from './storage/TokenStore.interface';
 import { Token, UserInfo, ApiConfig, ErrorResponse } from './shared/types';
-import { createAuthProvider, AuthProviderFactoryResult } from './factories/AuthProviderFactory';
+import { createAuthProvider, AuthProviderFactoryResult, isAuthProviderFactoryError } from './factories/AuthProviderFactory';
+import { createTokenStore, TokenStoreFactoryResult, isTokenStoreFactoryError } from './factories/TokenStoreFactory';
 import { FakeTokenStore } from './storage/FakeTokenStore';
 import { HttpClient } from './network/interfaces/HttpClient';
 import { 
@@ -24,7 +25,8 @@ export interface AuthManagerConfig {
   providerType: 'email' | 'google';
   apiConfig: ApiConfig;
   httpClient: HttpClient;  // HttpClient를 필수로 추가
-  tokenStore?: TokenStore;
+  tokenStore?: TokenStore; // 직접 TokenStore 인스턴스 제공 (선택사항)
+  tokenStoreType?: 'web' | 'mobile' | 'fake'; // TokenStore 타입으로 팩토리에서 생성 (선택사항)
 }
 
 export class AuthManager {
@@ -34,8 +36,8 @@ export class AuthManager {
   constructor(config: AuthManagerConfig) {
     // Provider 생성 (apiConfig 주입)
     this.provider = this.createProvider(config.providerType, config.apiConfig, config.httpClient);
-    // TokenStore 생성 (기본값 또는 주입받은 값 사용)
-    this.tokenStore = config.tokenStore || this.createDefaultTokenStore();
+    // TokenStore 생성 (우선순위: 직접 제공 > 타입으로 팩토리 생성 > 기본값)
+    this.tokenStore = config.tokenStore || this.createTokenStoreFromType(config.tokenStoreType);
   }
 
   private createProvider(providerType: 'email' | 'google', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
@@ -44,18 +46,30 @@ export class AuthManager {
     
     const result = createAuthProvider(providerType, config, httpClient, apiConfig);
     
-    // 팩토리 에러 처리
-    if ('success' in result && !result.success) {
+    // 타입 가드를 사용한 안전한 에러 처리
+    if (isAuthProviderFactoryError(result)) {
       console.error('인증 제공자 생성 실패:', result.error);
       throw new Error(result.message);
     }
     
-    return result as AuthProvider;
+    // 여기서부터 result는 AuthProvider 타입으로 안전하게 좁혀짐
+    return result;
   }
 
-  private createDefaultTokenStore(): TokenStore {
-    // 기본 TokenStore 생성 (FakeTokenStore 사용)
-    return FakeTokenStore;
+  private createTokenStoreFromType(tokenStoreType?: 'web' | 'mobile' | 'fake'): TokenStore {
+    // 지정된 타입이 있으면 해당 타입으로, 없으면 기본값 'fake' 사용
+    const type = tokenStoreType || 'fake';
+    
+    const result = createTokenStore(type);
+    
+    // 타입 가드를 사용한 안전한 에러 처리
+    if (isTokenStoreFactoryError(result)) {
+      console.error('토큰 저장소 생성 실패:', result.error);
+      throw new Error(result.message);
+    }
+    
+    // 여기서부터 result는 TokenStore 타입으로 안전하게 좁혀짐
+    return result;
   }
 
   /**
