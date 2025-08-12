@@ -46,8 +46,20 @@ export interface RefreshTokenRequest extends BaseRequest {
 // 토큰 갱신 응답 DTO
 export interface RefreshTokenResponse extends SuccessResponse<Token> {}
 
+// 토큰 검증 응답 DTO
+export interface TokenValidationResponse extends SuccessResponse<boolean> {}
+
+// 사용자 정보 조회 응답 DTO
+export interface UserInfoResponse extends SuccessResponse<UserInfo> {}
+
+// 서비스 가용성 확인 응답 DTO
+export interface ServiceAvailabilityResponse extends SuccessResponse<boolean> {}
+
 // 응답 타입들을 ErrorResponse와의 유니온 타입으로 정의
 export type EmailVerificationApiResponse = EmailVerificationResponse | ErrorResponse;
 export type LoginApiResponse = LoginResponse | ErrorResponse;
 export type LogoutApiResponse = LogoutResponse | ErrorResponse;
-export type RefreshTokenApiResponse = RefreshTokenResponse | ErrorResponse; 
+export type RefreshTokenApiResponse = RefreshTokenResponse | ErrorResponse;
+export type TokenValidationApiResponse = TokenValidationResponse | ErrorResponse;
+export type UserInfoApiResponse = UserInfoResponse | ErrorResponse;
+export type ServiceAvailabilityApiResponse = ServiceAvailabilityResponse | ErrorResponse; 
