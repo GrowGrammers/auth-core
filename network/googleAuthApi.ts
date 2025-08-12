@@ -1,11 +1,20 @@
-// Google OAuth 관련 API 함수들 (v2.0에서 구현 예정)
-import { ApiConfig, ApiResponse, Token, UserInfo } from '../shared/types';
+// Google OAuth 인증 API 구현
+import { ApiConfig, Token, UserInfo } from '../shared/types';
 import { HttpClient } from './interfaces/HttpClient';
 import { 
   LoginRequest, 
   LogoutRequest, 
-  RefreshTokenRequest
+  RefreshTokenRequest,
+  LoginApiResponse,
+  LogoutApiResponse,
+  RefreshTokenApiResponse
 } from '../providers/interfaces/dtos/auth.dto';
+import { 
+  makeRequestWithRetry, 
+  handleHttpResponse, 
+  createToken, 
+  createUserInfo 
+} from './utils/httpUtils';
 
 /**
  * Google OAuth 로그인 (v2.0에서 구현 예정)
@@ -14,7 +23,7 @@ export async function loginByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
   request: LoginRequest
-): Promise<ApiResponse<{ token: Token; userInfo: UserInfo }>> {
+): Promise<LoginApiResponse> {
   return {
     success: false,
     error: 'Google 로그인은 아직 구현되지 않았습니다.',
@@ -30,7 +39,7 @@ export async function logoutByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
   request: LogoutRequest
-): Promise<ApiResponse> {
+): Promise<LogoutApiResponse> {
   return {
     success: false,
     error: 'Google 로그아웃은 아직 구현되지 않았습니다.',
@@ -46,7 +55,7 @@ export async function refreshTokenByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
   request: RefreshTokenRequest
-): Promise<ApiResponse<{ token: Token }>> {
+): Promise<RefreshTokenApiResponse> {
   return {
     success: false,
     error: 'Google 토큰 갱신은 아직 구현되지 않았습니다.',

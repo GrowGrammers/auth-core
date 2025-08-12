@@ -7,7 +7,10 @@ import {
   LogoutRequest, 
   LogoutResponse,
   RefreshTokenRequest,
-  RefreshTokenResponse
+  RefreshTokenResponse,
+  LoginApiResponse,
+  LogoutApiResponse,
+  RefreshTokenApiResponse
 } from './dtos/auth.dto';
 
 export interface ILoginProvider {
@@ -26,21 +29,21 @@ export interface ILoginProvider {
    * @param request 로그인 요청 정보
    * @returns 로그인 결과
    */
-  login(request: LoginRequest): Promise<LoginResponse>;
+  login(request: LoginRequest): Promise<LoginApiResponse>;
   
   /**
    * 로그아웃을 수행합니다.
    * @param request 로그아웃 요청 정보
    * @returns 로그아웃 결과
    */
-  logout(request: LogoutRequest): Promise<LogoutResponse>;
+  logout(request: LogoutRequest): Promise<LogoutApiResponse>;
   
   /**
    * 토큰을 갱신합니다.
    * @param request 토큰 갱신 요청 정보
    * @returns 토큰 갱신 결과
    */
-  refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse>;
+  refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse>;
   
   /**
    * 현재 토큰의 유효성을 검증합니다.

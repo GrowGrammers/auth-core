@@ -3,18 +3,23 @@
 
 import { AuthProviderType } from './literals';
 
-// 공통 응답 인터페이스 (성공 응답 전용)
+// 공통 응답 인터페이스 (기본 속성들)
 export interface BaseResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T | null;
 }
 
+// 성공 응답 인터페이스
+export interface SuccessResponse<T = unknown> extends BaseResponse<T> {
+  success: true;
+  data: T;
+}
+
 // 실패 응답 인터페이스
 export interface ErrorResponse extends BaseResponse<null> {
   success: false;
   data: null;
-  message: string;
   error: string;
 }
 

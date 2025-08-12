@@ -1,5 +1,5 @@
 // 인증 관련 DTO 정의
-import { Token, UserInfo, BaseResponse, ErrorResponse, BaseRequest } from '../../../shared/types';
+import { Token, UserInfo, SuccessResponse, ErrorResponse, BaseRequest } from '../../../shared/types';
 
 // 이메일 인증번호 요청 DTO
 export interface EmailVerificationRequest {
@@ -7,7 +7,7 @@ export interface EmailVerificationRequest {
 }
 
 // 이메일 인증번호 요청 응답 DTO
-export interface EmailVerificationResponse extends BaseResponse<void> {
+export interface EmailVerificationResponse extends SuccessResponse<void> {
 }
 
 // 이메일 로그인 요청 DTO
@@ -26,7 +26,7 @@ export interface OAuthLoginRequest extends BaseRequest {
 export type LoginRequest = EmailLoginRequest | OAuthLoginRequest;
 
 // 로그인 응답 DTO
-export interface LoginResponse extends BaseResponse<{ token: Token; userInfo: UserInfo }> {}
+export interface LoginResponse extends SuccessResponse<{ token: Token; userInfo: UserInfo }> {}
 
 // 로그아웃 요청 DTO
 export interface LogoutRequest extends BaseRequest {
@@ -34,8 +34,8 @@ export interface LogoutRequest extends BaseRequest {
 }
 
 // 로그아웃 응답 DTO
-export interface LogoutResponse extends BaseResponse<void> {
-  // BaseResponse의 success, message 필드를 상속받음
+export interface LogoutResponse extends SuccessResponse<void> {
+  // SuccessResponse의 success: true, message, data 필드를 상속받음
 }
 
 // 토큰 갱신 요청 DTO
@@ -44,7 +44,7 @@ export interface RefreshTokenRequest extends BaseRequest {
 }
 
 // 토큰 갱신 응답 DTO
-export interface RefreshTokenResponse extends BaseResponse<Token> {}
+export interface RefreshTokenResponse extends SuccessResponse<Token> {}
 
 // 응답 타입들을 ErrorResponse와의 유니온 타입으로 정의
 export type EmailVerificationApiResponse = EmailVerificationResponse | ErrorResponse;

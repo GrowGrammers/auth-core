@@ -1,7 +1,8 @@
 // 이메일 인증 기능 인터페이스
 import { 
   EmailVerificationRequest,
-  EmailVerificationResponse
+  EmailVerificationResponse,
+  EmailVerificationApiResponse
 } from './dtos/auth.dto';
 
 export interface IEmailVerifiable {
@@ -10,5 +11,5 @@ export interface IEmailVerifiable {
    * @param request 이메일 인증번호 요청 정보
    * @returns 인증번호 요청 결과
    */
-  requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse>;
+  requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationApiResponse>;
 } 

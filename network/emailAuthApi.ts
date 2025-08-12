@@ -1,20 +1,24 @@
 // EmailAuthProvider를 위한 실제 HTTP 통신 함수 모음
 import { HttpClient } from './interfaces/HttpClient';
 import { 
-  LoginRequest, 
-  LogoutRequest, 
+  EmailVerificationRequest, 
+  EmailLoginRequest, 
+  LoginRequest,
+  LogoutRequest,
   RefreshTokenRequest,
-  EmailVerificationRequest,
-  EmailLoginRequest
+  EmailVerificationApiResponse,
+  LoginApiResponse,
+  LogoutApiResponse,
+  RefreshTokenApiResponse
 } from '../providers/interfaces/dtos/auth.dto';
 import { 
   makeRequestWithRetry, 
-  makeRequest, 
+  makeRequest,
   handleHttpResponse, 
   createToken, 
   createUserInfo 
 } from './utils/httpUtils';
-import { ApiConfig, ApiResponse, Token, UserInfo, ErrorResponse } from '../shared/types';
+import { ApiConfig, Token, UserInfo, ErrorResponse } from '../shared/types';
 
 /**
  * 이메일 인증번호 요청
@@ -23,7 +27,7 @@ export async function requestEmailVerification(
   httpClient: HttpClient,
   config: ApiConfig,
   request: EmailVerificationRequest
-): Promise<ApiResponse> {
+): Promise<EmailVerificationApiResponse> {
   try {
     if (!request.email) {
       return {
@@ -63,7 +67,7 @@ export async function loginByEmail(
   httpClient: HttpClient,
   config: ApiConfig,
   request: LoginRequest
-): Promise<ApiResponse<{ token: Token; userInfo: UserInfo }>> {
+): Promise<LoginApiResponse> {
   try {
     // 타입 가드로 이메일 로그인 요청인지 확인
     if (request.provider !== 'email') {
@@ -125,7 +129,7 @@ export async function logoutByEmail(
   httpClient: HttpClient,
   config: ApiConfig,
   request: LogoutRequest
-): Promise<ApiResponse> {
+): Promise<LogoutApiResponse> {
   try {
     if (!request.token?.accessToken) {
       return {
@@ -167,7 +171,7 @@ export async function refreshTokenByEmail(
   httpClient: HttpClient,
   config: ApiConfig,
   request: RefreshTokenRequest
-): Promise<ApiResponse<{ token: Token }>> {
+): Promise<RefreshTokenApiResponse> {
   try {
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.refresh, {
       method: 'POST',
@@ -181,7 +185,7 @@ export async function refreshTokenByEmail(
       (data: unknown) => {
         const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number };
         const token = createToken(typedData);
-        return { success: true, data: { token }, message: '토큰이 갱신되었습니다.' };
+        return { success: true, data: token, message: '토큰이 갱신되었습니다.' };
       }
     );
 
