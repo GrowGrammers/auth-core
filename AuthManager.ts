@@ -14,7 +14,9 @@ import {
   LogoutRequest,
   LogoutApiResponse, 
   RefreshTokenRequest,
-  RefreshTokenApiResponse 
+  RefreshTokenApiResponse,
+  TokenValidationApiResponse,
+  UserInfoApiResponse
 } from './providers/interfaces/dtos/auth.dto';
 import { createErrorResponse, createErrorResponseFromException } from './shared/utils/errorUtils';
 
@@ -176,15 +178,15 @@ export class AuthManager {
    * 현재 토큰의 유효성 검증.
    * @returns 유효성 검증 결과
    */
-  async validateCurrentToken(): Promise<boolean> {
+  async validateCurrentToken(): Promise<TokenValidationApiResponse> {
     const token = await this.tokenStore.getToken();
     if (!token) {
-      return false;
+      return createErrorResponse('저장된 토큰이 없습니다.');
     }
     
     // 토큰이 만료되었는지 먼저 확인
     if (await this.tokenStore.isTokenExpired()) {
-      return false;
+      return createErrorResponse('토큰이 만료되었습니다.');
     }
     
     // Provider를 통해 토큰 유효성 검증
@@ -193,12 +195,12 @@ export class AuthManager {
 
   /**
    * 사용자 정보 가져오기.
-   * @returns 사용자 정보 또는 null
+   * @returns 사용자 정보 응답
    */
-  async getCurrentUserInfo(): Promise<UserInfo | null> {
+  async getCurrentUserInfo(): Promise<UserInfoApiResponse> {
     const token = await this.tokenStore.getToken();
     if (!token) {
-      return null;
+      return createErrorResponse('저장된 토큰이 없습니다.');
     }
     
     return await this.provider.getUserInfo(token);
@@ -214,7 +216,8 @@ export class AuthManager {
       return false;
     }
     
-    return await this.validateCurrentToken();
+    const validationResult = await this.validateCurrentToken();
+    return validationResult.success && validationResult.data;
   }
 
   /**
