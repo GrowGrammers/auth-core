@@ -126,13 +126,21 @@ export async function loginByEmail(
 
 ```typescript
 export interface TokenStore {
-  saveToken(token: Token): Promise<{ success: boolean; error?: string }>;
-  getToken(): Promise<{ success: boolean; data?: Token; error?: string }>;
-  removeToken(): Promise<{ success: boolean; error?: string }>;
-  hasToken(): Promise<{ success: boolean; data?: boolean; error?: string }>;
-  isTokenExpired(): Promise<{ success: boolean; data?: boolean; error?: string }>;
-  clear(): Promise<{ success: boolean; error?: string }>;
+  saveToken(token: Token): Promise<SaveTokenResponse>;
+  getToken(): Promise<GetTokenResponse>;
+  removeToken(): Promise<RemoveTokenResponse>;
+  hasToken(): Promise<HasTokenResponse>;
+  isTokenExpired(): Promise<IsTokenExpiredResponse>;
+  clear(): Promise<ClearResponse>;
 }
+
+// 응답 타입 정의
+type SaveTokenResponse = SuccessResponse<null> | ErrorResponse;
+type GetTokenResponse = SuccessResponse<Token | null> | ErrorResponse;
+type RemoveTokenResponse = SuccessResponse<null> | ErrorResponse;
+type HasTokenResponse = SuccessResponse<boolean> | ErrorResponse;
+type IsTokenExpiredResponse = SuccessResponse<boolean> | ErrorResponse;
+type ClearResponse = SuccessResponse<null> | ErrorResponse;
 ```
 
 **책임**: 토큰의 안전한 저장, 조회, 삭제
