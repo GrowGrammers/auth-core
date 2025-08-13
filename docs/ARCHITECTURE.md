@@ -3,11 +3,10 @@
 ## 📋 목차
 
 1. [핵심 아키텍처](#핵심-아키텍처)
-4. [모듈 구조](#모듈-구조)
-5. [데이터 흐름](#데이터-흐름)
-6. [설계 원칙](#설계-원칙)
-7. [확장성](#확장성)
-
+2. [모듈 구조](#모듈-구조)
+3. [데이터 흐름](#데이터-흐름)
+4. [설계 원칙](#설계-원칙)
+5. [확장성](#확장성)
 
 ## 핵심 아키텍처
 
@@ -43,7 +42,7 @@
 
 ```
 서비스 레이어 (외부)
-    ↓ (AuthManager 인스턴스 생성)
+    ↓ (AuthManager 인스턴스 생성 + 의존성 주입)
 AuthManager.ts (중앙 제어)
     ↓ (의존성 주입)
 Provider (EmailAuthProvider/GoogleAuthProvider)
@@ -65,15 +64,15 @@ export class AuthManager {
   constructor(config: AuthManagerConfig) {
     // 의존성 주입을 통한 플랫폼 독립성 확보
     this.provider = this.createProvider(config.providerType, config.apiConfig, config.httpClient);
-    this.tokenStore = config.tokenStore || this.createDefaultTokenStore();
+    this.tokenStore = config.tokenStore || this.createTokenStoreFromType(config.tokenStoreType);
   }
 
   // 인증 플로우 제어 메서드들
-  async login(request: LoginRequest): Promise<LoginResponse>
-  async logout(request: LogoutRequest): Promise<LogoutResponse>
-  async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse>
+  async login(request: LoginRequest): Promise<LoginApiResponse>
+  async logout(request: LogoutRequest): Promise<LogoutApiResponse>
+  async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationApiResponse>
   async getToken(): Promise<Token | null>
-  async validateCurrentToken(): Promise<boolean>
+  async validateCurrentToken(): Promise<TokenValidationApiResponse>
 }
 ```
 
@@ -84,15 +83,15 @@ export class AuthManager {
 ```typescript
 // 인터페이스 분리 원칙 적용
 export interface ILoginProvider {
-  login(request: LoginRequest): Promise<LoginResponse>
-  logout(request: LogoutRequest): Promise<LogoutResponse>
-  refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenResponse>
-  validateToken(token: Token): Promise<boolean>
-  getUserInfo(token: Token): Promise<UserInfo | null>
+  login(request: LoginRequest): Promise<LoginApiResponse>
+  logout(request: LogoutRequest): Promise<LogoutApiResponse>
+  refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse>
+  validateToken(token: Token): Promise<TokenValidationApiResponse>
+  getUserInfo(token: Token): Promise<UserInfoApiResponse>
 }
 
 export interface IEmailVerifiable {
-  requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationResponse>
+  requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationApiResponse>
 }
 
 // 유니온 타입으로 하위 호환성 보장
@@ -116,7 +115,7 @@ export async function loginByEmail(
   httpClient: HttpClient,
   config: ApiConfig,
   request: LoginRequest
-): Promise<ApiResponse<{ token: Token; userInfo: UserInfo }>>
+): Promise<LoginApiResponse>
 ```
 
 **책임**: 실제 HTTP 통신 처리, 에러 핸들링, 응답 변환
@@ -125,12 +124,12 @@ export async function loginByEmail(
 
 ```typescript
 export interface TokenStore {
-  saveToken(token: Token): Promise<boolean>;
-  getToken(): Promise<Token | null>;
-  removeToken(): Promise<boolean>;
-  hasToken(): Promise<boolean>;
-  isTokenExpired(): Promise<boolean>;
-  clear(): Promise<boolean>;
+  saveToken(token: Token): Promise<{ success: boolean; error?: string }>;
+  getToken(): Promise<{ success: boolean; data?: Token; error?: string }>;
+  removeToken(): Promise<{ success: boolean; error?: string }>;
+  hasToken(): Promise<{ success: boolean; data?: boolean; error?: string }>;
+  isTokenExpired(): Promise<{ success: boolean; data?: boolean; error?: string }>;
+  clear(): Promise<{ success: boolean; error?: string }>;
 }
 ```
 
@@ -145,31 +144,37 @@ export function createAuthProvider(
   config: AuthProviderConfig,
   httpClient: HttpClient,
   apiConfig: ApiConfig
-): AuthProvider
+): AuthProviderFactoryResult
 
 export function createAuthManager(
   config: AuthManagerConfig,
   httpClient: HttpClient,
   tokenStoreType?: TokenStoreType
 ): AuthManager
+
+export function createTokenStore(
+  type: TokenStoreType
+): TokenStoreFactoryResult
 ```
 
-**책임**: 복잡한 객체 생성 로직 캡슐화
+**책임**: 복잡한 객체 생성 로직 캡슐화, 타입 안전성 보장
 
 ## 데이터 흐름
 
 ### 1. 로그인 플로우
 
 ```typescript
-// 1. 서비스에서 AuthManager 생성
+// 1. 서비스에서 AuthManager 생성 (의존성 주입)
 const authManager = new AuthManager({
   providerType: 'email',
   apiConfig: { /* API 설정 */ },
-  httpClient: myHttpClient  // 플랫폼별 구현체 주입
+  httpClient: myHttpClient,  // ← 필수! 외부에서 주입
+  tokenStoreType: 'web'      // 또는 직접 TokenStore 인스턴스 제공
 });
 
 // 2. 로그인 요청
 const result = await authManager.login({
+  provider: 'email',
   email: 'user@example.com',
   verificationCode: '123456'
 });
@@ -183,7 +188,7 @@ const result = await authManager.login({
 
 ```typescript
 // 1. 토큰 검증 요청
-const isValid = await authManager.validateCurrentToken();
+const validationResult = await authManager.validateCurrentToken();
 
 // 2. 내부 처리 흐름
 // TokenStore에서 토큰 조회 → 만료 확인 → Provider를 통한 서버 검증
@@ -193,7 +198,7 @@ const isValid = await authManager.validateCurrentToken();
 
 ```typescript
 // 1. 이메일 인증 요청
-await authManager.requestEmailVerification({ 
+const verificationResult = await authManager.requestEmailVerification({ 
   email: 'user@example.com' 
 });
 
@@ -210,12 +215,16 @@ await authManager.requestEmailVerification({
 export interface AuthManagerConfig {
   providerType: 'email' | 'google';
   apiConfig: ApiConfig;
-  httpClient: HttpClient;  // 필수 주입
-  tokenStore?: TokenStore; // 선택적 주입
+  httpClient: HttpClient;  // 필수 주입 - 플랫폼별 HTTP 클라이언트
+  tokenStore?: TokenStore; // 선택적 주입 - 직접 TokenStore 인스턴스
+  tokenStoreType?: 'web' | 'mobile' | 'fake'; // 선택적 주입 - 타입으로 팩토리 생성
 }
 ```
 
-**장점**: 플랫폼 독립성, 테스트 용이성, 런타임 교체 가능
+**장점**: 
+- 플랫폼 독립성: 브라우저, Node.js, React Native 등 모든 환경에서 사용 가능
+- 테스트 용이성: Mock HTTP 클라이언트 주입으로 단위 테스트 가능
+- 런타임 교체 가능: 필요에 따라 다른 HTTP 클라이언트로 교체 가능
 
 ### 2. 인터페이스 분리 (Interface Segregation)
 
@@ -233,7 +242,7 @@ interface TokenStore { /* 토큰 저장 */ }
 
 ```typescript
 export interface ApiConfig {
-  apiBaseUrl: string;
+  baseUrl: string;
   endpoints: ApiEndpoints;
   timeout?: number;
   retryCount?: number;
@@ -248,12 +257,13 @@ export interface ApiConfig {
 - `EmailAuthProvider`: 이메일 인증 로직
 - `TokenStore`: 토큰 저장/관리
 - `HttpClient`: HTTP 통신
+- `Factory`: 객체 생성 로직
 
 ### 5. 개방-폐쇄 원칙 (Open-Closed)
 
 ```typescript
 // 새로운 Provider 추가 시 기존 코드 수정 없이 확장
-export function createAuthProvider(type: AuthProviderType, ...): AuthProvider {
+export function createAuthProvider(type: AuthProviderType, ...): AuthProviderFactoryResult {
   switch (type) {
     case 'email': return new EmailAuthProvider(...);
     case 'google': return new GoogleAuthProvider(...);
@@ -277,6 +287,12 @@ protected createResponse<T extends BaseResponse>(
 private isEmailVerifiable(provider: AuthProvider): provider is AuthProvider & IEmailVerifiable {
   return 'requestEmailVerification' in provider;
 }
+
+// 팩토리 결과의 타입 안전성
+if (isAuthProviderFactoryError(result)) {
+  throw new Error(result.message);
+}
+return result; // 여기서부터 result는 AuthProvider 타입으로 안전하게 좁혀짐
 ```
 
 ## 확장성
@@ -290,7 +306,7 @@ export class FacebookAuthProvider implements ILoginProvider {
 }
 
 // 2. Factory에 추가
-export function createAuthProvider(type: AuthProviderType, ...): AuthProvider {
+export function createAuthProvider(type: AuthProviderType, ...): AuthProviderFactoryResult {
   switch (type) {
     case 'facebook': return new FacebookAuthProvider(...);
   }
@@ -317,8 +333,8 @@ const DesktopTokenStore: TokenStore = {
 const authManager = new AuthManager({
   providerType: 'email',
   apiConfig: desktopApiConfig,
-  httpClient: new DesktopHttpClient(),
-  tokenStore: DesktopTokenStore
+  httpClient: new DesktopHttpClient(),  // ← 플랫폼별 HTTP 클라이언트 주입
+  tokenStore: DesktopTokenStore         // ← 플랫폼별 토큰 저장소 주입
 });
 ```
 
@@ -356,12 +372,13 @@ Auth Core는 다음과 같은 특징을 가진 **플랫폼 독립적인 인증 �
 - **모듈화**: 각 컴포넌트가 명확한 책임을 가짐
 - **확장성**: 새로운 인증 방식과 플랫폼 쉽게 추가
 - **테스트 용이성**: 의존성 주입으로 Mock 구현체 사용 가능
-- **타입 안전성**: TypeScript로 컴파일 타임 오류 검출
+- **타입 안전성**: TypeScript로 컴파일 타임 오류 검출 및 타입 가드 활용
 
 ### ✅ **팀 협업 장점**
 - **공통 모듈**: 웹/모바일/백엔드에서 동일한 인증 로직 사용
 - **인터페이스 기반**: 각 플랫폼 모듈에서 필요한 구현체만 제공
 - **설정 분리**: 환경별 API 설정을 각 모듈에서 관리
+- **의존성 주입**: HTTP 클라이언트와 토큰 저장소를 외부에서 주입받아 플랫폼 독립성 확보
 
 ### ✅ **유지보수성**
 - **단일 책임**: 각 클래스가 하나의 명확한 역할
