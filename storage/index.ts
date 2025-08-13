@@ -5,36 +5,6 @@ export * from './TokenStore.interface';
 // export { MobileTokenStore } from './MobileTokenStore';
 export { FakeTokenStore } from './FakeTokenStore';
 
-// Storage 레이어 전용 응답 생성 유틸리티
-import { SuccessResponse, ErrorResponse } from '../shared/types';
-
-/**
- * Storage 레이어에서 사용하는 성공 응답 생성 함수
- * Provider 레이어에 의존하지 않음
- */
-export function createStorageSuccessResponse<T>(
-  message: string,
-  data: T
-): SuccessResponse<T> {
-  return {
-    success: true,
-    message,
-    data
-  };
-}
-
-/**
- * Storage 레이어에서 사용하는 에러 응답 생성 함수
- * Provider 레이어에 의존하지 않음
- */
-export function createStorageErrorResponse(
-  message: string,
-  error: string
-): ErrorResponse {
-  return {
-    success: false,
-    message,
-    error,
-    data: null
-  };
-} 
+// Storage 레이어 전용 응답 생성 유틸리티 (공통 유틸리티 재사용)
+export { createSuccessResponse as createStorageSuccessResponse } from '../shared/utils';
+export { createErrorResponse as createStorageErrorResponse } from '../shared/utils'; 
