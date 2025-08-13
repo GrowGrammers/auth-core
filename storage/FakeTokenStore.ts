@@ -60,12 +60,7 @@ export const FakeTokenStore: TokenStore = {
       );
     } catch (error) {
       console.error('토큰 존재 확인 중 오류 발생:', error);
-      return { 
-        success: false, 
-        error: '토큰 존재 확인 실패', 
-        message: '토큰 존재 확인 중 오류가 발생했습니다.', 
-        data: null 
-      };
+      return createTokenReadErrorResponse('토큰 존재 확인 중 오류가 발생했습니다.');
     }
   },
 
@@ -82,12 +77,7 @@ export const FakeTokenStore: TokenStore = {
       );
     } catch (error) {
       console.error('토큰 만료 확인 중 오류 발생:', error);
-      return { 
-        success: false, 
-        error: '토큰 만료 확인 실패', 
-        message: '토큰 만료 확인 중 오류가 발생했습니다.', 
-        data: null 
-      };
+      return createTokenReadErrorResponse('토큰 만료 확인 중 오류가 발생했습니다.');
     }
   },
 

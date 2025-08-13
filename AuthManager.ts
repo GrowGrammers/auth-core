@@ -17,7 +17,7 @@ import {
   TokenValidationApiResponse,
   UserInfoApiResponse
 } from './providers/interfaces/dtos/auth.dto';
-import { createErrorResponse, createErrorResponseFromException } from './shared/utils/errorUtils';
+import { createErrorResponse, createErrorResponseFromException, createSuccessResponse } from './shared/utils';
 import { SuccessResponse, ErrorResponse } from './shared/types/common';
 
 // AuthManager 공개 API 응답 타입들
@@ -259,15 +259,14 @@ export class AuthManager {
     try {
       const hasTokenResult = await this.tokenStore.hasToken();
       if (!hasTokenResult.success || !hasTokenResult.data) {
-        return { success: true, data: false, message: '토큰이 없습니다.' };
+        return createSuccessResponse('토큰이 없습니다.', false);
       }
       
       const validationResult = await this.validateCurrentToken();
-      return { 
-        success: true, 
-        data: validationResult.success && validationResult.data, 
-        message: validationResult.success ? '인증 상태 확인 완료' : '토큰이 유효하지 않습니다.'
-      };
+      return createSuccessResponse(
+        validationResult.success ? '인증 상태 확인 완료' : '토큰이 유효하지 않습니다.',
+        validationResult.success && validationResult.data
+      );
     } catch (error) {
       console.error('인증 상태 확인 중 오류 발생:', error);
       return createErrorResponseFromException(error, '인증 상태 확인 중 오류가 발생했습니다.');
