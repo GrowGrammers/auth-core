@@ -18,6 +18,12 @@ import {
   UserInfoApiResponse
 } from './providers/interfaces/dtos/auth.dto';
 import { createErrorResponse, createErrorResponseFromException } from './shared/utils/errorUtils';
+import { SuccessResponse, ErrorResponse } from './shared/types/common';
+
+// AuthManager 공개 API 응답 타입들
+export type GetTokenResponse = SuccessResponse<Token | null> | ErrorResponse;
+export type IsAuthenticatedApiResponse = SuccessResponse<boolean> | ErrorResponse;
+export type ClearResponse = SuccessResponse<void> | ErrorResponse;
 
 export interface AuthManagerConfig {
   providerType: 'email' | 'google';
@@ -174,15 +180,15 @@ export class AuthManager {
   
   /**
    * 저장된 토큰 가져오기.
-   * @returns 저장된 토큰 또는 null
+   * @returns 저장된 토큰 응답
    */
-  async getToken(): Promise<Token | null> {
-    const result = await this.tokenStore.getToken();
-    if (result.success) {
-      return result.data;
-    } else {
-      console.error('토큰 가져오기 실패:', result.error);
-      return null;
+  async getToken(): Promise<GetTokenResponse> {
+    try {
+      const result = await this.tokenStore.getToken();
+      return result;
+    } catch (error) {
+      console.error('토큰 가져오기 중 오류 발생:', error);
+      return createErrorResponseFromException(error, '토큰 가져오기 중 오류가 발생했습니다.');
     }
   }
 
@@ -217,7 +223,7 @@ export class AuthManager {
    * @returns 유효성 검증 결과
    */
   async validateCurrentToken(): Promise<TokenValidationApiResponse> {
-    const tokenResult = await this.tokenStore.getToken();
+    const tokenResult = await this.getToken();
     if (!tokenResult.success || !tokenResult.data) {
       return createErrorResponse('저장된 토큰이 없습니다.');
     }
@@ -237,7 +243,7 @@ export class AuthManager {
    * @returns 사용자 정보 응답
    */
   async getCurrentUserInfo(): Promise<UserInfoApiResponse> {
-    const tokenResult = await this.tokenStore.getToken();
+    const tokenResult = await this.getToken();
     if (!tokenResult.success || !tokenResult.data) {
       return createErrorResponse('저장된 토큰이 없습니다.');
     }
@@ -247,25 +253,39 @@ export class AuthManager {
 
   /**
    * 현재 인증 상태 확인.
-   * @returns 인증 상태
+   * @returns 인증 상태 응답
    */
-  async isAuthenticated(): Promise<boolean> {
-    const hasTokenResult = await this.tokenStore.hasToken();
-    if (!hasTokenResult.success || !hasTokenResult.data) {
-      return false;
+  async isAuthenticated(): Promise<IsAuthenticatedApiResponse> {
+    try {
+      const hasTokenResult = await this.tokenStore.hasToken();
+      if (!hasTokenResult.success || !hasTokenResult.data) {
+        return { success: true, data: false, message: '토큰이 없습니다.' };
+      }
+      
+      const validationResult = await this.validateCurrentToken();
+      return { 
+        success: true, 
+        data: validationResult.success && validationResult.data, 
+        message: validationResult.success ? '인증 상태 확인 완료' : '토큰이 유효하지 않습니다.'
+      };
+    } catch (error) {
+      console.error('인증 상태 확인 중 오류 발생:', error);
+      return createErrorResponseFromException(error, '인증 상태 확인 중 오류가 발생했습니다.');
     }
-    
-    const validationResult = await this.validateCurrentToken();
-    return validationResult.success && validationResult.data;
   }
 
   /**
    * 저장소 초기화.
-   * @returns 초기화 성공 여부
+   * @returns 초기화 결과 응답
    */
-  async clear(): Promise<boolean> {
-    const clearResult = await this.tokenStore.clear();
-    return clearResult.success;
+  async clear(): Promise<ClearResponse> {
+    try {
+      const clearResult = await this.tokenStore.clear();
+      return clearResult;
+    } catch (error) {
+      console.error('저장소 초기화 중 오류 발생:', error);
+      return createErrorResponseFromException(error, '저장소 초기화 중 오류가 발생했습니다.');
+    }
   }
 }
 

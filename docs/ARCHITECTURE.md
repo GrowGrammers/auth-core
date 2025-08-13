@@ -71,7 +71,9 @@ export class AuthManager {
   async login(request: LoginRequest): Promise<LoginApiResponse>
   async logout(request: LogoutRequest): Promise<LogoutApiResponse>
   async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationApiResponse>
-  async getToken(): Promise<Token | null>
+  async getToken(): Promise<GetTokenResponse>
+  async isAuthenticated(): Promise<IsAuthenticatedApiResponse>
+  async clear(): Promise<ClearResponse>
   async validateCurrentToken(): Promise<TokenValidationApiResponse>
 }
 ```
