@@ -26,13 +26,13 @@ Network Layer (emailAuthApi.ts/googleAuthApi.ts)
 ### 외부 모듈과의 상호작용
 ```
 AuthWebModule (웹 특화)
-    ↓ (HTTP 클라이언트 주입)
+    ↓ (HTTP 클라이언트 + 토큰 저장소 주입)
 Auth Core (공통 모듈)
     ↓ (API 요청)
 AuthBackendService (백엔드)
 
 mobile-app (모바일 특화)
-    ↓ (토큰 저장소 주입)
+    ↓ (HTTP 클라이언트 + 토큰 저장소 주입)
 Auth Core (공통 모듈)
     ↓ (API 요청)
 AuthBackendService (백엔드)
@@ -40,11 +40,13 @@ AuthBackendService (백엔드)
 
 ## 🚀 주요 특징
 
-- **🔧 플랫폼 독립성**: HTTP 클라이언트와 토큰 저장소를 주입받아 사용
+- **🔧 플랫폼 독립성**: HTTP 클라이언트와 토큰 저장소를 외부에서 주입받아 사용
 - **⚙️ 설정 가능한 API**: 환경별 API 엔드포인트 설정 지원
-- **🛡️ 타입 안전성**: TypeScript로 완전한 타입 지원
+- **🛡️ 타입 안전성**: TypeScript로 완전한 타입 지원 및 타입 가드 활용
 - **📦 모듈화**: 필요한 기능만 선택적으로 사용 가능
 - **🤝 공통 모듈**: 웹/모바일/백엔드 모듈에서 공통으로 사용하는 인증 로직
+- **🏭 팩토리 패턴**: 객체 생성 로직을 팩토리로 분리하여 복잡성 감소
+- **🔄 일관된 응답 구조**: 모든 API 메서드가 `{ success, data, message }` 형태의 응답 구조 사용
 
 ## 📦 설치
 
@@ -68,7 +70,12 @@ auth-core/
 │   └── interfaces/
 ├── storage/                      # 토큰 저장소 인터페이스
 ├── factories/                    # 객체 생성 (Factory Pattern)
-├── types.ts                      # 공통 타입 정의
+│   ├── AuthManagerFactory.ts    # AuthManager 생성
+│   ├── AuthProviderFactory.ts   # Provider 생성
+│   └── TokenStoreFactory.ts     # TokenStore 생성
+├── shared/                       # 공통 유틸리티
+│   ├── types/                    # 타입 정의
+│   └── utils/                    # 유틸리티 함수
 └── index.ts                      # 진입점 export
 ```
 
@@ -79,41 +86,27 @@ auth-core/
 ```typescript
 import { AuthManager } from 'auth-core';
 
-// 1. AuthManager 인스턴스 생성 (기본 사용법)
+// 1. HTTP 클라이언트 구현 (플랫폼별로 다름)
+class FetchHttpClient implements HttpClient {
+  async request(config: HttpRequestConfig): Promise<HttpResponse> {
+    // fetch 기반 구현
+  }
+}
+
+// 2. AuthManager 인스턴스 생성
 const authManager = new AuthManager({
   providerType: 'email',
-  apiConfig: {
-    baseUrl: 'https://api.myservice.com',
-    endpoints: {
-      login: '/api/v1/login',
-      logout: '/api/v1/logout',
-      requestVerification: '/email/verify'
-    }
-  },
-  httpClient: myHttpClient,  // 서비스에서 주입
-  tokenStoreType: 'web'      // 웹용 토큰 저장소 사용
+  apiConfig: { /* API 설정 */ },
+  httpClient: new FetchHttpClient(),
+  tokenStoreType: 'web'
 });
 
-// 또는 직접 TokenStore 인스턴스 제공
-const customTokenStore = new CustomTokenStore();
-const authManagerWithCustomStore = new AuthManager({
-  providerType: 'email',
-  apiConfig: { /* ... */ },
-  httpClient: myHttpClient,
-  tokenStore: customTokenStore  // 직접 TokenStore 인스턴스 제공
-});
-
-// 2. 이메일 인증 요청
-await authManager.requestEmailVerification({ 
-  email: 'user@example.com' 
-});
-
-// 3. 로그인
-const result = await authManager.login({
-  email: 'user@example.com',
-  verificationCode: '123456'
-});
+// 3. 기본 인증 플로우
+await authManager.requestEmailVerification({ email: 'user@example.com' });
+const result = await authManager.login({ email: 'user@example.com', verificationCode: '123456' });
 ```
+
+**더 자세한 사용법은 [사용 가이드](docs/USAGE_GUIDE.md)를 참조하세요.**
 
 ## 📚 주요 기능
 
@@ -132,49 +125,68 @@ const result = await authManager.login({
 
 각 플랫폼 모듈(AuthWebModule, mobile-app)에서는 다음을 구현해야 합니다:
 
-### HTTP 클라이언트
+### HTTP 클라이언트 (필수)
 ```typescript
 interface HttpClient {
   request(config: HttpRequestConfig): Promise<HttpResponse>;
 }
 ```
 
-### 토큰 저장소
+**구현 예시**:
+- **브라우저**: `fetch` 기반 클라이언트
+- **Node.js**: `axios` 기반 클라이언트  
+- **React Native**: `fetch` 또는 `axios` 기반 클라이언트
+
+### 토큰 저장소 (선택)
 ```typescript
 interface TokenStore {
-  saveToken(token: Token): Promise<boolean>;
-  getToken(): Promise<Token | null>;
-  removeToken(): Promise<boolean>;
+  saveToken(token: Token): Promise<SaveTokenResponse>;
+  getToken(): Promise<GetTokenResponse>;
+  removeToken(): Promise<RemoveTokenResponse>;
+  hasToken(): Promise<HasTokenResponse>;
+  isTokenExpired(): Promise<IsTokenExpiredResponse>;
+  clear(): Promise<ClearResponse>;
 }
 ```
+
+**구현 예시**:
+- **웹**: `localStorage` 기반 저장소
+- **모바일**: `SecureStore` 기반 저장소
+- **백엔드**: 메모리 또는 Redis 기반 저장소
 
 ## 🛡️ 타입 안전성
 
 이 모듈은 TypeScript의 타입 가드를 활용하여 런타임 안전성을 보장합니다:
-
-### 팩토리 결과 처리
-```typescript
-// ❌ 위험한 강제 캐스팅 (이전 방식)
-const result = createAuthProvider(providerType, config, httpClient, apiConfig);
-return result as AuthProvider; // 런타임 에러 가능성
-
-// ✅ 안전한 타입 가드 사용 (현재 방식)
-const result = createAuthProvider(providerType, config, httpClient, apiConfig);
-
-if (isAuthProviderFactoryError(result)) {
-  console.error('인증 제공자 생성 실패:', result.error);
-  throw new Error(result.message);
-}
-
-// 여기서부터 result는 AuthProvider 타입으로 안전하게 좁혀짐
-return result;
-```
 
 ### 타입 가드 함수들
 - `isAuthProviderFactoryError()`: 인증 제공자 팩토리 에러 확인
 - `isTokenStoreFactoryError()`: 토큰 저장소 팩토리 에러 확인
 - `isFactorySuccess()`: 팩토리 성공 결과 확인
 - `isFactoryError()`: 팩토리 에러 결과 확인
+
+## 🔄 API 응답 구조
+
+모든 API 메서드는 일관된 응답 구조를 사용합니다:
+
+### 성공 응답
+```typescript
+interface SuccessResponse<T> {
+  success: true;
+  data: T;
+  message: string;
+}
+```
+
+### 에러 응답
+```typescript
+interface ErrorResponse {
+  success: false;
+  error: string;
+  message: string;
+}
+```
+
+**구체적인 사용 예시는 [사용 가이드](docs/USAGE_GUIDE.md)를 참조하세요.**
 
 ## 🎨 설계 원칙
 

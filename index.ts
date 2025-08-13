@@ -46,10 +46,6 @@ export {
   isTokenStoreFactorySuccess,
   isTokenStoreFactoryError
 } from './factories/TokenStoreFactory';
-export { 
-  createAuthManager, 
-  createAuthManagerLegacy
-} from './factories/AuthManagerFactory';
 
 // AuthManager 설정 타입
 export { AuthManagerConfig } from './AuthManager';

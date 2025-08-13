@@ -2,9 +2,84 @@
 
 ## 📋 목차
 
+1. [API 응답 구조](#api-응답-구조)
 2. [기본 사용법](#기본-사용법)
-3. [플랫폼별 구현](#플랫폼별-구현)
-4. [고급 사용법](#고급-사용법)
+3. [API 응답 구조 베스트 프랙티스](#-api-응답-구조-베스트-프랙티스)
+
+## API 응답 구조
+
+모든 API 메서드는 일관된 응답 구조를 사용합니다. 이는 에러 처리와 타입 안전성을 향상시킵니다.
+
+### 응답 타입 정의
+
+```typescript
+// 성공 응답
+interface SuccessResponse<T> {
+  success: true;
+  data: T;
+  message: string;
+}
+
+// 에러 응답
+interface ErrorResponse {
+  success: false;
+  error: string;
+  message: string;
+}
+
+// API 응답 유니온 타입
+type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
+```
+
+### 주요 메서드별 응답 타입
+
+```typescript
+// 토큰 검증
+validateToken(token: Token): Promise<TokenValidationApiResponse>
+// TokenValidationApiResponse = SuccessResponse<boolean> | ErrorResponse
+
+// 사용자 정보 조회
+getUserInfo(token: Token): Promise<UserInfoApiResponse>
+// UserInfoApiResponse = SuccessResponse<UserInfo> | ErrorResponse
+
+// 서비스 가용성 확인
+isAvailable(): Promise<ServiceAvailabilityApiResponse>
+// ServiceAvailabilityApiResponse = SuccessResponse<boolean> | ErrorResponse
+
+// 토큰 저장소 메서드들
+saveToken(token: Token): Promise<SaveTokenResponse>
+getToken(): Promise<GetTokenResponse>
+removeToken(): Promise<RemoveTokenResponse>
+hasToken(): Promise<HasTokenResponse>
+isTokenExpired(): Promise<IsTokenExpiredResponse>
+clear(): Promise<ClearResponse>
+```
+
+### 주요 변경사항
+
+**이전**
+```typescript
+// boolean 반환
+const isValid = await provider.validateToken(token);
+if (isValid) { ... }
+
+// 직접 데이터 접근
+const userInfo = await provider.getUserInfo(token);
+console.log(userInfo.name);
+```
+
+**현재**
+```typescript
+// ApiResponse 반환
+const result = await provider.validateToken(token);
+if (result.success && result.data) { ... }
+
+// 안전한 데이터 접근
+const result = await provider.getUserInfo(token);
+if (result.success) {
+  console.log(result.data.name);
+}
+```
 
 
 ## 기본 사용법
@@ -40,7 +115,7 @@ class MockHttpClient implements HttpClient {
 
 // API 설정
 const apiConfig = {
-  apiBaseUrl: 'https://api.example.com',
+  baseUrl: 'https://api.example.com',
   endpoints: {
     requestVerification: '/auth/email/verification',
     login: '/auth/login',
@@ -58,14 +133,11 @@ const apiConfig = {
 const authManagerConfig: AuthManagerConfig = {
   providerType: 'email',
   apiConfig,
-  httpClient: new MockHttpClient()
+  httpClient: new MockHttpClient()  // ← 필수! HTTP 클라이언트 주입
 };
 
 // AuthManager 생성
-const authManager = createAuthManager(
-  authManagerConfig,
-  new MockHttpClient()
-);
+const authManager = new AuthManager(authManagerConfig);
 ```
 
 ### 2. 인증 플로우 사용
@@ -92,705 +164,193 @@ const loginResult = await authManager.login({
 
 if (loginResult.success) {
   console.log('로그인 성공!');
-  console.log('사용자 정보:', loginResult.user);
+  console.log('사용자 정보:', loginResult.data?.userInfo);
 } else {
   console.error('로그인 실패:', loginResult.error);
 }
 
 // 3. 토큰 검증
-const isValid = await authManager.validateCurrentToken();
-console.log('토큰 유효성:', isValid);
+const validationResult = await authManager.validateCurrentToken();
+if (validationResult.success) {
+  console.log('토큰이 유효합니다.');
+} else {
+  console.log('토큰이 유효하지 않습니다:', validationResult.error);
+}
 
 // 4. 사용자 정보 조회
-const userInfo = await authManager.getCurrentUserInfo();
-console.log('현재 사용자:', userInfo);
+const userInfoResult = await authManager.getCurrentUserInfo();
+if (userInfoResult.success) {
+  console.log('현재 사용자:', userInfoResult.data);
+} else {
+  console.log('사용자 정보 조회 실패:', userInfoResult.error);
+}
 
 // 5. 토큰 갱신
-const token = await authManager.getToken();
-if (token?.refreshToken) {
+const tokenResult = await authManager.getToken();
+if (tokenResult.success && tokenResult.data?.refreshToken) {
   const refreshResult = await authManager.refreshToken({
-    refreshToken: token.refreshToken
+    refreshToken: tokenResult.data.refreshToken
   });
-  console.log('토큰 갱신 결과:', refreshResult);
+  if (refreshResult.success) {
+    console.log('토큰 갱신 성공');
+  } else {
+    console.log('토큰 갱신 실패:', refreshResult.error);
+  }
 }
 
 // 6. 로그아웃
-const logoutResult = await authManager.logout({
-  token: await authManager.getToken()
-});
-console.log('로그아웃 결과:', logoutResult);
+const token = await authManager.getToken();
+if (token.success && token.data) {
+  const logoutResult = await authManager.logout({
+    token: token.data
+  });
+  if (logoutResult.success) {
+    console.log('로그아웃 성공');
+  } else {
+    console.log('로그아웃 실패:', logoutResult.error);
+  }
+}
 ```
 
 ### 3. 토큰 관리
 
 ```typescript
 // 토큰 조회
-const token = await authManager.getToken();
-console.log('현재 토큰:', token);
-
-// 토큰 만료 확인
-const isExpired = await authManager.isTokenExpired();
-console.log('토큰 만료 여부:', isExpired);
+const tokenResult = await authManager.getToken();
+if (tokenResult.success) {
+  console.log('현재 토큰:', tokenResult.data);
+} else {
+  console.log('토큰 조회 실패:', tokenResult.error);
+}
 
 // 인증 상태 확인
-const isAuthenticated = await authManager.isAuthenticated();
-console.log('인증 상태:', isAuthenticated);
+const authStatusResult = await authManager.isAuthenticated();
+if (authStatusResult.success) {
+  console.log('인증 상태:', authStatusResult.data);
+} else {
+  console.log('인증 상태 확인 실패:', authStatusResult.error);
+}
 
 // 모든 인증 데이터 정리
-await authManager.clear();
-```
-
-## 플랫폼별 구현
-
-### 웹 프론트엔드
-
-#### HTTP 클라이언트 구현
-
-```typescript
-// src/http/FetchHttpClient.ts
-import { HttpClient, HttpRequestConfig, HttpResponse } from 'auth-core';
-
-export class FetchHttpClient implements HttpClient {
-  async request(config: HttpRequestConfig): Promise<HttpResponse> {
-    const response = await fetch(config.url, {
-      method: config.method,
-      headers: config.headers,
-      body: config.body
-    });
-
-    return {
-      ok: response.ok,
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries()),
-      json: () => response.json(),
-      text: () => response.text()
-    };
-  }
+const clearResult = await authManager.clear();
+if (clearResult.success) {
+  console.log('정리 완료');
+} else {
+  console.log('정리 실패:', clearResult.error);
 }
 ```
 
-#### 토큰 저장소 구현
+
+
+이 가이드를 따라하면 Auth Core를 각 플랫폼에서 효과적으로 사용할 수 있습니다!
+
+## API 응답 구조 베스트 프랙티스
+
+### 1. 일관된 에러 처리
 
 ```typescript
-// src/storage/WebTokenStore.ts
-import { TokenStore, Token } from 'auth-core';
-
-export const WebTokenStore: TokenStore = {
-  async saveToken(token: Token): Promise<boolean> {
-    try {
-      localStorage.setItem('accessToken', token.accessToken);
-      if (token.refreshToken) {
-        localStorage.setItem('refreshToken', token.refreshToken);
-      }
-      if (token.expiresAt) {
-        localStorage.setItem('expiresAt', token.expiresAt.toString());
-      }
-      return true;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  async getToken(): Promise<Token | null> {
-    const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) return null;
-    
-    const refreshToken = localStorage.getItem('refreshToken') || undefined;
-    const expiresAtStr = localStorage.getItem('expiresAt');
-    const expiresAt = expiresAtStr ? Number(expiresAtStr) : undefined;
-    
-    return { accessToken, refreshToken, expiresAt };
-  },
-
-  async removeToken(): Promise<boolean> {
-    try {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('expiresAt');
-      return true;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  async hasToken(): Promise<boolean> {
-    return localStorage.getItem('accessToken') !== null;
-  },
-
-  async isTokenExpired(): Promise<boolean> {
-    const expiresAtStr = localStorage.getItem('expiresAt');
-    if (!expiresAtStr) return false;
-    const expiresAt = Number(expiresAtStr);
-    return Date.now() > expiresAt;
-  },
-
-  async clear(): Promise<boolean> {
-    try {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('expiresAt');
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-};
-```
-
-#### AuthManager 설정
-
-```typescript
-// src/auth/authManager.ts
-import { 
-  createAuthManager,
-  AuthManagerConfig
-} from 'auth-core';
-import { FetchHttpClient } from '../http/FetchHttpClient';
-import { WebTokenStore } from '../storage/WebTokenStore';
-
-// API 설정
-const apiConfig = {
-  apiBaseUrl: 'https://api.example.com',
-  endpoints: {
-    requestVerification: '/auth/email/verification',
-    login: '/auth/login',
-    logout: '/auth/logout',
-    refresh: '/auth/refresh',
-    validate: '/auth/validate',
-    me: '/auth/me',
-    health: '/auth/health'
-  },
-  timeout: 10000,
-  retryCount: 3
-};
-
-// AuthManager 설정
-const authManagerConfig: AuthManagerConfig = {
-  providerType: 'email',
-  apiConfig,
-  httpClient: new FetchHttpClient(),
-  tokenStore: WebTokenStore
-};
-
-// AuthManager 생성
-export const authManager = createAuthManager(
-  authManagerConfig,
-  new FetchHttpClient(),
-  'web'
-);
-```
-
-#### React 컴포넌트에서 사용
-
-```typescript
-// src/components/LoginForm.tsx
-import React, { useState } from 'react';
-import { authManager } from '../auth/authManager';
-
-export const LoginForm: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-
-  const handleRequestVerification = async () => {
-    try {
-      const response = await authManager.requestEmailVerification({
-        email
-      });
-
-      if (response.success) {
-        setMessage('인증번호가 전송되었습니다.');
-      } else {
-        setMessage(`인증번호 전송 실패: ${response.error}`);
-      }
-    } catch (error) {
-      setMessage('인증번호 요청 중 오류가 발생했습니다.');
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const response = await authManager.login({
-        provider: 'email',
-        email,
-        verificationCode,
-        rememberMe: true
-      });
-
-      if (response.success) {
-        setMessage('로그인 성공!');
-        // 로그인 성공 후 처리 (예: 리다이렉트)
-      } else {
-        setMessage(`로그인 실패: ${response.error}`);
-      }
-    } catch (error) {
-      setMessage('로그인 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleLogin}>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="이메일"
-        required
-      />
-      <button type="button" onClick={handleRequestVerification}>
-        인증번호 요청
-      </button>
-      <input
-        type="text"
-        value={verificationCode}
-        onChange={(e) => setVerificationCode(e.target.value)}
-        placeholder="인증번호"
-        required
-      />
-      <button type="submit" disabled={loading}>
-        {loading ? '로그인 중...' : '로그인'}
-      </button>
-      {message && <p>{message}</p>}
-    </form>
-  );
-};
-```
-
-### 모바일 앱 (React Native)
-
-#### HTTP 클라이언트 구현
-
-```typescript
-// src/http/AxiosHttpClient.ts
-import { HttpClient, HttpRequestConfig, HttpResponse } from 'auth-core';
-import axios from 'axios';
-
-export class AxiosHttpClient implements HttpClient {
-  async request(config: HttpRequestConfig): Promise<HttpResponse> {
-    try {
-      const response = await axios({
-        method: config.method,
-        url: config.url,
-        headers: config.headers,
-        data: config.body,
-        timeout: config.timeout
-      });
-
-      return {
-        ok: response.status >= 200 && response.status < 300,
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-        json: () => Promise.resolve(response.data),
-        text: () => Promise.resolve(JSON.stringify(response.data))
-      };
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        return {
-          ok: false,
-          status: error.response?.status || 0,
-          statusText: error.message,
-          headers: error.response?.headers || {},
-          json: () => Promise.resolve(error.response?.data),
-          text: () => Promise.resolve(JSON.stringify(error.response?.data))
-        };
-      }
-      throw error;
-    }
-  }
-}
-```
-
-#### 토큰 저장소 구현
-
-```typescript
-// src/storage/MobileTokenStore.ts
-import { TokenStore, Token } from 'auth-core';
-import * as SecureStore from 'expo-secure-store';
-
-export const MobileTokenStore: TokenStore = {
-  async saveToken(token: Token): Promise<boolean> {
-    try {
-      await SecureStore.setItemAsync('accessToken', token.accessToken);
-      if (token.refreshToken) {
-        await SecureStore.setItemAsync('refreshToken', token.refreshToken);
-      }
-      if (token.expiresAt) {
-        await SecureStore.setItemAsync('expiresAt', token.expiresAt.toString());
-      }
-      return true;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  async getToken(): Promise<Token | null> {
-    try {
-      const accessToken = await SecureStore.getItemAsync('accessToken');
-      if (!accessToken) return null;
-      
-      const refreshToken = await SecureStore.getItemAsync('refreshToken') || undefined;
-      const expiresAtStr = await SecureStore.getItemAsync('expiresAt');
-      const expiresAt = expiresAtStr ? Number(expiresAtStr) : undefined;
-      
-      return { accessToken, refreshToken, expiresAt };
-    } catch (error) {
-      return null;
-    }
-  },
-
-  async removeToken(): Promise<boolean> {
-    try {
-      await SecureStore.deleteItemAsync('accessToken');
-      await SecureStore.deleteItemAsync('refreshToken');
-      await SecureStore.deleteItemAsync('expiresAt');
-      return true;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  async hasToken(): Promise<boolean> {
-    try {
-      const accessToken = await SecureStore.getItemAsync('accessToken');
-      return accessToken !== null;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  async isTokenExpired(): Promise<boolean> {
-    try {
-      const expiresAtStr = await SecureStore.getItemAsync('expiresAt');
-      if (!expiresAtStr) return false;
-      const expiresAt = Number(expiresAtStr);
-      return Date.now() > expiresAt;
-    } catch (error) {
-      return false;
-    }
-  },
-
-  async clear(): Promise<boolean> {
-    try {
-      await SecureStore.deleteItemAsync('accessToken');
-      await SecureStore.deleteItemAsync('refreshToken');
-      await SecureStore.deleteItemAsync('expiresAt');
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-};
-```
-
-#### AuthManager 설정
-
-```typescript
-// src/auth/authManager.ts
-import { 
-  createAuthManager,
-  AuthManagerConfig
-} from 'auth-core';
-import { AxiosHttpClient } from '../http/AxiosHttpClient';
-import { MobileTokenStore } from '../storage/MobileTokenStore';
-
-const apiConfig = {
-  apiBaseUrl: 'https://api.example.com',
-  endpoints: {
-    requestVerification: '/auth/email/verification',
-    login: '/auth/login',
-    logout: '/auth/logout',
-    refresh: '/auth/refresh',
-    validate: '/auth/validate',
-    me: '/auth/me',
-    health: '/auth/health'
-  },
-  timeout: 15000,
-  retryCount: 3
-};
-
-const authManagerConfig: AuthManagerConfig = {
-  providerType: 'email',
-  apiConfig,
-  httpClient: new AxiosHttpClient(),
-  tokenStore: MobileTokenStore
-};
-
-export const authManager = createAuthManager(
-  authManagerConfig,
-  new AxiosHttpClient(),
-  'mobile'
-);
-```
-
-## 고급 사용법
-
-### 1. 커스텀 API 설정
-
-```typescript
-import { AuthManagerConfig } from 'auth-core';
-
-// 커스텀 API 설정
-const customApiConfig = {
-  apiBaseUrl: 'https://api.example.com',
-  endpoints: {
-    requestVerification: '/custom/auth/email/verification',
-    login: '/custom/auth/login',
-    logout: '/custom/auth/logout',
-    refresh: '/custom/auth/refresh',
-    validate: '/custom/auth/validate',
-    me: '/custom/auth/me',
-    health: '/custom/auth/health'
-  },
-  timeout: 15000,  // 15초 타임아웃
-  retryCount: 5    // 5번 재시도
-};
-
-// AuthManager에 커스텀 설정 적용
-const authManagerConfig: AuthManagerConfig = {
-  providerType: 'email',
-  apiConfig: customApiConfig,
-  httpClient: new FetchHttpClient(),
-  tokenStore: WebTokenStore
-};
-
-const authManager = createAuthManager(
-  authManagerConfig,
-  new FetchHttpClient(),
-  'web'
-);
-```
-
-### 2. 토큰 자동 갱신
-
-```typescript
-// src/auth/tokenRefresh.ts
-import { authManager } from './authManager';
-
-export const setupTokenRefresh = () => {
-  // 토큰 만료 5분 전에 자동 갱신
-  const REFRESH_BEFORE_EXPIRY = 5 * 60 * 1000; // 5분
-
-  const checkAndRefreshToken = async () => {
-    const token = await authManager.getToken();
-    if (!token || !token.expiresAt) return;
-
-    const timeUntilExpiry = token.expiresAt - Date.now();
-    
-    if (timeUntilExpiry <= REFRESH_BEFORE_EXPIRY) {
-      try {
-        await authManager.refreshToken({
-          refreshToken: token.refreshToken!
-        });
-        console.log('토큰 자동 갱신 완료');
-      } catch (error) {
-        console.error('토큰 갱신 실패:', error);
-        // 로그아웃 처리
-        await authManager.logout({ token });
-      }
-    }
-  };
-
-  // 1분마다 체크
-  setInterval(checkAndRefreshToken, 60 * 1000);
+// ✅ 권장: 구조화된 에러 처리
+const handleApiCall = async () => {
+  const result = await authManager.validateCurrentToken();
   
-  // 초기 체크
-  checkAndRefreshToken();
+  if (result.success) {
+    // 성공 케이스 처리
+    console.log('성공:', result.data);
+  } else {
+    // 에러 케이스 처리
+    console.error('에러:', result.error);
+    console.log('메시지:', result.message);
+  }
+};
+
+// ❌ 비권장: try-catch만 사용
+const handleApiCall = async () => {
+  try {
+    const result = await authManager.validateCurrentToken();
+    console.log('결과:', result);
+  } catch (error) {
+    console.error('에러:', error);
+  }
 };
 ```
 
-### 3. 인증 상태 관리 (React Context)
+### 2. 타입 가드 활용
 
 ```typescript
-// src/contexts/AuthContext.tsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authManager } from '../auth/authManager';
+// ✅ 권장: 타입 가드로 안전한 접근
+const processUserInfo = async () => {
+  const result = await authManager.getCurrentUserInfo();
+  
+  if (result.success && result.data) {
+    // result.data는 UserInfo 타입으로 좁혀짐
+    console.log('사용자 이름:', result.data.name);
+    console.log('사용자 이메일:', result.data.email);
+  }
+};
 
-interface AuthContextType {
-  isAuthenticated: boolean;
-  user: any | null;
-  login: (credentials: any) => Promise<boolean>;
-  logout: () => Promise<void>;
-  loading: boolean;
-}
+// ❌ 비권장: 타입 단언
+const processUserInfo = async () => {
+  const result = await authManager.getCurrentUserInfo();
+  
+  if (result.success) {
+    // 타입 단언은 런타임 에러 위험
+    const userInfo = result.data as UserInfo;
+    console.log('사용자 이름:', userInfo.name);
+  }
+};
+```
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+### 3. 조건부 렌더링 (React)
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
+```typescript
+// ✅ 권장: 응답 구조에 따른 조건부 렌더링
+const UserProfile: React.FC = () => {
+  const [userResult, setUserResult] = useState<UserInfoApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthStatus();
+    const fetchUser = async () => {
+      const result = await authManager.getCurrentUserInfo();
+      setUserResult(result);
+      setLoading(false);
+    };
+    fetchUser();
   }, []);
 
-  const checkAuthStatus = async () => {
-    try {
-      const authenticated = await authManager.isAuthenticated();
-      setIsAuthenticated(authenticated);
-      
-      if (authenticated) {
-        const userInfo = await authManager.getCurrentUserInfo();
-        setUser(userInfo);
-      }
-    } catch (error) {
-      console.error('인증 상태 확인 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (credentials: any): Promise<boolean> => {
-    try {
-      const response = await authManager.login(credentials);
-      if (response.success) {
-        setIsAuthenticated(true);
-        const userInfo = await authManager.getCurrentUserInfo();
-        setUser(userInfo);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('로그인 실패:', error);
-      return false;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await authManager.logout({ token: await authManager.getToken() });
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      console.error('로그아웃 실패:', error);
-    }
-  };
+  if (loading) return <div>로딩 중...</div>;
+  
+  if (!userResult || !userResult.success) {
+    return <div>사용자 정보를 불러올 수 없습니다: {userResult?.error}</div>;
+  }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-```
-
-### 4. 보안 고려사항
-
-```typescript
-// 토큰 암호화 저장 (웹 환경)
-class EncryptedWebTokenStore implements TokenStore {
-  private encrypt(data: string): string {
-    // 실제로는 더 강력한 암호화 사용
-    return btoa(data);
-  }
-
-  private decrypt(data: string): string {
-    return atob(data);
-  }
-
-  async saveToken(token: Token): Promise<boolean> {
-    try {
-      localStorage.setItem('accessToken', this.encrypt(token.accessToken));
-      if (token.refreshToken) {
-        localStorage.setItem('refreshToken', this.encrypt(token.refreshToken));
-      }
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async getToken(): Promise<Token | null> {
-    try {
-      const encryptedToken = localStorage.getItem('accessToken');
-      if (!encryptedToken) return null;
-      
-      const accessToken = this.decrypt(encryptedToken);
-      return { accessToken };
-    } catch (error) {
-      return null;
-    }
-  }
-
-  // 다른 메서드들도 구현...
-}
-```
-
-### 5. 테스트 환경 설정
-
-```typescript
-// src/test/testAuthManager.ts
-import { 
-  createAuthManager,
-  AuthManagerConfig,
-  FakeTokenStore
-} from 'auth-core';
-
-// 테스트용 Mock HTTP 클라이언트
-class TestHttpClient implements HttpClient {
-  async request(config: HttpRequestConfig): Promise<HttpResponse> {
-    // 테스트 시나리오에 따라 다른 응답 반환
-    return {
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      json: () => Promise.resolve({ 
-        accessToken: 'test-token',
-        refreshToken: 'test-refresh-token',
-        user: { id: '1', email: 'test@example.com' }
-      }),
-      text: () => Promise.resolve('{"accessToken": "test-token"}')
-    };
-  }
-}
-
-// 테스트용 AuthManager 생성
-export const createTestAuthManager = () => {
-  const testApiConfig = {
-    apiBaseUrl: 'https://test-api.example.com',
-    endpoints: {
-      requestVerification: '/auth/email/verification',
-      login: '/auth/login',
-      logout: '/auth/logout',
-      refresh: '/auth/refresh',
-      validate: '/auth/validate',
-      me: '/auth/me',
-      health: '/auth/health'
-    },
-    timeout: 5000,
-    retryCount: 1
-  };
-
-  const authManagerConfig: AuthManagerConfig = {
-    providerType: 'email',
-    apiConfig: testApiConfig,
-    httpClient: new TestHttpClient(),
-    tokenStore: FakeTokenStore
-  };
-
-  return createAuthManager(
-    authManagerConfig,
-    new TestHttpClient(),
-    'fake'
+    <div>
+      <h1>{userResult.data.name}</h1>
+      <p>{userResult.data.email}</p>
+    </div>
   );
 };
 ```
 
-이 가이드를 따라하면 Auth Core를 각 플랫폼에서 효과적으로 사용할 수 있습니다! 
+## 📚 요약
+
+### 주요 변경사항
+1. **모든 API 메서드가 `ApiResponse<T>` 형태 반환**
+2. **`success` 필드로 성공/실패 판단**
+3. **`data` 필드에서 실제 데이터 접근**
+4. **`error` 필드에서 에러 정보 확인**
+
+### 사용 패턴
+```typescript
+const result = await authManager.someMethod();
+if (result.success) {
+  // 성공: result.data 사용
+  processData(result.data);
+} else {
+  // 실패: result.error 사용
+  handleError(result.error);
+}
+```
+
+
+이제 Auth Core의 새로운 API 응답 구조를 활용하여 더 안전하고 일관된 인증 로직을 구현할 수 있습니다! 🚀 

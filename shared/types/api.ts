@@ -1,7 +1,7 @@
 // API 관련 타입 정의
 // shared/types/api.ts
 
-import { BaseResponse, ErrorResponse, SuccessResponse } from './common';
+import { ErrorResponse, SuccessResponse } from './common';
 
 // API 엔드포인트 설정
 export interface ApiEndpoints {
