@@ -1,14 +1,12 @@
 // 인증 + 저장 전략들을 주입받아 로그인 흐름 제어 
-import { AuthProvider, IEmailVerifiable, ILoginProvider } from './providers/interfaces';
+import { AuthProvider, IEmailVerifiable } from './providers/interfaces';
 import { TokenStore } from './storage/TokenStore.interface';
-import { Token, UserInfo, ApiConfig, ErrorResponse } from './shared/types';
-import { createAuthProvider, AuthProviderFactoryResult, isAuthProviderFactoryError } from './factories/AuthProviderFactory';
-import { createTokenStore, TokenStoreFactoryResult, isTokenStoreFactoryError } from './factories/TokenStoreFactory';
-import { FakeTokenStore } from './storage/FakeTokenStore';
+import { Token, ApiConfig } from './shared/types';
+import { createAuthProvider, isAuthProviderFactoryError } from './factories/AuthProviderFactory';
+import { createTokenStore, isTokenStoreFactoryError } from './factories/TokenStoreFactory';
 import { HttpClient } from './network/interfaces/HttpClient';
 import { 
   EmailVerificationRequest,
-  EmailVerificationResponse,
   EmailVerificationApiResponse, 
   LoginRequest,
   LoginApiResponse, 
