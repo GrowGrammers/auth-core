@@ -23,8 +23,9 @@ import {
   createTokenValidationErrorResponse,
   createUserInfoErrorResponse,
   createServiceAvailabilityErrorResponse,
-  createServerErrorResponse
-} from '../shared/utils/errorUtils';
+  createServerErrorResponse,
+  createSuccessResponse
+} from '../shared/utils';
 import { Token, UserInfo } from '../shared/types';
 
 /**
@@ -50,7 +51,7 @@ export async function requestEmailVerification(
       response,
       '인증번호 요청에 실패했습니다.',
       (error) => createErrorResponse(error),
-      () => ({ success: true, data: undefined, message: '인증번호가 전송되었습니다.' })
+      () => createSuccessResponse('인증번호가 전송되었습니다.', undefined)
     );
 
   } catch (error) {
@@ -96,7 +97,7 @@ export async function loginByEmail(
         const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number; user: { id: string; email: string; name: string } };
         const token = createToken(typedData);
         const userInfo = createUserInfo(typedData.user, 'email');
-        return { success: true, data: { token, userInfo }, message: '로그인에 성공했습니다.' };
+        return createSuccessResponse('로그인에 성공했습니다.', { token, userInfo });
       }
     );
 
@@ -129,7 +130,7 @@ export async function logoutByEmail(
       response,
       '로그아웃에 실패했습니다.',
       (error: string) => createErrorResponse(error),
-      () => ({ success: true, data: undefined, message: '로그아웃에 성공했습니다.' })
+      () => createSuccessResponse('로그아웃에 성공했습니다.', undefined)
     );
 
   } catch (error) {
@@ -162,7 +163,7 @@ export async function refreshTokenByEmail(
               (data: unknown) => {
           const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number };
           const token = createToken(typedData);
-          return { success: true, data: token, message: '토큰 갱신에 성공했습니다.' };
+          return createSuccessResponse('토큰 갱신에 성공했습니다.', token);
         }
     );
 
@@ -192,7 +193,7 @@ export async function validateTokenByEmail(
     });
 
     if (response.ok) {
-      return { success: true, data: true, message: '토큰이 유효합니다.' };
+      return createSuccessResponse('토큰이 유효합니다.', true);
     } else {
       return createTokenValidationErrorResponse(`HTTP ${response.status}: ${response.statusText}`);
     }
@@ -234,7 +235,7 @@ export async function getUserInfoByEmail(
     try {
       const data = await response.json();
       const userInfo = createUserInfo(data, 'email');
-      return { success: true, data: userInfo, message: '사용자 정보를 성공적으로 가져왔습니다.' };
+      return createSuccessResponse('사용자 정보를 성공적으로 가져왔습니다.', userInfo);
     } catch (parseError) {
       return createUserInfoErrorResponse('응답 데이터 파싱에 실패했습니다.');
     }
@@ -257,7 +258,7 @@ export async function checkEmailServiceAvailability(
     });
 
     if (response.ok) {
-      return { success: true, data: true, message: '서비스가 정상적으로 작동하고 있습니다.' };
+      return createSuccessResponse('서비스가 정상적으로 작동하고 있습니다.', true);
     } else {
       if (response.status >= 500) {
         return createServerErrorResponse(response.status);
