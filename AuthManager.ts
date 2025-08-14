@@ -26,7 +26,8 @@ export type IsAuthenticatedApiResponse = SuccessResponse<boolean> | ErrorRespons
 export type ClearResponse = SuccessResponse<void> | ErrorResponse;
 
 export interface AuthManagerConfig {
-  providerType: 'email' | 'google';
+  providerType?: 'email' | 'google'; // 테스트를 위해 선택사항으로 변경
+  provider?: AuthProvider; // 직접 Provider 인스턴스 제공 (테스트용)
   apiConfig: ApiConfig;
   httpClient: HttpClient;  // HttpClient를 필수로 추가
   tokenStore?: TokenStore; // 직접 TokenStore 인스턴스 제공 (선택사항)
@@ -38,8 +39,8 @@ export class AuthManager {
   private tokenStore: TokenStore; // ② 어떤 방식으로 토큰을 저장할 건지 저장
 
   constructor(config: AuthManagerConfig) {
-    // Provider 생성 (apiConfig 주입)
-    this.provider = this.createProvider(config.providerType, config.apiConfig, config.httpClient);
+    // Provider 생성 (우선순위: 직접 제공 > 타입으로 팩토리 생성)
+    this.provider = config.provider || this.createProvider(config.providerType!, config.apiConfig, config.httpClient);
     // TokenStore 생성 (우선순위: 직접 제공 > 타입으로 팩토리 생성 > 기본값)
     this.tokenStore = config.tokenStore || this.createTokenStoreFromType(config.tokenStoreType);
   }
