@@ -26,8 +26,8 @@ export type IsAuthenticatedApiResponse = SuccessResponse<boolean> | ErrorRespons
 export type ClearResponse = SuccessResponse<void> | ErrorResponse;
 
 export interface AuthManagerConfig {
-  providerType?: 'email' | 'google'; // 테스트를 위해 선택사항으로 변경
-  provider?: AuthProvider; // 직접 Provider 인스턴스 제공 (테스트용)
+  providerType?: 'email' | 'google'; // 팩토리를 통한 Provider 생성 (권장)
+  provider?: AuthProvider; // 직접 Provider 인스턴스 주입 (테스트에 유리하나, 프로덕션에서는 DI/팩토리 레이어 통해 주입 권장)
   apiConfig: ApiConfig;
   httpClient: HttpClient;  // HttpClient를 필수로 추가
   tokenStore?: TokenStore; // 직접 TokenStore 인스턴스 제공 (선택사항)
@@ -42,6 +42,11 @@ export class AuthManager {
     // Provider 설정 검증
     if (!config.provider && !config.providerType) {
       throw new Error('[AuthManager] provider 또는 providerType 중 하나는 반드시 제공되어야 합니다.');
+    }
+
+    // 프로덕션 환경에서 직접 Provider 주입 시 경고
+    if (process.env.NODE_ENV === 'production' && config.provider) {
+      console.warn('[AuthManager] 프로덕션 환경에서 직접 Provider 주입은 권장하지 않습니다. providerType과 팩토리 패턴 사용을 고려해주세요.');
     }
 
     // Provider 생성 (우선순위: 직접 제공 > 타입으로 팩토리 생성)
