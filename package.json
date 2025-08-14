@@ -3,15 +3,20 @@
   "version": "1.0.0",
   "description": "플랫폼 독립적인 인증 모듈",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "build:check": "tsc --noEmit",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "prebuild": "npm run clean",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "typescript": "^5.9.2",
-    "rimraf": "^5.0.0"
+    "rimraf": "^5.0.0",
+    "vitest": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0"
   }
 }
