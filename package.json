@@ -16,7 +16,7 @@
   "devDependencies": {
     "typescript": "^5.9.2",
     "rimraf": "^5.0.0",
-    "vitest": "^1.0.0",
-    "@vitest/coverage-v8": "^1.0.0"
+    "vitest": "1.6.1",
+    "@vitest/coverage-v8": "1.6.1"
   }
 }
