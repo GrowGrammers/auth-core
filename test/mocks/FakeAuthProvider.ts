@@ -1,5 +1,5 @@
-import { ILoginProvider, IEmailVerifiable } from '../../providers/interfaces';
-import { AuthProviderConfig } from '../../providers/interfaces/config/auth-config';
+import { ILoginProvider, IEmailVerifiable } from '../../src/providers/interfaces';
+import { AuthProviderConfig } from '../../src/providers/interfaces/config/auth-config';
 import { 
   LoginRequest, 
   LoginResponse, 
@@ -16,9 +16,9 @@ import {
   EmailVerificationRequest,
   EmailVerificationResponse,
   EmailVerificationApiResponse
-} from '../../providers/interfaces/dtos/auth.dto';
-import { Token, UserInfo } from '../../shared/types';
-import { createSuccessResponse, createErrorResponse } from '../../shared/utils';
+} from '../../src/providers/interfaces/dtos/auth.dto';
+import { Token, UserInfo } from '../../src/shared/types';
+import { createSuccessResponse, createErrorResponse } from '../../src/shared/utils';
 
 export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
   readonly providerName = "fake";

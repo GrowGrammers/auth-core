@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { AuthManager } from '../../AuthManager';
+import { AuthManager } from '../../src/AuthManager';
 import { FakeAuthProvider } from '../mocks/FakeAuthProvider';
 import { InMemoryTokenStore } from '../mocks/InMemoryTokenStore';
 import { FakeHttpClient } from '../mocks/FakeHttpClient';
-import { ApiConfig } from '../../shared/types';
+import { ApiConfig } from '../../src/shared/types';
 
 describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   let manager: AuthManager;
