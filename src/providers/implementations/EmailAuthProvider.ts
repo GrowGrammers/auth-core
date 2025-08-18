@@ -3,18 +3,19 @@ import { Token, UserInfo, ApiConfig } from '../../shared/types';
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
-import { 
-  LoginRequest, 
-  LogoutRequest, 
+import {
+  LoginRequest,
+  LogoutRequest,
   RefreshTokenRequest,
-  EmailVerificationRequest,
   LoginApiResponse,
   LogoutApiResponse,
   RefreshTokenApiResponse,
+  EmailVerificationRequest,
   EmailVerificationApiResponse,
   TokenValidationApiResponse,
   UserInfoApiResponse,
-  ServiceAvailabilityApiResponse
+  ServiceAvailabilityApiResponse,
+  LoginResponseData
 } from '../interfaces/dtos/auth.dto';
 import { ILoginProvider, IEmailVerifiable } from '../interfaces';
 import {
@@ -32,7 +33,7 @@ export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvide
   readonly config: AuthProviderConfig;
   private httpClient: HttpClient;
   private apiConfig: ApiConfig;
-  
+
   constructor(config: AuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
     super();
     this.config = config;
@@ -43,48 +44,22 @@ export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvide
   async login(request: LoginRequest): Promise<LoginApiResponse> {
     const apiResponse = await loginByEmail(this.httpClient, this.apiConfig, request);
     
-    if (!apiResponse.success) {
-      return this.createErrorResponse(
-        apiResponse.error || '로그인에 실패했습니다.',
-        apiResponse.error || '로그인에 실패했습니다.'
-      );
-    }
-
-    // apiResponse.data는 { token: Token; userInfo: UserInfo } 형태
-    return this.createSuccessResponse<{ token: Token; userInfo: UserInfo }>(
-      '로그인에 성공했습니다.',
-      apiResponse.data
-    );
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
   }
 
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
     const apiResponse = await logoutByEmail(this.httpClient, this.apiConfig, request);
     
-    if (!apiResponse.success) {
-      return this.createErrorResponse(
-        apiResponse.error || '로그아웃에 실패했습니다.',
-        apiResponse.error || '로그아웃에 실패했습니다.'
-      );
-    }
-
-    return this.createSuccessResponse<void>('로그아웃에 성공했습니다.', undefined);
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse> {
     const apiResponse = await refreshTokenByEmail(this.httpClient, this.apiConfig, request);
     
-    if (!apiResponse.success) {
-      return this.createErrorResponse(
-        apiResponse.error || '토큰 갱신에 실패했습니다.',
-        apiResponse.error || '토큰 갱신에 실패했습니다.'
-      );
-    }
-
-    // apiResponse.data는 Token 형태
-    return this.createSuccessResponse<Token>(
-      '토큰 갱신에 성공했습니다.',
-      apiResponse.data
-    );
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
   }
 
   async validateToken(token: Token): Promise<TokenValidationApiResponse> {
@@ -98,14 +73,8 @@ export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvide
   async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationApiResponse> {
     const apiResponse = await requestEmailVerification(this.httpClient, this.apiConfig, request);
     
-    if (!apiResponse.success) {
-      return this.createErrorResponse(
-        apiResponse.error || '이메일 인증번호 요청에 실패했습니다.',
-        apiResponse.error || '이메일 인증번호 요청에 실패했습니다.'
-      );
-    }
-
-    return this.createSuccessResponse<void>('이메일 인증번호가 전송되었습니다.', undefined);
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
   }
 
   async isAvailable(): Promise<ServiceAvailabilityApiResponse> {

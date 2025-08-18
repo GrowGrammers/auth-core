@@ -74,8 +74,10 @@ export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
         success: true,
         message: '로그인 성공',
         data: {
-          token: this.currentToken,
-          userInfo: this.currentUser
+          accessToken: this.currentToken!.accessToken,
+          refreshToken: this.currentToken!.refreshToken || '',
+          expiresAt: this.currentToken!.expiresAt,
+          userInfo: this.currentUser!
         }
       };
 

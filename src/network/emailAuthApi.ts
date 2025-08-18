@@ -23,8 +23,7 @@ import {
   createTokenValidationErrorResponse,
   createUserInfoErrorResponse,
   createServiceAvailabilityErrorResponse,
-  createServerErrorResponse,
-  createSuccessResponse
+  createServerErrorResponse
 } from '../shared/utils';
 import { Token, UserInfo } from '../shared/types';
 
@@ -47,12 +46,8 @@ export async function requestEmailVerification(
       body: { email: request.email }
     });
 
-    return handleHttpResponse(
-      response,
-      '인증번호 요청에 실패했습니다.',
-      (error) => createErrorResponse(error),
-      () => createSuccessResponse('인증번호가 전송되었습니다.', undefined)
-    );
+    const data = await handleHttpResponse<EmailVerificationApiResponse>(response, '인증번호 요청에 실패했습니다.');
+    return data;
 
   } catch (error) {
     return createNetworkErrorResponse();
@@ -89,17 +84,8 @@ export async function loginByEmail(
       }
     });
 
-    return handleHttpResponse(
-      response,
-      '로그인에 실패했습니다.',
-      (error: string) => createErrorResponse(error),
-      (data: unknown) => {
-        const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number; user: { id: string; email: string; name: string } };
-        const token = createToken(typedData);
-        const userInfo = createUserInfo(typedData.user, 'email');
-        return createSuccessResponse('로그인에 성공했습니다.', { token, userInfo });
-      }
-    );
+    const data = await handleHttpResponse<LoginApiResponse>(response, '로그인에 실패했습니다.');
+    return data;
 
   } catch (error) {
     return createNetworkErrorResponse();
@@ -126,12 +112,8 @@ export async function logoutByEmail(
       }
     });
 
-    return handleHttpResponse(
-      response,
-      '로그아웃에 실패했습니다.',
-      (error: string) => createErrorResponse(error),
-      () => createSuccessResponse('로그아웃에 성공했습니다.', undefined)
-    );
+    const data = await handleHttpResponse<LogoutApiResponse>(response, '로그아웃에 실패했습니다.');
+    return data;
 
   } catch (error) {
     return createNetworkErrorResponse();
@@ -156,16 +138,8 @@ export async function refreshTokenByEmail(
       body: { refreshToken: request.refreshToken }
     });
 
-    return handleHttpResponse(
-      response,
-      '토큰 갱신에 실패했습니다.',
-      (error: string) => createErrorResponse(error),
-              (data: unknown) => {
-          const typedData = data as { accessToken: string; refreshToken: string; expiresAt?: number };
-          const token = createToken(typedData);
-          return createSuccessResponse('토큰 갱신에 성공했습니다.', token);
-        }
-    );
+    const data = await handleHttpResponse<RefreshTokenApiResponse>(response, '토큰 갱신에 실패했습니다.');
+    return data;
 
   } catch (error) {
     return createNetworkErrorResponse();
@@ -192,11 +166,9 @@ export async function validateTokenByEmail(
       }
     });
 
-    if (response.ok) {
-      return createSuccessResponse('토큰이 유효합니다.', true);
-    } else {
-      return createTokenValidationErrorResponse(`HTTP ${response.status}: ${response.statusText}`);
-    }
+    const data = await handleHttpResponse<TokenValidationApiResponse>(response, '토큰 검증에 실패했습니다.');
+    return data;
+
   } catch (error) {
     return createNetworkErrorResponse();
   }
@@ -222,23 +194,8 @@ export async function getUserInfoByEmail(
       }
     });
 
-    if (!response.ok) {
-      if (response.status >= 500) {
-        return createServerErrorResponse(response.status);
-      } else if (response.status === 401) {
-        return createTokenValidationErrorResponse('인증이 필요합니다.');
-      } else {
-        return createUserInfoErrorResponse(`HTTP ${response.status}: ${response.statusText}`);
-      }
-    }
-
-    try {
-      const data = await response.json();
-      const userInfo = createUserInfo(data, 'email');
-      return createSuccessResponse('사용자 정보를 성공적으로 가져왔습니다.', userInfo);
-    } catch (parseError) {
-      return createUserInfoErrorResponse('응답 데이터 파싱에 실패했습니다.');
-    }
+    const data = await handleHttpResponse<UserInfoApiResponse>(response, '사용자 정보 조회에 실패했습니다.');
+    return data;
 
   } catch (error) {
     return createNetworkErrorResponse();
@@ -257,15 +214,9 @@ export async function checkEmailServiceAvailability(
       method: 'GET'
     });
 
-    if (response.ok) {
-      return createSuccessResponse('서비스가 정상적으로 작동하고 있습니다.', true);
-    } else {
-      if (response.status >= 500) {
-        return createServerErrorResponse(response.status);
-      } else {
-        return createServiceAvailabilityErrorResponse(`HTTP ${response.status}: ${response.statusText}`);
-      }
-    }
+    const data = await handleHttpResponse<ServiceAvailabilityApiResponse>(response, '서비스 가용성 확인에 실패했습니다.');
+    return data;
+
   } catch (error) {
     return createNetworkErrorResponse();
   }
