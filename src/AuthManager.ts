@@ -108,11 +108,11 @@ export class AuthManager {
       const verificationResponse = await emailProvider.requestEmailVerification(request);
       
       if (verificationResponse.success) {
-        console.log('인증번호 요청 성공');
+        //console.log('[AuthManager] 인증번호 요청 성공');
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in verificationResponse ? verificationResponse.error : '알 수 없는 오류';
-        console.log('인증번호 요청 실패:', errorMessage);
+        //console.log('[AuthManager] 인증번호 요청 실패:', errorMessage);
       }
       
       return verificationResponse;
@@ -143,14 +143,14 @@ export class AuthManager {
         // ⑤ 로그인 성공 시 토큰 저장
         const saveResult = await this.tokenStore.saveToken(loginResponse.data.token);
         if (saveResult.success) {
-          console.log('로그인 성공, 토큰 저장됨');
+          //console.log('[AuthManager] 로그인 성공, 토큰 저장됨');
         } else {
-          console.error('토큰 저장 실패:', saveResult.error);
+          console.error('[AuthManager] 토큰 저장 실패:', saveResult.error);
         }
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in loginResponse ? loginResponse.error : '알 수 없는 오류';
-        console.log('로그인 실패:', errorMessage);
+        //console.log('[AuthManager] 로그인 실패:', errorMessage);
       }
       
       return loginResponse;
@@ -174,14 +174,14 @@ export class AuthManager {
         // ⑧ 로그아웃 성공 시 저장된 토큰 삭제
         const removeResult = await this.tokenStore.removeToken();
         if (removeResult.success) {
-          console.log('로그아웃 성공, 토큰 삭제됨');
+          //console.log('[AuthManager] 로그아웃 성공, 토큰 삭제됨');
         } else {
-          console.error('토큰 삭제 실패:', removeResult.error);
+          console.error('[AuthManager] 토큰 삭제 실패:', removeResult.error);
         }
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in logoutResponse ? logoutResponse.error : '알 수 없는 오류';
-        console.log('로그아웃 실패:', errorMessage);
+        //console.log('[AuthManager] 로그아웃 실패:', errorMessage);
       }
       
       return logoutResponse;
@@ -218,9 +218,9 @@ export class AuthManager {
         // 토큰 갱신 성공 시 새로운 토큰 저장
         const saveResult = await this.tokenStore.saveToken(refreshResponse.data);
         if (saveResult.success) {
-          console.log('토큰 갱신 성공, 새 토큰 저장됨');
+          //console.log('[AuthManager] 토큰 갱신 성공, 새 토큰 저장됨');
         } else {
-          console.error('새 토큰 저장 실패:', saveResult.error);
+          console.error('[AuthManager] 새 토큰 저장 실패:', saveResult.error);
         }
       }
       
