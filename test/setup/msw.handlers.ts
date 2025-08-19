@@ -4,7 +4,19 @@ import { http, HttpResponse } from 'msw';
 // 와일드카드 패턴을 사용하여 모든 호스트에서 동일한 경로 처리
 export const handlers = [
   // 이메일 인증번호 요청
-  http.post('/api/auth/email/request-verification', () => {
+  http.post('*/api/auth/email/request-verification', async ({ request }) => {
+    const body = await request.json() as any;
+    
+    // 존재하지 않는 이메일에 대한 에러 응답
+    if (body.email === 'nonexistent@example.com') {
+      return HttpResponse.json({
+        success: false,
+        message: '존재하지 않는 이메일입니다.',
+        data: null,
+        error: '존재하지 않는 이메일입니다.'
+      }, { status: 404 });
+    }
+    
     return HttpResponse.json({
       success: true,
       message: '인증번호가 전송되었습니다.',
@@ -13,7 +25,23 @@ export const handlers = [
   }),
 
   // 이메일 로그인
-  http.post('/api/auth/email/login', () => {
+  http.post('*/api/auth/email/login', async ({ request }) => {
+    const body = await request.json() as any;
+    
+    // 환경 변수로 에러 시뮬레이션 제어
+    const shouldSimulateError = process.env.MSW_SIMULATE_LOGIN_ERROR === 'true';
+    const errorVerificationCode = process.env.MSW_ERROR_VERIFICATION_CODE || '999999';
+    
+    // 잘못된 인증번호에 대한 에러 응답
+    if (shouldSimulateError && body.verificationCode === errorVerificationCode) {
+      return HttpResponse.json({
+        success: false,
+        message: '잘못된 인증번호입니다.',
+        data: null,
+        error: '잘못된 인증번호입니다.'
+      }, { status: 400 });
+    }
+    
     return HttpResponse.json({
       success: true,
       message: '로그인에 성공했습니다.',
