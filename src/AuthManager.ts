@@ -139,9 +139,14 @@ export class AuthManager {
       // ④ 로그인 시도 (누가? 전달받은 provider가!)
       const loginResponse = await this.provider.login(request);
       
-      if (loginResponse.success && loginResponse.data?.token) {
+      if (loginResponse.success && loginResponse.data?.accessToken) {
         // ⑤ 로그인 성공 시 토큰 저장
-        const saveResult = await this.tokenStore.saveToken(loginResponse.data.token);
+        const token: Token = {
+          accessToken: loginResponse.data.accessToken,
+          refreshToken: loginResponse.data.refreshToken,
+          expiresAt: loginResponse.data.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : undefined
+        };
+        const saveResult = await this.tokenStore.saveToken(token);
         if (saveResult.success) {
           //console.log('[AuthManager] 로그인 성공, 토큰 저장됨');
         } else {
