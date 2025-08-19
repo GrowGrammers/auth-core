@@ -1,0 +1,21 @@
+{
+  "name": "auth-core-web-demo",
+  "version": "1.0.0",
+  "description": "AuthCore 라이브러리 웹 데모",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "msw-server": "node scripts/start-msw-server.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vite": "^5.0.0",
+    "@types/node": "^24.2.1"
+  },
+  "dependencies": {
+    "auth-core": "file:../.."
+  }
+}
+
