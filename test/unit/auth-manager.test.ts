@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { AuthManager } from '../../AuthManager';
+import { AuthManager } from '../../src/AuthManager';
 import { FakeAuthProvider } from '../mocks/FakeAuthProvider';
 import { InMemoryTokenStore } from '../mocks/InMemoryTokenStore';
 import { FakeHttpClient } from '../mocks/FakeHttpClient';
-import { ApiConfig } from '../../shared/types';
+import { ApiConfig } from '../../src/shared/types';
 
 describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   let manager: AuthManager;
@@ -60,7 +60,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       if (result.success) {
         expect(result.data?.userInfo.email).toBe('test@example.com');
         expect(result.data?.userInfo.nickname).toBe('테스트 사용자');
-        expect(result.data?.token.accessToken).toBe('fake-access-token-123');
+        expect(result.data?.accessToken).toBe('fake-access-token-123');
       }
 
       // Then: 토큰이 저장소에 저장되었는지 확인

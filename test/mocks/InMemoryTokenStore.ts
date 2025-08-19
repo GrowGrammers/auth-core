@@ -1,6 +1,6 @@
-import { TokenStore, SaveTokenResponse, GetTokenResponse, RemoveTokenResponse, HasTokenResponse, IsTokenExpiredResponse, ClearResponse } from '../../storage/TokenStore.interface';
-import { Token } from '../../shared/types';
-import { createSuccessResponse, createErrorResponse } from '../../shared/utils';
+import { TokenStore, SaveTokenResponse, GetTokenResponse, RemoveTokenResponse, HasTokenResponse, IsTokenExpiredResponse, ClearResponse } from '../../src/storage/TokenStore.interface';
+import { Token } from '../../src/shared/types';
+import { createSuccessResponse, createErrorResponse } from '../../src/shared/utils';
 
 export class InMemoryTokenStore implements TokenStore {
   private tokens: Token | null = null;

@@ -25,8 +25,16 @@ export interface OAuthLoginRequest extends BaseRequest {
 // 통합 로그인 요청 DTO (유니온 타입)
 export type LoginRequest = EmailLoginRequest | OAuthLoginRequest;
 
+// 백엔드 로그인 응답 데이터 구조
+export interface LoginResponseData {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt?: number;
+  userInfo: UserInfo;
+}
+
 // 로그인 응답 DTO
-export interface LoginResponse extends SuccessResponse<{ token: Token; userInfo: UserInfo }> {}
+export interface LoginResponse extends SuccessResponse<LoginResponseData> {}
 
 // 로그아웃 요청 DTO
 export interface LogoutRequest extends BaseRequest {

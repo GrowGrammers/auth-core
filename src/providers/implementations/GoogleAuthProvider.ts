@@ -3,22 +3,23 @@ import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
 import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
-import { 
-  LoginRequest, 
-  LogoutRequest, 
+import {
+  LoginRequest,
+  LogoutRequest,
   RefreshTokenRequest,
   LoginApiResponse,
   LogoutApiResponse,
   RefreshTokenApiResponse,
   TokenValidationApiResponse,
   UserInfoApiResponse,
-  ServiceAvailabilityApiResponse
+  ServiceAvailabilityApiResponse,
+  LoginResponseData
 } from '../interfaces/dtos/auth.dto';
 import { ILoginProvider } from '../interfaces';
-import { 
-  loginByGoogle, 
-  logoutByGoogle, 
-  refreshTokenByGoogle 
+import {
+  loginByGoogle,
+  logoutByGoogle,
+  refreshTokenByGoogle
 } from '../../network';
 
 export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvider {
@@ -26,7 +27,7 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   readonly config: AuthProviderConfig;
   private httpClient: HttpClient;
   private apiConfig: ApiConfig;
-  
+
   constructor(config: AuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
     super();
     this.config = config;
@@ -37,47 +38,22 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   async login(request: LoginRequest): Promise<LoginApiResponse> {
     const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, request);
     
-    if (!apiResponse.success) {
-      return this.createErrorResponse(
-        apiResponse.error || 'Google 로그인에 실패했습니다.',
-        apiResponse.error || 'Google 로그인에 실패했습니다.'
-      );
-    }
-
-    return this.createSuccessResponse<{ token: Token; userInfo: UserInfo }>(
-      'Google 로그인에 성공했습니다.',
-      apiResponse.data
-    );
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
   }
 
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
     const apiResponse = await logoutByGoogle(this.httpClient, this.apiConfig, request);
     
-    if (!apiResponse.success) {
-      return this.createErrorResponse(
-        apiResponse.error || 'Google 로그아웃에 실패했습니다.',
-        apiResponse.error || 'Google 로그아웃에 실패했습니다.'
-      );
-    }
-
-    return this.createSuccessResponse<void>('Google 로그아웃에 성공했습니다.', undefined);
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse> {
     const apiResponse = await refreshTokenByGoogle(this.httpClient, this.apiConfig, request);
     
-    if (!apiResponse.success) {
-      return this.createErrorResponse(
-        apiResponse.error || 'Google 토큰 갱신에 실패했습니다.',
-        apiResponse.error || 'Google 토큰 갱신에 실패했습니다.'
-      );
-    }
-
-    // apiResponse.data는 Token 형태
-    return this.createSuccessResponse<Token>(
-      'Google 토큰 갱신에 성공했습니다.',
-      apiResponse.data
-    );
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
   }
 
   async validateToken(token: Token): Promise<TokenValidationApiResponse> {

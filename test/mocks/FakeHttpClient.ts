@@ -1,4 +1,4 @@
-import { HttpClient, HttpRequestConfig, HttpResponse } from '../../network/interfaces/HttpClient';
+import { HttpClient, HttpRequestConfig, HttpResponse } from '../../src/network/interfaces/HttpClient';
 
 export class FakeHttpClient implements HttpClient {
   private mockResponses: Map<string, any> = new Map();
