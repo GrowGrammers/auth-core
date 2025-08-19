@@ -87,7 +87,7 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
         duration: Date.now() - startTime
       };
     }
-    console.log('      ✅ 초기 상태: 로그아웃 상태 확인');
+    console.log('     ✅ 초기 상태: 로그아웃 상태 확인');
 
     // 2. 이메일 인증번호 요청
     console.log('    2단계: 이메일 인증번호 요청');
@@ -164,7 +164,7 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
         duration: Date.now() - startTime
       };
     }
-    console.log('   ✅ 토큰 갱신 성공');
+    console.log('     ✅ 토큰 갱신 성공');
 
     // 7. 로그아웃
     console.log('    7단계: 로그아웃');
@@ -228,7 +228,7 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
 
 // 시나리오 2: 토큰 자동 관리 테스트
 async function testTokenManagement(authManager: AuthManager): Promise<TestResult> {
-  const testName = '토큰 자동 관리';
+  const testName = '2. 토큰 자동 관리';
   const startTime = Date.now();
   
   try {
@@ -313,7 +313,7 @@ async function testTokenManagement(authManager: AuthManager): Promise<TestResult
 
 // 시나리오 3: 에러 처리 및 재시도 테스트
 async function testErrorHandling(authManager: AuthManager): Promise<TestResult> {
-  const testName = '에러 처리 및 재시도';
+  const testName = '3. 에러 처리 및 재시도';
   const startTime = Date.now();
   
   try {
@@ -376,7 +376,7 @@ async function testErrorHandling(authManager: AuthManager): Promise<TestResult> 
 
 // 시나리오 4: 인증 상태 관리 테스트
 async function testStateManagement(authManager: AuthManager): Promise<TestResult> {
-  const testName = '인증 상태 관리';
+  const testName = '4. 인증 상태 관리';
   const startTime = Date.now();
   
   try {
@@ -532,8 +532,8 @@ async function printTestSummary(testResults: TestResult[], startTime: number): P
 
   if (passedTests === totalTests) {
     console.log(' 모든 인증 시나리오가 성공했습니다!');
-    console.log('✅ AuthManager가 인증 흐름을 올바르게 제어하고 있습니다.');
+    console.log(' AuthManager가 인증 흐름을 올바르게 제어하고 있습니다.');
   } else {
-    console.log('⚠️  일부 인증 시나리오가 실패했습니다.');
+    console.log(' 일부 인증 시나리오가 실패했습니다.');
   }
 }
