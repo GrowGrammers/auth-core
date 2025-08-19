@@ -47,8 +47,8 @@ export const handlers = [
       data: {
         id: 'user-123',
         email: 'test@example.com',
-        name: '테스트 사용자',
-        profileImage: null
+        nickname: '테스트 사용자',
+        provider: 'email'
       }
     });
   }),
