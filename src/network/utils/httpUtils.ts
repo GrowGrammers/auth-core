@@ -72,34 +72,37 @@ export async function handleHttpResponse<T>(
   response: HttpResponse,
   errorMessage: string
 ): Promise<T> {
-  if (!response.ok) {
-    try {
-      const data = await response.json();
-      // 백엔드가 BaseResponse 형태로 에러를 보내는 경우
-      if (data && typeof data === 'object' && 'success' in data && !data.success) {
-        throw new Error(data.message || errorMessage);
-      }
-      // 일반적인 HTTP 에러 응답
-      throw new Error(data.message || errorMessage);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error(errorMessage);
-    }
-  }
-
   try {
     const data = await response.json();
     
-    // 백엔드가 BaseResponse 형태로 성공 응답을 보내는 경우
-    if (data && typeof data === 'object' && 'success' in data && data.success) {
-      return data as T; // 백엔드 응답을 그대로 반환
+    // 백엔드가 BaseResponse 형태로 응답을 보내는 경우 (성공/실패 모두 포함)
+    if (data && typeof data === 'object' && 'success' in data) {
+      return data as T; // 백엔드 응답을 그대로 반환 (success: false인 경우도 포함)
+    }
+    
+    // HTTP 에러 상태이지만 응답 데이터가 있는 경우
+    if (!response.ok) {
+      // 일반적인 HTTP 에러 응답을 BaseResponse 형태로 변환
+      return {
+        success: false,
+        message: data.message || errorMessage,
+        data: null,
+        error: data.message || errorMessage
+      } as T;
     }
     
     // 백엔드가 raw 데이터를 보내는 경우 (하위 호환성)
     return data as T;
   } catch (error) {
+    // JSON 파싱 실패 시
+    if (!response.ok) {
+      return {
+        success: false,
+        message: errorMessage,
+        data: null,
+        error: errorMessage
+      } as T;
+    }
     throw new Error('응답 데이터 파싱에 실패했습니다.');
   }
 }
