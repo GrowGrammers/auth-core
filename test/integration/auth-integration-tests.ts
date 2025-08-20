@@ -523,3 +523,73 @@ async function printTestSummary(testResults: TestResult[], startTime: number): P
     console.log(' 일부 인증 시나리오가 실패했습니다.');
   }
 }
+
+// =====================================
+// 🚀 CLI 진입점
+// =====================================
+// 이 섹션은 tsx로 직접 실행할 때 사용되는 진입점입니다.
+// 환경 변수 TEST_MODE에 따라 적절한 테스트 모드를 설정합니다.
+
+async function main() {
+  const testMode = process.env.TEST_MODE || 'local';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+
+  console.log(`🔧 테스트 모드: ${testMode}`);
+  console.log(`🌐 백엔드 URL: ${backendUrl}`);
+  console.log('');
+
+  // API 설정
+  const apiConfig: ApiConfig = {
+    apiBaseUrl: backendUrl,
+    endpoints: {
+      requestVerification: '/api/auth/email/request-verification',
+      login: '/api/auth/email/login',
+      logout: '/api/auth/email/logout',
+      refresh: '/api/auth/email/refresh',
+      validate: '/api/auth/validate-token',
+      me: '/api/auth/user-info',
+      health: '/api/health'
+    },
+    timeout: 10000
+  };
+
+  // HttpClient 생성 (MSW 모드에서는 MSW HttpClient 사용)
+  let httpClient: HttpClient;
+  if (testMode === 'msw') {
+    const { MSWHttpClient } = await import('../mocks/MSWHttpClient');
+    httpClient = new MSWHttpClient();
+  } else {
+    const { RealHttpClient } = await import('../../examples/web-demo/src/http-clients/RealHttpClient');
+    httpClient = new RealHttpClient();
+  }
+
+  // AuthManager 생성
+  const authManager = new AuthManager({
+    providerType: 'email',
+    apiConfig,
+    httpClient
+  });
+
+  // MSW 모드인 경우 MSW 서버 시작
+  if (testMode === 'msw') {
+    const { startMSWServer, stopMSWServer } = await import('../setup/msw.server');
+    startMSWServer();
+    
+    try {
+      await runIntegrationTests(authManager, apiConfig, testMode);
+    } finally {
+      stopMSWServer();
+    }
+  } else {
+    // 일반 모드 (local, deployed, custom)
+    await runIntegrationTests(authManager, apiConfig, testMode);
+  }
+}
+
+// CLI에서 직접 실행될 때만 main 함수 실행
+if (require.main === module) {
+  main().catch(error => {
+    console.error('❌ CLI 실행 중 오류 발생:', error);
+    process.exit(1);
+  });
+}
