@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "msw-server": "node scripts/start-msw-server.js"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "typescript": "^5.9.2",
