@@ -28,9 +28,9 @@ export const handlers = [
   http.post('*/api/auth/email/login', async ({ request }) => {
     const body = await request.json() as any;
     
-    // 환경 변수로 에러 시뮬레이션 제어
-    const shouldSimulateError = process.env.MSW_SIMULATE_LOGIN_ERROR === 'true';
-    const errorVerificationCode = process.env.MSW_ERROR_VERIFICATION_CODE || '999999';
+    // 브라우저 환경에서 안전하게 환경 변수 접근
+    const shouldSimulateError = (typeof process !== 'undefined' && process.env?.MSW_SIMULATE_LOGIN_ERROR === 'true') || false;
+    const errorVerificationCode = (typeof process !== 'undefined' && process.env?.MSW_ERROR_VERIFICATION_CODE) || '999999';
     
     // 잘못된 인증번호에 대한 에러 응답
     if (shouldSimulateError && body.verificationCode === errorVerificationCode) {
