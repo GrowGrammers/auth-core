@@ -3,10 +3,10 @@
 **플랫폼 독립적인 인증 라이브러리**입니다. 웹, 모바일, 백엔드 등 모든 환경에서 동일한 인증 로직을 사용할 수 있도록 설계되었습니다.
 
  **팀 프로젝트 컨텍스트**: 이 모듈은 4개 모듈 중 하나인 **공통 클라이언트 모듈**입니다.
-> - 📁 **auth-core** ← 로그인 흐름의 클라이언트 공통 모듈 (TS 기반) ← **현재 모듈**
-> - 📁 AuthWebModule ← 웹 특화 모듈 (리디렉션, 쿼리 파싱 등)
-> - 📁 mobile-app ← 모바일 특화 모듈 (딥링크, SecureStorage 등)
-> - 📁 AuthBackendService ← 백엔드 전용 로그인 모듈 (Java Spring 기반)
+>  📁 **auth-core** ← 로그인 흐름의 클라이언트 공통 모듈 (TS 기반) ← **현재 모듈**  
+>  📁 AuthWebModule ← 웹 특화 모듈 (리디렉션, 쿼리 파싱 등)  
+>  📁 mobile-app ← 모바일 특화 모듈 (딥링크, SecureStorage 등)  
+>  📁 AuthBackendService ← 백엔드 전용 로그인 모듈 (Java Spring 기반)
 
 ## 🏗️ 아키텍처 흐름
 
@@ -46,7 +46,7 @@ AuthBackendService (백엔드)
 - **📦 모듈화**: 필요한 기능만 선택적으로 사용 가능
 - **🤝 공통 모듈**: 웹/모바일/백엔드 모듈에서 공통으로 사용하는 인증 로직
 - **🏭 팩토리 패턴**: 객체 생성 로직을 팩토리로 분리하여 복잡성 감소
-- **🔄 일관된 응답 구조**: 모든 API 메서드가 `{ success, data, message }` 형태의 응답 구조 사용
+- **🔄 일관된 응답 구조**: 모든 API 메서드가 `{ success, data, message, error? }` 형태의 응답 구조 사용
 
 ## 📦 설치
 
@@ -69,13 +69,21 @@ auth-core/
 │   ├── googleAuthApi.ts         # 구글 인증 API
 │   └── interfaces/
 ├── storage/                      # 토큰 저장소 인터페이스
+│   ├── implementations/          # 플랫폼별 구현체 (웹/모바일용)
+│   └── FakeTokenStore.ts        # 테스트용 가짜 저장소
 ├── factories/                    # 객체 생성 (Factory Pattern)
 │   ├── AuthManagerFactory.ts    # AuthManager 생성
 │   ├── AuthProviderFactory.ts   # Provider 생성
 │   └── TokenStoreFactory.ts     # TokenStore 생성
 ├── shared/                       # 공통 유틸리티
 │   ├── types/                    # 타입 정의
-│   └── utils/                    # 유틸리티 함수
+│   └── utils/                    # 응답 생성 및 에러 처리 유틸리티
+├── test/                         # 테스트 코드
+│   ├── unit/                     # 단위 테스트
+│   ├── integration/              # 통합 테스트
+│   └── mocks/                    # 테스트용 Mock 객체들
+├── examples/                     # 사용 예시
+│   └── web-demo/                 # 웹 데모 애플리케이션
 └── index.ts                      # 진입점 export
 ```
 
@@ -183,10 +191,36 @@ interface ErrorResponse {
   success: false;
   error: string;
   message: string;
+  data: null;
 }
 ```
 
 **구체적인 사용 예시는 [사용 가이드](docs/USAGE_GUIDE.md)를 참조하세요.**
+
+## 🧪 테스트 환경
+
+### 테스트 스크립트
+```bash
+# 단위 테스트
+npm run test:run
+
+# 통합 테스트 (로컬)
+npm run integration:local
+
+# 통합 테스트 (MSW 모킹)
+npm run integration:msw
+
+# 전체 테스트 (단위 + 통합)
+npm run test:all
+
+# 커버리지 포함 테스트
+npm run test:all:coverage
+```
+
+### 테스트 구조
+- **단위 테스트**: 각 컴포넌트의 독립적인 기능 테스트
+- **통합 테스트**: 전체 인증 플로우 시나리오 테스트
+- **웹 데모**: 실제 브라우저 환경에서의 동작 확인
 
 ## 🎨 설계 원칙
 
