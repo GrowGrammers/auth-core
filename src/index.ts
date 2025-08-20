@@ -28,6 +28,8 @@ export { BaseAuthProvider } from './providers/base/BaseAuthProvider';
 // 토큰 저장소 관련
 export { TokenStore } from './storage';
 export { FakeTokenStore } from './storage';
+export { WebTokenStore } from './storage/implementations/WebTokenStore';
+export { MobileTokenStore } from './storage/implementations/MobileTokenStore';
 export { 
   SaveTokenResponse, 
   GetTokenResponse, 
@@ -51,7 +53,6 @@ export {
   isAuthProviderFactoryError
 } from './factories/AuthProviderFactory';
 export { 
-  createTokenStore, 
   TokenStoreType, 
   TokenStoreRegistry,
   TokenStoreFactoryResult,

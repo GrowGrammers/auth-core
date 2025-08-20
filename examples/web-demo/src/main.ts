@@ -5,6 +5,7 @@ import {
   RefreshTokenApiResponse, 
   LogoutApiResponse 
 } from 'auth-core';
+import { createTokenStore, isTokenStoreFactorySuccess, TokenStore, TokenStoreType } from 'auth-core';
 import { WebTokenStore } from './WebTokenStore';
 import { RealHttpClient, MSWHttpClient, MockHttpClient } from './http-clients';
 import { setupMSWWorker } from './utils/msw-worker-setup';
@@ -12,10 +13,16 @@ import { currentConfig } from './config';
 
 class AuthDemo {
   private authManager: AuthManager;
-  private tokenStore: WebTokenStore;
+  private tokenStore: TokenStore;
 
   constructor() {
-    this.tokenStore = new WebTokenStore();
+    const tokenStoreResult = createTokenStore('auto' as TokenStoreType);
+    if (isTokenStoreFactorySuccess(tokenStoreResult)) {
+      this.tokenStore = tokenStoreResult;
+    } else {
+      // 실패 시 기본 WebTokenStore 사용
+      this.tokenStore = new WebTokenStore();
+    }
     this.authManager = new AuthManager({
       providerType: 'email',
       tokenStore: this.tokenStore,
