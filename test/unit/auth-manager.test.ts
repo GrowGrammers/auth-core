@@ -187,6 +187,13 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       // Given: 로그인된 상태
       await manager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
 
+      // Then: 로그인 후 토큰이 저장소에 있는지 확인
+      const tokenBeforeLogout = await manager.getToken();
+      expect(tokenBeforeLogout.success).toBe(true);
+      if (tokenBeforeLogout.success) {
+        expect(tokenBeforeLogout.data?.accessToken).toBe('fake-access-token-123');
+      }
+
       // When: 로그아웃 실행
       const logoutResult = await manager.logout({ provider: 'email' as const });
 
@@ -205,6 +212,24 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       expect(isAuth.success).toBe(true);
       if (isAuth.success) {
         expect(isAuth.data).toBe(false);
+      }
+    });
+
+    it('토큰이 없는 상태에서 로그아웃 시도 시 에러 처리', async () => {
+      // Given: 토큰이 없는 상태 (초기 상태)
+      const tokenResult = await manager.getToken();
+      expect(tokenResult.success).toBe(true);
+      if (tokenResult.success) {
+        expect(tokenResult.data).toBeNull();
+      }
+
+      // When: 로그아웃 실행
+      const logoutResult = await manager.logout({ provider: 'email' as const });
+
+      // Then: 로그아웃 실패 (액세스 토큰이 필요함)
+      expect(logoutResult.success).toBe(false);
+      if (!logoutResult.success) {
+        expect(logoutResult.message).toContain('액세스 토큰이 필요합니다');
       }
     });
   });
