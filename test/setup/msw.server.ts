@@ -7,16 +7,6 @@ export const server = setupServer(...handlers);
 // 서버 시작
 export function startMSWServer() {
   server.listen({ onUnhandledRequest: 'warn' });
-  console.log('🚀 MSW 서버가 시작되었습니다.');
-  console.log('📡 모킹된 API 엔드포인트:');
-  console.log('   - POST /api/auth/email/request-verification');
-  console.log('   - POST /api/auth/email/login');
-  console.log('   - GET  /api/auth/validate-token');
-  console.log('   - GET  /api/auth/user-info');
-  console.log('   - POST /api/auth/email/refresh');
-  console.log('   - POST /api/auth/email/logout');
-  console.log('   - GET  /api/health');
-  console.log('');
 }
 
 // 서버 중지

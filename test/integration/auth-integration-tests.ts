@@ -573,12 +573,26 @@ async function main() {
   // MSW 모드인 경우 MSW 서버 시작
   if (testMode === 'msw') {
     const { startMSWServer, stopMSWServer } = await import('../setup/msw.server');
+    
+    console.log('🚀 MSW 서버를 시작합니다...');
     startMSWServer();
+    console.log('✅ MSW 서버가 시작되었습니다.');
+    console.log('📡 모킹된 API 엔드포인트:');
+    console.log(`   - POST ${apiConfig.endpoints.requestVerification}`);
+    console.log(`   - POST ${apiConfig.endpoints.login}`);
+    console.log(`   - GET  ${apiConfig.endpoints.validate}`);
+    console.log(`   - GET  ${apiConfig.endpoints.me}`);
+    console.log(`   - POST ${apiConfig.endpoints.refresh}`);
+    console.log(`   - POST ${apiConfig.endpoints.logout}`);
+    console.log(`   - GET  ${apiConfig.endpoints.health}`);
+    console.log('');
     
     try {
       await runIntegrationTests(authManager, apiConfig, testMode);
     } finally {
+      console.log('🛑 MSW 서버를 중지합니다...');
       stopMSWServer();
+      console.log('✅ MSW 서버가 중지되었습니다.');
     }
   } else {
     // 일반 모드 (local, deployed, custom)
