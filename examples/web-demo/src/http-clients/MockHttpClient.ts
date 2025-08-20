@@ -1,8 +1,8 @@
-import { HttpClient, HttpRequestConfig, HttpResponse } from '../src/network/interfaces/HttpClient';
+import { HttpClient, HttpRequestConfig, HttpResponse } from 'auth-core';
 
 // 간단한 모킹 HTTP 클라이언트 - MSW 없이도 API 응답을 모킹
 export class MockHttpClient implements HttpClient {
-  async request<T = any>(config: HttpRequestConfig): Promise<HttpResponse> {
+  async request(config: HttpRequestConfig): Promise<HttpResponse> {
     const { method = 'GET', url, body } = config;
     
     // URL에 따른 모킹 응답
@@ -177,23 +177,23 @@ export class MockHttpClient implements HttpClient {
     };
   }
 
-  async get<T = any>(url: string, config?: Omit<HttpRequestConfig, 'method' | 'url'>): Promise<HttpResponse> {
+  async get(url: string, config?: Omit<HttpRequestConfig, 'method' | 'url'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'GET', url });
   }
 
-  async post<T = any>(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
+  async post(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'POST', url, body: data });
   }
 
-  async put<T = any>(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
+  async put(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'PUT', url, body: data });
   }
 
-  async delete<T = any>(url: string, config?: Omit<HttpRequestConfig, 'method' | 'url'>): Promise<HttpResponse> {
+  async delete(url: string, config?: Omit<HttpRequestConfig, 'method' | 'url'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'DELETE', url });
   }
 
-  async patch<T = any>(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
+  async patch(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'PATCH', url, body: data });
   }
 }

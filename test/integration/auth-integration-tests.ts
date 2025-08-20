@@ -6,6 +6,7 @@ import {
   LogoutRequest,
   RefreshTokenRequest
 } from '../../src/providers/interfaces/dtos/auth.dto';
+import { HttpClient } from '../../src/network/interfaces/HttpClient';
 
 // =====================================
 // 🧪 테스트 전용 인터페이스 (auth-core와 무관)
@@ -169,12 +170,7 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     // 7. 로그아웃
     console.log('    7단계: 로그아웃');
     const logoutRequest: LogoutRequest = {
-      provider: 'email',
-      token: {
-        accessToken: loginResponse.data?.accessToken || '',
-        refreshToken: loginResponse.data?.refreshToken || '',
-        expiresAt: loginResponse.data?.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : 0
-      }
+      provider: 'email'
     };
     const logoutResponse = await authManager.logout(logoutRequest);
     if (!logoutResponse.success) {
@@ -276,12 +272,7 @@ async function testTokenManagement(authManager: AuthManager): Promise<TestResult
 
     // 4. 로그아웃하여 토큰 정리
     const logoutRequest: LogoutRequest = {
-      provider: 'email',
-      token: {
-        accessToken: loginResponse.data?.accessToken || '',
-        refreshToken: loginResponse.data?.refreshToken || '',
-        expiresAt: loginResponse.data?.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : 0
-      }
+      provider: 'email'
     };
     await authManager.logout(logoutRequest);
 
@@ -320,10 +311,11 @@ async function testErrorHandling(authManager: AuthManager): Promise<TestResult> 
     
     // 1. 잘못된 인증번호로 로그인 시도
     console.log('    1단계: 잘못된 인증번호로 로그인 시도');
+    const errorVerificationCode = process.env.MSW_ERROR_VERIFICATION_CODE || '999999';
     const invalidLoginRequest: LoginRequest = {
       provider: 'email',
       email: 'test@example.com',
-      verificationCode: '999999' // 잘못된 인증번호
+      verificationCode: errorVerificationCode // 환경 변수에서 가져온 에러 코드
     };
     const invalidLoginResponse = await authManager.login(invalidLoginRequest);
     
@@ -425,12 +417,7 @@ async function testStateManagement(authManager: AuthManager): Promise<TestResult
     // 4. 로그아웃
     console.log('    4단계: 로그아웃');
     const logoutRequest: LogoutRequest = {
-      provider: 'email',
-      token: {
-        accessToken: loginResponse.data?.accessToken || '',
-        refreshToken: loginResponse.data?.refreshToken || '',
-        expiresAt: loginResponse.data?.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : 0
-      }
+      provider: 'email'
     };
     const logoutResponse = await authManager.logout(logoutRequest);
     if (!logoutResponse.success) {
@@ -495,8 +482,7 @@ async function clearAuthState(authManager: AuthManager): Promise<void> {
     if (userInfo.success) {
       // 토큰이 있으면 로그아웃 시도
       const logoutRequest: LogoutRequest = {
-        provider: 'email',
-        token: { accessToken: '', refreshToken: '', expiresAt: 0 }
+        provider: 'email'
       };
       await authManager.logout(logoutRequest);
     }
@@ -536,4 +522,88 @@ async function printTestSummary(testResults: TestResult[], startTime: number): P
   } else {
     console.log(' 일부 인증 시나리오가 실패했습니다.');
   }
+}
+
+// =====================================
+// 🚀 CLI 진입점
+// =====================================
+// 이 섹션은 tsx로 직접 실행할 때 사용되는 진입점입니다.
+// 환경 변수 TEST_MODE에 따라 적절한 테스트 모드를 설정합니다.
+
+async function main() {
+  const testMode = process.env.TEST_MODE || 'local';
+  const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
+
+  console.log(`🔧 테스트 모드: ${testMode}`);
+  console.log(`🌐 백엔드 URL: ${backendUrl}`);
+  console.log('');
+
+  // API 설정
+  const apiConfig: ApiConfig = {
+    apiBaseUrl: backendUrl,
+    endpoints: {
+      requestVerification: '/api/auth/email/request-verification',
+      login: '/api/auth/email/login',
+      logout: '/api/auth/email/logout',
+      refresh: '/api/auth/email/refresh',
+      validate: '/api/auth/validate-token',
+      me: '/api/auth/user-info',
+      health: '/api/health'
+    },
+    timeout: 10000
+  };
+
+  // HttpClient 생성 (MSW 모드에서는 MSW HttpClient 사용)
+  let httpClient: HttpClient;
+  if (testMode === 'msw') {
+    const { MSWHttpClient } = await import('../mocks/MSWHttpClient');
+    httpClient = new MSWHttpClient();
+  } else {
+    const { RealHttpClient } = await import('../../examples/web-demo/src/http-clients/RealHttpClient');
+    httpClient = new RealHttpClient();
+  }
+
+  // AuthManager 생성
+  const authManager = new AuthManager({
+    providerType: 'email',
+    apiConfig,
+    httpClient
+  });
+
+  // MSW 모드인 경우 MSW 서버 시작
+  if (testMode === 'msw') {
+    const { startMSWServer, stopMSWServer } = await import('../setup/msw.server');
+    
+    console.log('🚀 MSW 서버를 시작합니다...');
+    startMSWServer();
+    console.log('✅ MSW 서버가 시작되었습니다.');
+    console.log('📡 모킹된 API 엔드포인트:');
+    console.log(`   - POST ${apiConfig.endpoints.requestVerification}`);
+    console.log(`   - POST ${apiConfig.endpoints.login}`);
+    console.log(`   - GET  ${apiConfig.endpoints.validate}`);
+    console.log(`   - GET  ${apiConfig.endpoints.me}`);
+    console.log(`   - POST ${apiConfig.endpoints.refresh}`);
+    console.log(`   - POST ${apiConfig.endpoints.logout}`);
+    console.log(`   - GET  ${apiConfig.endpoints.health}`);
+    console.log('');
+    
+    try {
+      await runIntegrationTests(authManager, apiConfig, testMode);
+    } finally {
+      console.log('🛑 MSW 서버를 중지합니다...');
+      stopMSWServer();
+      console.log('✅ MSW 서버가 중지되었습니다.');
+    }
+  } else {
+    // 일반 모드 (local, deployed, custom)
+    await runIntegrationTests(authManager, apiConfig, testMode);
+  }
+}
+
+// CLI에서 직접 실행될 때만 main 함수 실행
+if (require.main === module) {
+  main().catch(error => {
+    console.error('❌ CLI 실행 중 오류 발생:', error);
+    process.exit(1);
+  });
 }

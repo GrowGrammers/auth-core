@@ -172,8 +172,20 @@ export class AuthManager {
    */
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
     try {
+      // 저장된 토큰 가져오기
+      const tokenResult = await this.tokenStore.getToken();
+      if (!tokenResult.success || !tokenResult.data) {
+        return createErrorResponse('액세스 토큰이 필요합니다.');
+      }
+      
+      // 토큰을 request에 추가
+      const logoutRequestWithToken = {
+        ...request,
+        token: tokenResult.data
+      };
+      
       // ⑦ 로그아웃 시도 (누가? 전달받은 provider가!)
-      const logoutResponse = await this.provider.logout(request);
+      const logoutResponse = await this.provider.logout(logoutRequestWithToken);
       
       if (logoutResponse.success) {
         // ⑧ 로그아웃 성공 시 저장된 토큰 삭제

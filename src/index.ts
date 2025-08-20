@@ -14,16 +14,30 @@ export {
   LogoutRequest,
   LogoutResponse,
   RefreshTokenRequest,
-  RefreshTokenResponse
+  RefreshTokenResponse,
+  EmailVerificationApiResponse,
+  LoginApiResponse,
+  LogoutApiResponse,
+  RefreshTokenApiResponse
 } from './providers';
 
 // 구현체들
 export { EmailAuthProvider, GoogleAuthProvider } from './providers';
 export { BaseAuthProvider } from './providers/base/BaseAuthProvider';
 
-// 토큰 저장소 관련 - 인터페이스만 export
+// 토큰 저장소 관련
 export { TokenStore } from './storage';
 export { FakeTokenStore } from './storage';
+export { WebTokenStore } from './storage/implementations/WebTokenStore';
+export { MobileTokenStore } from './storage/implementations/MobileTokenStore';
+export { 
+  SaveTokenResponse, 
+  GetTokenResponse, 
+  RemoveTokenResponse, 
+  HasTokenResponse, 
+  IsTokenExpiredResponse, 
+  ClearResponse 
+} from './storage/TokenStore.interface';
 
 // HTTP 클라이언트 인터페이스
 export { HttpClient, HttpRequestConfig, HttpResponse } from './network/interfaces/HttpClient';
@@ -39,7 +53,7 @@ export {
   isAuthProviderFactoryError
 } from './factories/AuthProviderFactory';
 export { 
-  createTokenStore, 
+  createTokenStore,
   TokenStoreType, 
   TokenStoreRegistry,
   TokenStoreFactoryResult,

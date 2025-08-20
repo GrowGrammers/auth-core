@@ -2,23 +2,25 @@
 
 import { TokenStore } from '../storage/TokenStore.interface';
 import { FakeTokenStore } from '../storage/FakeTokenStore';
+import { WebTokenStore } from '../storage/implementations/WebTokenStore';
+import { MobileTokenStore } from '../storage/implementations/MobileTokenStore';
 import { createErrorResponse } from '../shared/utils/errorUtils';
 import { FactoryResult, FactoryErrorResponse, isFactorySuccess, isFactoryError } from '../shared/types';
 
-export type TokenStoreType = 'web' | 'mobile' | 'fake';
+export type TokenStoreType = 'web' | 'mobile' | 'fake' | 'auto';
 
-// 플랫폼별 TokenStore 구현체들을 외부에서 주입받기 위한 인터페이스
+// 플랫폼별 TokenStore 생성 함수들을 외부에서 주입받기 위한 인터페이스
 export interface TokenStoreRegistry {
-  web: TokenStore;
-  mobile: TokenStore;
-  fake: TokenStore;
+  web: () => WebTokenStore;
+  mobile: (storage?: any) => MobileTokenStore;
+  fake: () => typeof FakeTokenStore;
 }
 
-// 기본 레지스트리 (FakeTokenStore만 포함)
+// 기본 레지스트리 (실제 구현체 생성 함수들 포함)
 const defaultRegistry: TokenStoreRegistry = {
-  web: FakeTokenStore, // 임시로 FakeTokenStore 사용
-  mobile: FakeTokenStore, // 임시로 FakeTokenStore 사용
-  fake: FakeTokenStore
+  web: () => new WebTokenStore(),
+  mobile: (storage?: any) => new MobileTokenStore(storage),
+  fake: () => FakeTokenStore
 };
 
 export type TokenStoreFactoryResult = FactoryResult<TokenStore>;
@@ -45,17 +47,42 @@ export function isTokenStoreFactoryError(result: TokenStoreFactoryResult): resul
  */
 export function createTokenStore(
   type: TokenStoreType, 
-  registry: TokenStoreRegistry = defaultRegistry
+  registry: TokenStoreRegistry = defaultRegistry,
+  storage?: any
 ): TokenStoreFactoryResult {
   try {
-    const store = registry[type];
-    if (!store) {
+    // auto 타입인 경우 환경 자동 감지
+    if (type === 'auto') {
+      // 브라우저 환경
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return new WebTokenStore();
+      }
+      
+      // React Native 환경 (AsyncStorage 제공된 경우)
+      if (storage && typeof storage.setItem === 'function') {
+        return new MobileTokenStore(storage);
+      }
+      
+      // 기본값: 웹 환경
+      return new WebTokenStore();
+    }
+    
+    // 기존 타입 기반 선택
+    const storeFactory = registry[type as keyof TokenStoreRegistry];
+    if (!storeFactory) {
       return createErrorResponse(
         `지원하지 않는 토큰 저장소 타입입니다: ${type}`,
         `지원하지 않는 토큰 저장소 타입입니다. (${type})`
       );
     }
-    return store;
+    
+    // mobile 타입인 경우 storage 인자 전달
+    if (type === 'mobile') {
+      return storeFactory(storage);
+    }
+    
+    // 다른 타입들은 인자 없이 호출
+    return storeFactory();
   } catch (error) {
     console.error('토큰 저장소 생성 중 오류 발생:', error);
     return createErrorResponse(

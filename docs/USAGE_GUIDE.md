@@ -5,6 +5,8 @@
 1. [API 응답 구조](#api-응답-구조)
 2. [기본 사용법](#기본-사용법)
 3. [API 응답 구조 베스트 프랙티스](#-api-응답-구조-베스트-프랙티스)
+4. [테스트 환경 활용](#-테스트-환경-활용)
+5. [유틸리티 함수 활용](#-유틸리티-함수-활용)
 
 ## API 응답 구조
 
@@ -25,6 +27,7 @@ interface ErrorResponse {
   success: false;
   error: string;
   message: string;
+  data: null;
 }
 
 // API 응답 유니온 타입
@@ -241,9 +244,6 @@ if (clearResult.success) {
 ```
 
 
-
-이 가이드를 따라하면 Auth Core를 각 플랫폼에서 효과적으로 사용할 수 있습니다!
-
 ## API 응답 구조 베스트 프랙티스
 
 ### 1. 일관된 에러 처리
@@ -332,6 +332,138 @@ const UserProfile: React.FC = () => {
 };
 ```
 
+## 테스트 환경 활용
+
+### 1. 단위 테스트 실행
+
+```bash
+# 모든 단위 테스트 실행
+npm run test:run
+
+# 테스트 커버리지 확인
+npm run test:coverage
+
+# 테스트 감시 모드
+npm run test:watch
+```
+
+### 2. 통합 테스트 실행
+
+```bash
+# 로컬 환경 통합 테스트
+npm run integration:local
+
+# MSW를 사용한 모킹 통합 테스트
+npm run integration:msw
+
+# 배포된 백엔드로 통합 테스트
+npm run integration:deployed
+```
+
+### 3. 웹 데모 테스트
+
+```bash
+# 웹 데모 실행
+cd examples/web-demo
+npm install
+npm run dev
+```
+
+웹 데모에서는 다음을 테스트할 수 있습니다:
+- MSW를 사용한 API 모킹
+- 실제 HTTP 클라이언트
+- Mock HTTP 클라이언트
+- 전체 인증 플로우 시나리오
+
+## 유틸리티 함수 활용
+
+### 1. 기본 응답 생성
+
+```typescript
+import { createSuccessResponse, createErrorResponse } from 'auth-core';
+
+// 성공 응답 생성
+const successResponse = createSuccessResponse(
+  '사용자 정보 조회 성공',
+  { id: '123', name: '홍길동' }
+);
+
+// 에러 응답 생성
+const errorResponse = createErrorResponse(
+  '사용자 정보 조회 실패',
+  '사용자를 찾을 수 없습니다.'
+);
+```
+
+### 2. 전용 에러 응답 함수들
+
+```typescript
+import { 
+  createTokenValidationErrorResponse,
+  createUserInfoErrorResponse,
+  createNetworkErrorResponse,
+  createValidationErrorResponse,
+  createTimeoutErrorResponse
+} from 'auth-core';
+
+// 토큰 검증 실패
+const tokenError = createTokenValidationErrorResponse('토큰이 만료되었습니다.');
+
+// 사용자 정보 조회 실패
+const userError = createUserInfoErrorResponse('권한이 없습니다.');
+
+// 네트워크 오류
+const networkError = createNetworkErrorResponse();
+
+// 유효성 검사 실패
+const validationError = createValidationErrorResponse('email');
+
+// 타임아웃 오류
+const timeoutError = createTimeoutErrorResponse();
+```
+
+### 3. 예외 객체로부터 에러 응답 생성
+
+```typescript
+import { createErrorResponseFromException } from 'auth-core';
+
+try {
+  // API 호출
+  const result = await someApiCall();
+} catch (error) {
+  // 예외를 에러 응답으로 변환
+  const errorResponse = createErrorResponseFromException(
+    error, 
+    'API 호출 중 오류가 발생했습니다.'
+  );
+  
+  // 에러 응답 처리
+  console.error('에러:', errorResponse.error);
+  console.log('메시지:', errorResponse.message);
+}
+```
+
+### 4. 커스텀 응답 생성
+
+```typescript
+// 특정 도메인에 맞는 응답 생성 함수
+function createAuthErrorResponse(errorType: string, details?: string) {
+  const errorMessages = {
+    'INVALID_CREDENTIALS': '잘못된 인증 정보입니다.',
+    'TOKEN_EXPIRED': '인증 토큰이 만료되었습니다.',
+    'INSUFFICIENT_PERMISSIONS': '권한이 부족합니다.'
+  };
+  
+  return createErrorResponse(
+    errorType,
+    details || errorMessages[errorType] || '인증 오류가 발생했습니다.'
+  );
+}
+
+// 사용 예시
+const authError = createAuthErrorResponse('INVALID_CREDENTIALS');
+```
+
 ## 📚 요약
 
 ### 주요 변경사항
@@ -339,6 +471,8 @@ const UserProfile: React.FC = () => {
 2. **`success` 필드로 성공/실패 판단**
 3. **`data` 필드에서 실제 데이터 접근**
 4. **`error` 필드에서 에러 정보 확인**
+5. **완벽한 테스트 환경 구축**
+6. **유틸리티 함수 제공**
 
 ### 사용 패턴
 ```typescript
@@ -352,5 +486,4 @@ if (result.success) {
 }
 ```
 
-
-이제 Auth Core의 새로운 API 응답 구조를 활용하여 더 안전하고 일관된 인증 로직을 구현할 수 있습니다! 🚀 
+ 

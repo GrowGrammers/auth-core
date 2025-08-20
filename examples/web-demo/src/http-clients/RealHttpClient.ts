@@ -1,8 +1,8 @@
-import { HttpClient, HttpRequestConfig, HttpResponse } from '../src/network/interfaces/HttpClient';
+import { HttpClient, HttpRequestConfig, HttpResponse } from 'auth-core';
 
 // 실제 HTTP 요청을 보내는 HttpClient 구현
 export class RealHttpClient implements HttpClient {
-  async request<T = any>(config: HttpRequestConfig): Promise<HttpResponse> {
+  async request(config: HttpRequestConfig): Promise<HttpResponse> {
     try {
       const { method = 'GET', url, headers = {}, body, timeout = 10000 } = config;
       
@@ -48,23 +48,23 @@ export class RealHttpClient implements HttpClient {
     }
   }
 
-  async get<T = any>(url: string, config?: Omit<HttpRequestConfig, 'method' | 'url'>): Promise<HttpResponse> {
+  async get(url: string, config?: Omit<HttpRequestConfig, 'method' | 'url'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'GET', url });
   }
 
-  async post<T = any>(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
+  async post(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'POST', url, body: data });
   }
 
-  async put<T = any>(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
+  async put(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'PUT', url, body: data });
   }
 
-  async delete<T = any>(url: string, config?: Omit<HttpRequestConfig, 'method' | 'url'>): Promise<HttpResponse> {
+  async delete(url: string, config?: Omit<HttpRequestConfig, 'method' | 'url'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'DELETE', url });
   }
 
-  async patch<T = any>(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
+  async patch(url: string, data?: any, config?: Omit<HttpRequestConfig, 'method' | 'url' | 'body'>): Promise<HttpResponse> {
     return this.request({ ...config, method: 'PATCH', url, body: data });
   }
 }

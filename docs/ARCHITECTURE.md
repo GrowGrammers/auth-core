@@ -7,6 +7,7 @@
 3. [데이터 흐름](#데이터-흐름)
 4. [설계 원칙](#설계-원칙)
 5. [확장성](#확장성)
+6. [테스트 아키텍처](#테스트-아키텍처)
 
 ## 핵심 아키텍처
 
@@ -169,6 +170,25 @@ export function createTokenStore(
 
 **책임**: 복잡한 객체 생성 로직 캡슐화, 타입 안전성 보장
 
+### 6. Shared Utils (공통 유틸리티)
+
+```typescript
+// 응답 생성 헬퍼 함수들
+export function createSuccessResponse<T>(message: string, data: T): SuccessResponse<T>
+export function createErrorResponse(error: string, message?: string): ErrorResponse
+export function createErrorResponseFromException(error: unknown, defaultMessage: string): ErrorResponse
+
+// 전용 에러 응답 함수들
+export function createTokenValidationErrorResponse(reason?: string): ErrorResponse
+export function createUserInfoErrorResponse(reason?: string): ErrorResponse
+export function createNetworkErrorResponse(): ErrorResponse
+export function createValidationErrorResponse(field: string): ErrorResponse
+export function createTimeoutErrorResponse(): ErrorResponse
+export function createServerErrorResponse(statusCode: number): ErrorResponse
+```
+
+**책임**: 일관된 응답 구조 생성, 에러 처리 표준화
+
 ## 데이터 흐름
 
 ### 1. 로그인 플로우
@@ -268,6 +288,7 @@ export interface ApiConfig {
 - `TokenStore`: 토큰 저장/관리
 - `HttpClient`: HTTP 통신
 - `Factory`: 객체 생성 로직
+- `Shared Utils`: 응답 생성 및 에러 처리
 
 ### 5. 개방-폐쇄 원칙 (Open-Closed)
 
@@ -374,6 +395,97 @@ export class AuthManager {
 }
 ```
 
+## 테스트 아키텍처
+
+### 1. 테스트 구조
+
+```
+test/
+├── unit/                     # 단위 테스트
+│   ├── auth-manager.test.ts # AuthManager 단위 테스트
+│   └── setup/
+│       └── unit.setup.ts    # 단위 테스트 설정
+├── integration/              # 통합 테스트
+│   ├── auth-integration-tests.ts # 전체 인증 플로우 테스트
+│   └── setup/
+│       ├── integration.setup.ts  # 통합 테스트 설정
+│       ├── msw.handlers.ts       # MSW 핸들러
+│       └── msw.server.ts         # MSW 서버 설정
+├── mocks/                    # Mock 객체들
+│   ├── FakeAuthProvider.ts   # 가짜 인증 제공자
+│   ├── FakeHttpClient.ts     # 가짜 HTTP 클라이언트
+│   ├── InMemoryTokenStore.ts # 메모리 토큰 저장소
+│   └── MSWHttpClient.ts      # MSW 기반 HTTP 클라이언트
+└── utils/                    # 테스트 유틸리티
+    └── test-helpers.ts       # 테스트 헬퍼 함수들
+```
+
+### 2. 테스트 전략
+
+#### 단위 테스트
+- **목적**: 각 컴포넌트의 독립적인 기능 검증
+- **범위**: AuthManager, Provider, TokenStore, Factory 등
+- **Mock**: HTTP 클라이언트, 토큰 저장소를 Mock으로 대체
+- **실행**: `npm run test:run`
+
+#### 통합 테스트
+- **목적**: 전체 인증 플로우 시나리오 검증
+- **범위**: 로그인 → 토큰 검증 → 사용자 정보 조회 → 로그아웃
+- **환경**: MSW를 사용한 API 모킹
+- **실행**: `npm run integration:msw`
+
+#### 웹 데모 테스트
+- **목적**: 실제 브라우저 환경에서의 동작 확인
+- **범위**: MSW 모킹, 실제 HTTP 클라이언트, Mock 클라이언트
+- **환경**: Vite + TypeScript + MSW
+- **실행**: `cd examples/web-demo && npm run dev`
+
+### 3. 테스트 환경 설정
+
+#### MSW (Mock Service Worker)
+```typescript
+// API 응답 모킹
+export const handlers = [
+  rest.post('/api/auth/email/login', (req, res, ctx) => {
+    return res(
+      ctx.json({
+        accessToken: 'mock-access-token',
+        refreshToken: 'mock-refresh-token',
+        user: { id: '1', email: 'test@example.com' }
+      })
+    );
+  })
+];
+```
+
+#### 테스트 설정
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    setupFiles: ['./test/setup/unit.setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html']
+    }
+  }
+});
+```
+
+### 4. 테스트 커버리지
+
+```bash
+# 커버리지 확인
+npm run test:coverage
+
+# 전체 테스트 + 커버리지
+npm run test:all:coverage
+```
+
+**목표**: 핵심 비즈니스 로직 90% 이상 커버리지 달성
+
 ## 결론
 
 Auth Core는 다음과 같은 특징을 가진 **플랫폼 독립적인 인증 라이브러리**입니다:
@@ -383,6 +495,8 @@ Auth Core는 다음과 같은 특징을 가진 **플랫폼 독립적인 인증 �
 - **확장성**: 새로운 인증 방식과 플랫폼 쉽게 추가
 - **테스트 용이성**: 의존성 주입으로 Mock 구현체 사용 가능
 - **타입 안전성**: TypeScript로 컴파일 타임 오류 검출 및 타입 가드 활용
+- **일관된 응답 구조**: 모든 API가 동일한 응답 형태 사용
+- **풍부한 유틸리티**: 응답 생성 및 에러 처리를 위한 헬퍼 함수들
 
 ### ✅ **팀 협업 장점**
 - **공통 모듈**: 웹/모바일/백엔드에서 동일한 인증 로직 사용
@@ -394,5 +508,12 @@ Auth Core는 다음과 같은 특징을 가진 **플랫폼 독립적인 인증 �
 - **단일 책임**: 각 클래스가 하나의 명확한 역할
 - **개방-폐쇄**: 새로운 기능 추가 시 기존 코드 수정 최소화
 - **의존성 역전**: 구체적인 구현보다 추상화에 의존
+- **완벽한 테스트 환경**: 단위/통합/웹 데모 테스트로 품질 보장
+
+### ✅ **테스트 환경**
+- **단위 테스트**: 각 컴포넌트 독립적 검증
+- **통합 테스트**: 전체 인증 플로우 시나리오 검증
+- **웹 데모**: 실제 브라우저 환경 동작 확인
+- **MSW 모킹**: 백엔드 없이도 완전한 테스트 가능
 
 다른 모듈들(AuthWebModule, mobile-app, AuthBackendService)에서 이 공통 모듈을 활용하여 각자의 플랫폼 특성에 맞는 인증 시스템을 구축할 수 있습니다. 
