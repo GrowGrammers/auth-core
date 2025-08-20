@@ -6,6 +6,7 @@ import {
   LogoutRequest,
   RefreshTokenRequest
 } from '../../src/providers/interfaces/dtos/auth.dto';
+import { HttpClient } from '../../src/network/interfaces/HttpClient';
 
 // =====================================
 // 🧪 테스트 전용 인터페이스 (auth-core와 무관)
@@ -169,12 +170,7 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     // 7. 로그아웃
     console.log('    7단계: 로그아웃');
     const logoutRequest: LogoutRequest = {
-      provider: 'email',
-      token: {
-        accessToken: loginResponse.data?.accessToken || '',
-        refreshToken: loginResponse.data?.refreshToken || '',
-        expiresAt: loginResponse.data?.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : 0
-      }
+      provider: 'email'
     };
     const logoutResponse = await authManager.logout(logoutRequest);
     if (!logoutResponse.success) {
@@ -276,12 +272,7 @@ async function testTokenManagement(authManager: AuthManager): Promise<TestResult
 
     // 4. 로그아웃하여 토큰 정리
     const logoutRequest: LogoutRequest = {
-      provider: 'email',
-      token: {
-        accessToken: loginResponse.data?.accessToken || '',
-        refreshToken: loginResponse.data?.refreshToken || '',
-        expiresAt: loginResponse.data?.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : 0
-      }
+      provider: 'email'
     };
     await authManager.logout(logoutRequest);
 
@@ -320,10 +311,11 @@ async function testErrorHandling(authManager: AuthManager): Promise<TestResult> 
     
     // 1. 잘못된 인증번호로 로그인 시도
     console.log('    1단계: 잘못된 인증번호로 로그인 시도');
+    const errorVerificationCode = process.env.MSW_ERROR_VERIFICATION_CODE || '999999';
     const invalidLoginRequest: LoginRequest = {
       provider: 'email',
       email: 'test@example.com',
-      verificationCode: '999999' // 잘못된 인증번호
+      verificationCode: errorVerificationCode // 환경 변수에서 가져온 에러 코드
     };
     const invalidLoginResponse = await authManager.login(invalidLoginRequest);
     
@@ -425,12 +417,7 @@ async function testStateManagement(authManager: AuthManager): Promise<TestResult
     // 4. 로그아웃
     console.log('    4단계: 로그아웃');
     const logoutRequest: LogoutRequest = {
-      provider: 'email',
-      token: {
-        accessToken: loginResponse.data?.accessToken || '',
-        refreshToken: loginResponse.data?.refreshToken || '',
-        expiresAt: loginResponse.data?.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : 0
-      }
+      provider: 'email'
     };
     const logoutResponse = await authManager.logout(logoutRequest);
     if (!logoutResponse.success) {
@@ -495,8 +482,7 @@ async function clearAuthState(authManager: AuthManager): Promise<void> {
     if (userInfo.success) {
       // 토큰이 있으면 로그아웃 시도
       const logoutRequest: LogoutRequest = {
-        provider: 'email',
-        token: { accessToken: '', refreshToken: '', expiresAt: 0 }
+        provider: 'email'
       };
       await authManager.logout(logoutRequest);
     }
