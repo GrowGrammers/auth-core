@@ -13,7 +13,7 @@ export class MSWHttpClient implements HttpClient {
           'Content-Type': 'application/json',
           ...headers,
         },
-        body: body ? JSON.stringify(body) : undefined,
+        body: body, // 이미 JSON.stringify된 body를 그대로 사용
       });
 
       const responseData = await response.json();
