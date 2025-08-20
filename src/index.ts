@@ -53,6 +53,7 @@ export {
   isAuthProviderFactoryError
 } from './factories/AuthProviderFactory';
 export { 
+  createTokenStore,
   TokenStoreType, 
   TokenStoreRegistry,
   TokenStoreFactoryResult,
