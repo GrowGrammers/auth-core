@@ -199,6 +199,7 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
+    // 구글 로그인
     if (url.includes('/api/v1/auth/google/login') && method === 'POST') {
       // 요청 본문에서 googleToken 확인
       let requestBody: any;
@@ -223,6 +224,7 @@ export class MockHttpClient implements HttpClient {
           json: async () => ({
             success: false,
             message: '잘못된 구글 토큰입니다.',
+            data: null,
             error: 'INVALID_GOOGLE_TOKEN'
           }),
           text: async () => '{"success":false,"message":"잘못된 구글 토큰입니다.","error":"INVALID_GOOGLE_TOKEN"}'
@@ -251,6 +253,43 @@ export class MockHttpClient implements HttpClient {
           }
         }),
         text: async () => 'mock google login response'
+      };
+    }
+
+    // 구글 로그아웃
+    if (url.includes('/api/v1/auth/google/logout') && method === 'POST') {
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        json: async () => ({
+          success: true,
+          message: '구글 로그아웃에 성공했습니다.',
+          data: null
+        }),
+        text: async () => '{"success":true,"message":"구글 로그아웃에 성공했습니다.","data":null}'
+      };
+    }
+
+    // 구글 토큰 갱신
+    if (url.includes('/api/v1/auth/google/refresh') && method === 'POST') {
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        json: async () => ({
+          success: true,
+          message: '구글 토큰이 성공적으로 갱신되었습니다.',
+          data: {
+            accessToken: this.generateRandomToken('new-google-access-token'),
+            refreshToken: this.generateRandomToken('new-google-refresh-token'),
+            expiresAt: this.generateExpiresAt(),
+            tokenType: 'Bearer'
+          }
+        }),
+        text: async () => 'mock google refresh response'
       };
     }
     

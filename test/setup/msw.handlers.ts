@@ -130,6 +130,29 @@ export const handlers = [
     });
   }),
 
+  // 구글 로그아웃
+  http.post('*/api/v1/auth/google/logout', () => {
+    return HttpResponse.json({
+      success: true,
+      message: '구글 로그아웃에 성공했습니다.',
+      data: null
+    });
+  }),
+
+  // 구글 토큰 갱신
+  http.post('*/api/v1/auth/google/refresh', () => {
+    return HttpResponse.json({
+      success: true,
+      message: '구글 토큰이 성공적으로 갱신되었습니다.',
+      data: {
+        accessToken: generateRandomToken('new-google-access-token'),
+        refreshToken: generateRandomToken('new-google-refresh-token'),
+        expiresAt: generateExpiresAt(),
+        tokenType: 'Bearer'
+      }
+    });
+  }),
+
   // 토큰 검증
   http.get('*/api/v1/auth/validate-token', () => {
     return HttpResponse.json({

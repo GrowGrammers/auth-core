@@ -3,7 +3,8 @@ import {
   EmailVerificationApiResponse, 
   LoginApiResponse, 
   RefreshTokenApiResponse, 
-  LogoutApiResponse
+  LogoutApiResponse,
+  ApiConfig
 } from 'auth-core';
 import { createTokenStore, isTokenStoreFactorySuccess, TokenStore, TokenStoreType } from 'auth-core';
 import { WebTokenStore } from './WebTokenStore';
@@ -23,22 +24,27 @@ class AuthDemo {
       // 실패 시 기본 WebTokenStore 사용
       this.tokenStore = new WebTokenStore();
     }
+    
+    // API 설정
+    const apiConfig: ApiConfig = {
+      apiBaseUrl: currentConfig.apiBaseUrl,
+      endpoints: {
+        requestVerification: '/api/v1/auth/email/request',
+        verifyEmail: '/api/v1/auth/email/verify',
+        login: '/api/v1/auth/email/login',
+        logout: '/api/v1/auth/email/logout',
+        refresh: '/api/v1/auth/email/refresh',
+        validate: '/api/v1/auth/validate-token',
+        me: '/api/v1/auth/user-info',
+        health: '/api/v1/health'
+      },
+      timeout: 10000
+    };
+    
     this.authManager = new AuthManager({
       providerType: 'email',
       tokenStore: this.tokenStore,
-        apiConfig: { /* API 설정 */
-          apiBaseUrl: currentConfig.apiBaseUrl,
-          endpoints: {
-            requestVerification: '/api/v1/auth/email/request',
-            verifyEmail: '/api/v1/auth/email/verify',
-            login: '/api/v1/auth/email/login',
-            logout: '/api/v1/auth/email/logout',
-            refresh: '/api/v1/auth/email/refresh',
-            validate: '/api/v1/auth/validate-token',
-            me: '/api/v1/auth/user-info',
-            health: '/api/v1/health'
-          }
-      },
+      apiConfig,
       httpClient: (() => {
         switch (currentConfig.httpClient) {
           case 'MSWHttpClient':

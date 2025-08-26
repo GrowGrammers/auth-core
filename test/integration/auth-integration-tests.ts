@@ -580,7 +580,11 @@ async function main() {
       refresh: '/api/v1/auth/email/refresh',
       validate: '/api/v1/auth/validate-token',
       me: '/api/v1/auth/user-info',
-      health: '/api/v1/health'
+      health: '/api/v1/health',
+      // 구글 인증 엔드포인트 추가
+      googleLogin: '/api/v1/auth/google/login',
+      googleLogout: '/api/v1/auth/google/logout',
+      googleRefresh: '/api/v1/auth/google/refresh'
     },
     timeout: 10000
   };

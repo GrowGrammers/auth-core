@@ -19,7 +19,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
     fakeHttpClient = new FakeHttpClient();
     
     apiConfig = {
-      apiBaseUrl: 'https://fake-api.example.com',
+      apiBaseUrl: 'http://localhost:3000',
       endpoints: {
         requestVerification: '/api/v1/auth/email/request',
         verifyEmail: '/api/v1/auth/email/verify',
@@ -28,8 +28,13 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         refresh: '/api/v1/auth/email/refresh',
         validate: '/api/v1/auth/validate-token',
         me: '/api/v1/auth/user-info',
-        health: '/api/v1/health'
-      }
+        health: '/api/v1/health',
+        // 구글 인증 엔드포인트 추가
+        googleLogin: '/api/v1/auth/google/login',
+        googleLogout: '/api/v1/auth/google/logout',
+        googleRefresh: '/api/v1/auth/google/refresh'
+      },
+      timeout: 10000
     };
 
     // AuthManager 생성 (테스트 더블들 주입)
