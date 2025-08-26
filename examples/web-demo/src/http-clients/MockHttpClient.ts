@@ -77,6 +77,7 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
+    // 이메일 로그인
     if (url.includes('/api/v1/auth/email/login') && method === 'POST') {
       // 요청 본문에서 email 확인
       let requestBody: any;
@@ -91,7 +92,7 @@ export class MockHttpClient implements HttpClient {
       }
       const email = requestBody?.email;
       
-      // 이메일이 없는 경우 실패 응답
+      // 이메일이 없는 경우 에러 응답
       if (!email) {
         return {
           ok: false,
@@ -101,12 +102,31 @@ export class MockHttpClient implements HttpClient {
           json: async () => ({
             success: false,
             message: '이메일이 필요합니다.',
+            data: null,
             error: 'EMAIL_REQUIRED'
           }),
           text: async () => '{"success":false,"message":"이메일이 필요합니다.","error":"EMAIL_REQUIRED"}'
         };
       }
+
+      // 이메일 인증이 완료되지 않은 경우 에러 응답 (MSW와 동일한 로직)
+      if (email === 'unverified@example.com') {
+        return {
+          ok: false,
+          status: 401,
+          statusText: 'Unauthorized',
+          headers: {},
+          json: async () => ({
+            success: false,
+            message: '이메일 인증이 필요합니다.',
+            data: null,
+            error: 'EMAIL_VERIFICATION_REQUIRED'
+          }),
+          text: async () => '{"success":false,"message":"이메일 인증이 필요합니다.","error":"EMAIL_VERIFICATION_REQUIRED"}'
+        };
+      }
       
+      // 올바른 이메일인 경우 성공 응답
       return {
         ok: true,
         status: 200,
@@ -121,7 +141,7 @@ export class MockHttpClient implements HttpClient {
             expiresAt: this.generateExpiresAt(),
             userInfo: {
               id: 'user-123',
-              email: 'test@example.com',
+              email: email,
               nickname: '테스트 사용자',
               provider: 'email'
             }
