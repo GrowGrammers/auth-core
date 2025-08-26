@@ -65,6 +65,7 @@ export const handlers = [
   http.post('*/api/v1/auth/email/verify', async ({ request }) => {
     const body = await request.json() as any;
     
+<<<<<<< HEAD
     // 저장된 인증 코드와 비교
     const storedCode = verificationCodes.get(body.email);
     
@@ -78,6 +79,10 @@ export const handlers = [
     }
     
     if (body.verifyCode !== storedCode) {
+=======
+    // 잘못된 인증번호에 대한 에러 응답
+    if (body.verifyCode === '999999') {  // code → verifyCode로 통일
+>>>>>>> 6c0d715 (fix: 이메일 인증 확인 바디 키 혼선 해결)
       return HttpResponse.json({
         success: false,
         message: '잘못된 인증번호입니다.',
