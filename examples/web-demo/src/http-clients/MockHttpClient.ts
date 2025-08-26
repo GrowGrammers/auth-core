@@ -79,7 +79,11 @@ export class MockHttpClient implements HttpClient {
     }
     
     // 이메일 로그인
+<<<<<<< HEAD
     if (url.includes('/api/v1/auth/members/email-login') && method === 'POST') {
+=======
+    if (url.includes('/api/v1/auth/email/login') && method === 'POST') {
+>>>>>>> 2164b26 (test: MockHttpClient에도 MSW와 동일한 인증 상태 확인 로직을 추가)
       // 요청 본문에서 email 확인
       let requestBody: any;
       if (typeof body === 'string') {
