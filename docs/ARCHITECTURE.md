@@ -446,7 +446,11 @@ test/
 ```typescript
 // API 응답 모킹
 export const handlers = [
+<<<<<<< HEAD
   rest.post('/api/v1/auth/members/email-login', (req, res, ctx) => {
+=======
+  rest.post('/api/v1/auth/email/login', (req, res, ctx) => {
+>>>>>>> 094bc86 (docs: 이메일 로그인 API 엔드포인트 버전 업데이트)
     return res(
       ctx.json({
         accessToken: 'mock-access-token',
