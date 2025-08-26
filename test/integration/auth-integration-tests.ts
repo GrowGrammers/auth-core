@@ -106,12 +106,27 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 인증번호 요청 성공');
 
-    // 3. 로그인
-    console.log('    3단계: 로그인');
+    // 3. 이메일 인증번호 확인
+    console.log('    3단계: 이메일 인증번호 확인');
+    const verifyEmailResponse = await authManager.verifyEmail({
+      email: 'test@example.com',
+      verifyCode: '123456'
+    });
+    if (!verifyEmailResponse.success) {
+      return {
+        testName,
+        success: false,
+        error: `이메일 인증 실패: ${verifyEmailResponse.error}`,
+        duration: Date.now() - startTime
+      };
+    }
+    console.log('     ✅ 이메일 인증 성공');
+
+    // 4. 로그인
+    console.log('    4단계: 로그인');
     const loginRequest: LoginRequest = {
       provider: 'email',
-      email: 'test@example.com',
-      verificationCode: '123456'
+      email: 'test@example.com'
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
@@ -124,8 +139,8 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 로그인 성공');
 
-    // 4. 로그인 후 사용자 정보 확인
-    console.log('    4단계: 로그인 후 사용자 정보 확인');
+    // 5. 로그인 후 사용자 정보 확인
+    console.log('    5단계: 로그인 후 사용자 정보 확인');
     const userInfoResponse = await authManager.getCurrentUserInfo();
     if (!userInfoResponse.success) {
       return {
@@ -137,8 +152,8 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 사용자 정보 조회 성공');
 
-    // 5. 토큰 검증
-    console.log('    5단계: 토큰 검증');
+    // 6. 토큰 검증
+    console.log('    6단계: 토큰 검증');
     const tokenValidationResponse = await authManager.validateCurrentToken();
     if (!tokenValidationResponse.success) {
       return {
@@ -150,8 +165,8 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 토큰 검증 성공');
 
-    // 6. 토큰 갱신
-    console.log('    6단계: 토큰 갱신');
+    // 7. 토큰 갱신
+    console.log('    7단계: 토큰 갱신');
     const refreshRequest: RefreshTokenRequest = {
       provider: 'email',
       refreshToken: loginResponse.data?.refreshToken || 'invalid-refresh-token'
@@ -167,8 +182,8 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 토큰 갱신 성공');
 
-    // 7. 로그아웃
-    console.log('    7단계: 로그아웃');
+    // 8. 로그아웃
+    console.log('    8단계: 로그아웃');
     const logoutRequest: LogoutRequest = {
       provider: 'email'
     };
@@ -183,8 +198,8 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 로그아웃 성공');
 
-    // 8. 로그아웃 후 상태 확인
-    console.log('    8단계: 로그아웃 후 상태 확인');
+    // 9. 로그아웃 후 상태 확인
+    console.log('    9단계: 로그아웃 후 상태 확인');
     const finalUserInfo = await authManager.getCurrentUserInfo();
     if (finalUserInfo.success) {
       return {
@@ -234,7 +249,6 @@ async function testTokenManagement(authManager: AuthManager): Promise<TestResult
     const loginRequest: LoginRequest = {
       provider: 'email',
       email: 'test@example.com',
-      verificationCode: '123456'
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
@@ -309,29 +323,46 @@ async function testErrorHandling(authManager: AuthManager): Promise<TestResult> 
   
   try {
     
-    // 1. 잘못된 인증번호로 로그인 시도
-    console.log('    1단계: 잘못된 인증번호로 로그인 시도');
-    const errorVerificationCode = process.env.MSW_ERROR_VERIFICATION_CODE || '999999';
-    const invalidLoginRequest: LoginRequest = {
+    // 1. 이메일 인증 없이 로그인 시도 (실패해야 함)
+    console.log('    1단계: 이메일 인증 없이 로그인 시도');
+    const loginWithoutVerification: LoginRequest = {
       provider: 'email',
-      email: 'test@example.com',
-      verificationCode: errorVerificationCode // 환경 변수에서 가져온 에러 코드
+      email: 'unverified@example.com',
     };
-    const invalidLoginResponse = await authManager.login(invalidLoginRequest);
+    const loginWithoutVerificationResponse = await authManager.login(loginWithoutVerification);
     
-    // 에러가 적절히 처리되었는지 확인
-    if (invalidLoginResponse.success) {
+    // 이메일 인증 없이는 로그인이 실패해야 함
+    if (loginWithoutVerificationResponse.success) {
       return {
         testName,
         success: false,
-        error: '잘못된 인증번호로도 로그인이 성공함',
+        error: '이메일 인증 없이도 로그인이 성공함',
+        duration: Date.now() - startTime
+      };
+    }
+    console.log('     ✅ 이메일 인증 없이 로그인 시도 시 에러 처리 확인');
+
+    // 2. 잘못된 인증번호로 이메일 인증 시도
+    console.log('    2단계: 잘못된 인증번호로 이메일 인증 시도');
+    const errorVerificationCode = process.env.MSW_ERROR_VERIFICATION_CODE || '999999';
+    const invalidVerificationResponse = await authManager.verifyEmail({
+      email: 'test@example.com',
+      verifyCode: errorVerificationCode
+    });
+    
+    // 잘못된 인증번호로는 인증이 실패해야 함
+    if (invalidVerificationResponse.success) {
+      return {
+        testName,
+        success: false,
+        error: '잘못된 인증번호로도 이메일 인증이 성공함',
         duration: Date.now() - startTime
       };
     }
     console.log('     ✅ 잘못된 인증번호 에러 처리 확인');
 
-    // 2. 존재하지 않는 이메일로 인증번호 요청
-    console.log('    2단계: 존재하지 않는 이메일로 인증번호 요청');
+    // 3. 존재하지 않는 이메일로 인증번호 요청
+    console.log('    3단계: 존재하지 않는 이메일로 인증번호 요청');
     const invalidEmailRequest: EmailVerificationRequest = {
       email: 'nonexistent@example.com'
     };
@@ -348,7 +379,8 @@ async function testErrorHandling(authManager: AuthManager): Promise<TestResult> 
       success: true,
       duration,
       details: {
-        invalidCredentialsHandled: true,
+        loginWithoutVerificationHandled: true,
+        invalidVerificationCodeHandled: true,
         invalidEmailHandled: true
       }
     };
@@ -390,7 +422,6 @@ async function testStateManagement(authManager: AuthManager): Promise<TestResult
     const loginRequest: LoginRequest = {
       provider: 'email',
       email: 'test@example.com',
-      verificationCode: '123456'
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
@@ -542,13 +573,14 @@ async function main() {
   const apiConfig: ApiConfig = {
     apiBaseUrl: backendUrl,
     endpoints: {
-      requestVerification: '/api/auth/email/request-verification',
-      login: '/api/auth/email/login',
-      logout: '/api/auth/email/logout',
-      refresh: '/api/auth/email/refresh',
-      validate: '/api/auth/validate-token',
-      me: '/api/auth/user-info',
-      health: '/api/health'
+      requestVerification: '/api/v1/auth/email/request',
+      verifyEmail: '/api/v1/auth/email/verify',
+      login: '/api/v1/auth/email/login',
+      logout: '/api/v1/auth/email/logout',
+      refresh: '/api/v1/auth/email/refresh',
+      validate: '/api/v1/auth/validate-token',
+      me: '/api/v1/auth/user-info',
+      health: '/api/v1/health'
     },
     timeout: 10000
   };
@@ -579,6 +611,7 @@ async function main() {
     console.log('✅ MSW 서버가 시작되었습니다.');
     console.log('📡 모킹된 API 엔드포인트:');
     console.log(`   - POST ${apiConfig.endpoints.requestVerification}`);
+    console.log(`   - POST ${apiConfig.endpoints.verifyEmail}`);
     console.log(`   - POST ${apiConfig.endpoints.login}`);
     console.log(`   - GET  ${apiConfig.endpoints.validate}`);
     console.log(`   - GET  ${apiConfig.endpoints.me}`);

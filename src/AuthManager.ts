@@ -15,7 +15,9 @@ import {
   RefreshTokenRequest,
   RefreshTokenApiResponse,
   TokenValidationApiResponse,
-  UserInfoApiResponse
+  UserInfoApiResponse,
+  EmailVerificationConfirmRequest,
+  EmailVerificationConfirmApiResponse
 } from './providers/interfaces/dtos/auth.dto';
 import { createErrorResponse, createErrorResponseFromException, createSuccessResponse } from './shared/utils';
 import { SuccessResponse, ErrorResponse } from './shared/types/common';
@@ -119,6 +121,39 @@ export class AuthManager {
     } catch (error) {
       console.error('인증번호 요청 중 오류 발생:', error);
       return createErrorResponseFromException(error, '인증번호 요청 중 오류가 발생했습니다.');
+    }
+  }
+
+  /**
+   * 이메일 인증번호 확인.
+   * @param request 이메일 인증번호 확인 정보
+   * @returns 인증번호 확인 결과
+   */
+  async verifyEmail(request: EmailVerificationConfirmRequest): Promise<EmailVerificationConfirmApiResponse> {
+    try {
+      // ① 이메일 인증 가능한 제공자인지 확인
+      if (!this.isEmailVerifiable(this.provider)) {
+        return createErrorResponse('이메일 인증을 지원하지 않는 제공자입니다.');
+      }
+
+      // ② 이메일 인증 가능한 제공자로 캐스팅
+      const emailProvider = this.provider as IEmailVerifiable;
+      
+      // ③ 이메일 인증번호 확인
+      const verificationResponse = await emailProvider.verifyEmail(request);
+      
+      if (verificationResponse.success) {
+        //console.log('[AuthManager] 이메일 인증 성공');
+      } else {
+        // 타입 가드를 통해 error 속성에 안전하게 접근
+        const errorMessage = 'error' in verificationResponse ? verificationResponse.error : '알 수 없는 오류';
+        //console.log('[AuthManager] 이메일 인증 실패:', errorMessage);
+      }
+      
+      return verificationResponse;
+    } catch (error) {
+      console.error('이메일 인증 중 오류 발생:', error);
+      return createErrorResponseFromException(error, '이메일 인증 중 오류가 발생했습니다.');
     }
   }
 

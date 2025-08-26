@@ -6,6 +6,7 @@ import { ErrorResponse, SuccessResponse } from './common';
 // API 엔드포인트 설정
 export interface ApiEndpoints {
   requestVerification: string;
+  verifyEmail: string; // 이메일 인증 엔드포인트 추가
   login: string;
   logout: string;
   refresh: string;

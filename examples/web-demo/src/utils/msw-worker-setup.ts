@@ -18,13 +18,14 @@ export async function setupMSWWorker() {
     
     console.log('🚀 MSW 워커가 시작되었습니다. (브라우저용)');
     console.log('📡 모킹된 API 엔드포인트:');
-    console.log('   - POST /api/auth/email/request-verification');
-    console.log('   - POST /api/auth/email/login');
-    console.log('   - GET  /api/auth/validate-token');
-    console.log('   - GET  /api/auth/user-info');
-    console.log('   - POST /api/auth/email/refresh');
-    console.log('   - POST /api/auth/email/logout');
-    console.log('   - GET  /api/health');
+    console.log('   - POST /api/v1/auth/email/request');
+    console.log('   - POST /api/v1/auth/email/verify');
+    console.log('   - POST /api/v1/auth/email/login');
+    console.log('   - GET  /api/v1/auth/validate-token');
+    console.log('   - GET  /api/v1/auth/user-info');
+    console.log('   - POST /api/v1/auth/email/refresh');
+    console.log('   - POST /api/v1/auth/email/logout');
+    console.log('   - GET  /api/v1/health');
     console.log('');
     
     return worker;

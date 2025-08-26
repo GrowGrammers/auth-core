@@ -13,39 +13,93 @@ import {
   ServiceAvailabilityApiResponse
 } from '../providers/interfaces/dtos/auth.dto';
 
-import { createErrorResponse } from '../shared/utils/errorUtils';
+import { createErrorResponse, createValidationErrorResponse, createNetworkErrorResponse } from '../shared/utils/errorUtils';
+import { makeRequest, makeRequestWithRetry, handleHttpResponse, createToken, createUserInfo } from './utils/httpUtils';
 
 /**
- * Google OAuth 로그인 (v2.0에서 구현 예정)
+ * Google OAuth 로그인
  */
 export async function loginByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
   request: LoginRequest
 ): Promise<LoginApiResponse> {
-  return createErrorResponse('Google 로그인은 아직 구현되지 않았습니다.');
+  try {
+    // 타입 가드: GoogleLoginRequest인지 확인
+    if (!('googleToken' in request)) {
+      return createErrorResponse('구글 로그인 요청이 아닙니다.');
+    }
+
+    // 구글 토큰 검증
+    if (!request.googleToken) {
+      return createValidationErrorResponse('구글 토큰');
+    }
+
+    const response = await makeRequestWithRetry(httpClient, config, config.endpoints.login, {
+      method: 'POST',
+      body: { googleToken: request.googleToken }
+    });
+
+    const data = await handleHttpResponse<LoginApiResponse>(response, '구글 로그인에 실패했습니다.');
+    return data;
+
+  } catch (error) {
+    return createNetworkErrorResponse();
+  }
 }
 
 /**
- * Google OAuth 로그아웃 (v2.0에서 구현 예정)
+ * Google OAuth 로그아웃
  */
 export async function logoutByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
   request: LogoutRequest
 ): Promise<LogoutApiResponse> {
-  return createErrorResponse('Google 로그아웃은 아직 구현되지 않았습니다.');
+  try {
+    if (!request.accessToken) {
+      return createValidationErrorResponse('액세스 토큰');
+    }
+
+    const response = await makeRequestWithRetry(httpClient, config, config.endpoints.logout, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${request.accessToken}`,
+      }
+    });
+
+    const data = await handleHttpResponse<LogoutApiResponse>(response, '구글 로그아웃에 실패했습니다.');
+    return data;
+
+  } catch (error) {
+    return createNetworkErrorResponse();
+  }
 }
 
 /**
- * Google OAuth 토큰 갱신 (v2.0에서 구현 예정)
+ * Google OAuth 토큰 갱신
  */
 export async function refreshTokenByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
   request: RefreshTokenRequest
 ): Promise<RefreshTokenApiResponse> {
-  return createErrorResponse('Google 토큰 갱신은 아직 구현되지 않았습니다.');
+  try {
+    if (!request.refreshToken) {
+      return createValidationErrorResponse('리프레시 토큰');
+    }
+
+    const response = await makeRequestWithRetry(httpClient, config, config.endpoints.refresh, {
+      method: 'POST',
+      body: { refreshToken: request.refreshToken }
+    });
+
+    const data = await handleHttpResponse<RefreshTokenApiResponse>(response, '구글 토큰 갱신에 실패했습니다.');
+    return data;
+
+  } catch (error) {
+    return createNetworkErrorResponse();
+  }
 }
 
 /**

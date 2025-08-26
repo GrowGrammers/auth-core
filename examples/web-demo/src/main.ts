@@ -3,7 +3,7 @@ import {
   EmailVerificationApiResponse, 
   LoginApiResponse, 
   RefreshTokenApiResponse, 
-  LogoutApiResponse 
+  LogoutApiResponse
 } from 'auth-core';
 import { createTokenStore, isTokenStoreFactorySuccess, TokenStore, TokenStoreType } from 'auth-core';
 import { WebTokenStore } from './WebTokenStore';
@@ -29,13 +29,14 @@ class AuthDemo {
         apiConfig: { /* API 설정 */
           apiBaseUrl: currentConfig.apiBaseUrl,
           endpoints: {
-           requestVerification: '/api/auth/email/request-verification',
-            login: '/api/auth/email/login',
-            logout: '/api/auth/email/logout',
-            refresh: '/api/auth/email/refresh',
-            validate: '/api/auth/validate-token',
-            me: '/api/auth/user-info',
-            health: '/api/health'
+            requestVerification: '/api/v1/auth/email/request',
+            verifyEmail: '/api/v1/auth/email/verify',
+            login: '/api/v1/auth/email/login',
+            logout: '/api/v1/auth/email/logout',
+            refresh: '/api/v1/auth/email/refresh',
+            validate: '/api/v1/auth/validate-token',
+            me: '/api/v1/auth/user-info',
+            health: '/api/v1/health'
           }
       },
       httpClient: (() => {
@@ -52,10 +53,15 @@ class AuthDemo {
       })()
     });
     
-    // MSW 워커 시작
-    setupMSWWorker().catch((error) => {
-      console.error('MSW 워커 설정 실패:', error);
-    });
+    // MSW 워커 시작 (RealHttpClient 사용 시에는 시작하지 않음)
+    if (currentConfig.httpClient !== 'RealHttpClient') {
+      setupMSWWorker().catch((error) => {
+        console.error('MSW 워커 설정 실패:', error);
+      });
+    } else {
+      console.log('🚀 RealHttpClient 사용 - MSW 워커를 시작하지 않습니다.');
+      console.log(`📡 로컬 백엔드 서버: ${currentConfig.apiBaseUrl}`);
+    }
     
     this.initializeEventListeners();
     this.updateStatus('AuthCore 웹 데모가 준비되었습니다. 🚀', 'info');
@@ -118,15 +124,25 @@ class AuthDemo {
   private async verifyEmail(): Promise<void> {
     try {
       const email = (document.getElementById('email') as HTMLInputElement).value;
-      const verificationCode = (document.getElementById('verificationCode') as HTMLInputElement).value;
+      const verifyCode = (document.getElementById('verificationCode') as HTMLInputElement).value;
       
-      if (!email || !verificationCode) {
+      if (!email || !verifyCode) {
         this.updateStatus('이메일과 인증번호를 모두 입력해주세요.', 'error');
         return;
       }
 
-      // 이메일 인증은 provider를 통해 직접 호출해야 함
-      this.updateStatus('이메일 인증 기능은 provider를 통해 구현됩니다.', 'info');
+      // AuthManager를 통해 이메일 인증 API 호출
+      const result = await this.authManager.verifyEmail({ 
+        email, 
+        verifyCode: verifyCode 
+      });
+      
+      // UI 업데이트
+      if (result.success) {
+        this.updateStatus('이메일 인증이 완료되었습니다!', 'success');
+      } else {
+        this.updateStatus(`이메일 인증 실패: ${result.error}`, 'error');
+      }
     } catch (error) {
       this.updateStatus(`이메일 인증 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, 'error');
     }
@@ -135,23 +151,21 @@ class AuthDemo {
   private async loginWithEmail(): Promise<LoginApiResponse> {
     try {
       const email = (document.getElementById('email') as HTMLInputElement).value;
-      const password = (document.getElementById('password') as HTMLInputElement).value;
       
-      if (!email || !password) {
+      if (!email) {
         const errorResponse: LoginApiResponse = {
           success: false,
-          message: '이메일과 비밀번호를 모두 입력해주세요.',
+          message: '이메일을 입력해주세요.',
           data: null,
-          error: '이메일과 비밀번호를 모두 입력해주세요.'
+          error: '이메일을 입력해주세요.'
         };
-        this.updateStatus('이메일과 비밀번호를 모두 입력해주세요.', 'error');
+        this.updateStatus('이메일을 입력해주세요.', 'error');
         return errorResponse;
       }
 
       const result = await this.authManager.login({ 
         provider: 'email', 
-        email, 
-        verificationCode: '123456' 
+        email
       });
       
       // UI 업데이트
@@ -184,8 +198,19 @@ class AuthDemo {
         return;
       }
 
-      // 구글 로그인은 별도 provider가 필요하므로 모의 구현
-      this.updateStatus('구글 로그인 기능은 별도 provider 구현이 필요합니다.', 'info');
+      // AuthManager를 통해 구글 로그인 API 호출
+      const result = await this.authManager.login({ 
+        provider: 'google',
+        googleToken 
+      });
+      
+      // UI 업데이트
+      if (result.success && result.data) {
+        this.updateStatus('구글 로그인이 성공했습니다!', 'success');
+        this.displayTokenInfo(result.data);
+      } else {
+        this.updateStatus(`구글 로그인 실패: ${result.error}`, 'error');
+      }
     } catch (error) {
       this.updateStatus(`구글 로그인 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, 'error');
     }

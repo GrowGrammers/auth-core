@@ -2,11 +2,20 @@ import { HttpClient, HttpRequestConfig, HttpResponse } from 'auth-core';
 
 // 간단한 모킹 HTTP 클라이언트 - MSW 없이도 API 응답을 모킹
 export class MockHttpClient implements HttpClient {
+  private generateRandomToken(prefix: string): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    return `${prefix}-${timestamp}-${random}`;
+  }
+
+  private generateExpiresAt(): number {
+    return Date.now() + 3600000; // 1시간 후 만료
+  }
   async request(config: HttpRequestConfig): Promise<HttpResponse> {
     const { method = 'GET', url, body } = config;
     
     // URL에 따른 모킹 응답
-    if (url.includes('/api/auth/email/request-verification') && method === 'POST') {
+    if (url.includes('/api/v1/auth/email/request') && method === 'POST') {
       return {
         ok: true,
         status: 200,
@@ -21,8 +30,8 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
-    if (url.includes('/api/auth/email/login') && method === 'POST') {
-      // 요청 본문에서 verificationCode 확인
+    if (url.includes('/api/v1/auth/email/verify') && method === 'POST') {
+      // 요청 본문에서 email과 code 확인
       let requestBody: any;
       if (typeof body === 'string') {
         try {
@@ -33,10 +42,11 @@ export class MockHttpClient implements HttpClient {
       } else {
         requestBody = body;
       }
-      const verificationCode = requestBody?.verificationCode;
+      const email = requestBody?.email;
+      const code = requestBody?.code;
       
       // 잘못된 인증번호인 경우 실패 응답
-      if (verificationCode === '999999') {
+      if (code === '999999') {
         return {
           ok: false,
           status: 400,
@@ -51,6 +61,51 @@ export class MockHttpClient implements HttpClient {
         };
       }
       
+      // 올바른 인증번호인 경우 성공 응답
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        json: async () => ({
+          success: true,
+          message: '이메일 인증이 완료되었습니다.',
+          data: null
+        }),
+        text: async () => '{"success":true,"message":"이메일 인증이 완료되었습니다.","data":null}'
+      };
+    }
+    
+    if (url.includes('/api/v1/auth/email/login') && method === 'POST') {
+      // 요청 본문에서 email 확인
+      let requestBody: any;
+      if (typeof body === 'string') {
+        try {
+          requestBody = JSON.parse(body);
+        } catch (e) {
+          requestBody = {};
+        }
+      } else {
+        requestBody = body;
+      }
+      const email = requestBody?.email;
+      
+      // 이메일이 없는 경우 실패 응답
+      if (!email) {
+        return {
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+          headers: {},
+          json: async () => ({
+            success: false,
+            message: '이메일이 필요합니다.',
+            error: 'EMAIL_REQUIRED'
+          }),
+          text: async () => '{"success":false,"message":"이메일이 필요합니다.","error":"EMAIL_REQUIRED"}'
+        };
+      }
+      
       return {
         ok: true,
         status: 200,
@@ -60,9 +115,9 @@ export class MockHttpClient implements HttpClient {
           success: true,
           message: '로그인에 성공했습니다.',
           data: {
-            accessToken: 'mock-access-token-123',
-            refreshToken: 'mock-refresh-token-456',
-            expiresAt: Date.now() + 3600000, // 1시간 후 만료
+            accessToken: this.generateRandomToken('mock-access-token'),
+            refreshToken: this.generateRandomToken('mock-refresh-token'),
+            expiresAt: this.generateExpiresAt(),
             userInfo: {
               id: 'user-123',
               email: 'test@example.com',
@@ -75,7 +130,7 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
-    if (url.includes('/api/auth/validate-token') && method === 'GET') {
+    if (url.includes('/api/v1/auth/validate-token') && method === 'GET') {
       return {
         ok: true,
         status: 200,
@@ -90,7 +145,7 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
-    if (url.includes('/api/auth/user-info') && method === 'GET') {
+    if (url.includes('/api/v1/auth/user-info') && method === 'GET') {
       return {
         ok: true,
         status: 200,
@@ -110,7 +165,7 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
-    if (url.includes('/api/auth/email/refresh') && method === 'POST') {
+    if (url.includes('/api/v1/auth/email/refresh') && method === 'POST') {
       return {
         ok: true,
         status: 200,
@@ -120,16 +175,16 @@ export class MockHttpClient implements HttpClient {
           success: true,
           message: '토큰 갱신에 성공했습니다.',
           data: {
-            accessToken: 'new-mock-access-token-789',
-            refreshToken: 'new-mock-refresh-token-012',
-            expiresAt: Date.now() + 3600000 // 1시간 후 만료
+            accessToken: this.generateRandomToken('new-mock-access-token'),
+            refreshToken: this.generateRandomToken('new-mock-refresh-token'),
+            expiresAt: this.generateExpiresAt()
           }
         }),
         text: async () => 'mock refresh response'
       };
     }
     
-    if (url.includes('/api/auth/email/logout') && method === 'POST') {
+    if (url.includes('/api/v1/auth/email/logout') && method === 'POST') {
       return {
         ok: true,
         status: 200,
@@ -144,7 +199,62 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
-    if (url.includes('/api/health') && method === 'GET') {
+    if (url.includes('/api/v1/auth/google/login') && method === 'POST') {
+      // 요청 본문에서 googleToken 확인
+      let requestBody: any;
+      if (typeof body === 'string') {
+        try {
+          requestBody = JSON.parse(body);
+        } catch (e) {
+          requestBody = {};
+        }
+      } else {
+        requestBody = body;
+      }
+      const googleToken = requestBody?.googleToken;
+      
+      // 잘못된 구글 토큰인 경우 실패 응답
+      if (googleToken === 'invalid-token') {
+        return {
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+          headers: {},
+          json: async () => ({
+            success: false,
+            message: '잘못된 구글 토큰입니다.',
+            error: 'INVALID_GOOGLE_TOKEN'
+          }),
+          text: async () => '{"success":false,"message":"잘못된 구글 토큰입니다.","error":"INVALID_GOOGLE_TOKEN"}'
+        };
+      }
+      
+      // 올바른 구글 토큰인 경우 성공 응답
+      return {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        json: async () => ({
+          success: true,
+          message: '구글 로그인에 성공했습니다.',
+          data: {
+            accessToken: this.generateRandomToken('google-access-token'),
+            refreshToken: this.generateRandomToken('google-refresh-token'),
+            expiresAt: this.generateExpiresAt(),
+            userInfo: {
+              id: 'google-user-123',
+              email: 'google@example.com',
+              nickname: '구글 사용자',
+              provider: 'google'
+            }
+          }
+        }),
+        text: async () => 'mock google login response'
+      };
+    }
+    
+    if (url.includes('/api/v1/health') && method === 'GET') {
       return {
         ok: true,
         status: 200,
