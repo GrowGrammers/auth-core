@@ -30,8 +30,9 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
+    // 이메일 인증번호 확인
     if (url.includes('/api/v1/auth/email/verify') && method === 'POST') {
-      // 요청 본문에서 email과 code 확인
+      // 요청 본문에서 email과 verifyCode 확인
       let requestBody: any;
       if (typeof body === 'string') {
         try {
@@ -42,11 +43,10 @@ export class MockHttpClient implements HttpClient {
       } else {
         requestBody = body;
       }
-      const email = requestBody?.email;
-      const code = requestBody?.code;
+      const verifyCode = requestBody?.verifyCode;  // code → verifyCode로 통일
       
       // 잘못된 인증번호인 경우 실패 응답
-      if (code === '999999') {
+      if (verifyCode === '999999') {  // code → verifyCode로 통일
         return {
           ok: false,
           status: 400,
@@ -55,6 +55,7 @@ export class MockHttpClient implements HttpClient {
           json: async () => ({
             success: false,
             message: '잘못된 인증번호입니다.',
+            data: null,
             error: 'INVALID_VERIFICATION_CODE'
           }),
           text: async () => '{"success":false,"message":"잘못된 인증번호입니다.","error":"INVALID_VERIFICATION_CODE"}'

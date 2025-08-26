@@ -41,7 +41,7 @@ export const handlers = [
     const body = await request.json() as any;
     
     // 잘못된 인증번호에 대한 에러 응답
-    if (body.code === '999999') {
+    if (body.verifyCode === '999999') {  // code → verifyCode로 통일
       return HttpResponse.json({
         success: false,
         message: '잘못된 인증번호입니다.',

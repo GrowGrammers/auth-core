@@ -75,7 +75,7 @@ export async function verifyEmail(
 
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.verifyEmail, {
       method: 'POST',
-      body: { email: request.email, code: request.verifyCode }
+      body: { email: request.email, verifyCode: request.verifyCode }  // code → verifyCode로 통일
     });
 
     const data = await handleHttpResponse<EmailVerificationConfirmApiResponse>(response, '이메일 인증에 실패했습니다.');
