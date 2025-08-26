@@ -6,20 +6,35 @@ export { AuthManager } from './AuthManager';
 // 인터페이스들
 export { 
   AuthProvider, 
-  AuthProviderConfig,
+  AuthProviderConfig
+} from './providers';
+
+// DTOs
+export type {
   EmailVerificationRequest,
   EmailVerificationResponse,
+  EmailVerificationApiResponse,
+  EmailVerificationConfirmRequest,
+  EmailVerificationConfirmApiResponse,
+  EmailLoginRequest,
+  OAuthLoginRequest,
+  GoogleLoginRequest,
   LoginRequest,
   LoginResponse,
+  LoginApiResponse,
   LogoutRequest,
   LogoutResponse,
+  LogoutApiResponse,
   RefreshTokenRequest,
   RefreshTokenResponse,
-  EmailVerificationApiResponse,
-  LoginApiResponse,
-  LogoutApiResponse,
-  RefreshTokenApiResponse
-} from './providers';
+  RefreshTokenApiResponse,
+  TokenValidationResponse,
+  TokenValidationApiResponse,
+  UserInfoResponse,
+  UserInfoApiResponse,
+  ServiceAvailabilityResponse,
+  ServiceAvailabilityApiResponse
+} from './providers/interfaces/dtos/auth.dto';
 
 // 구현체들
 export { EmailAuthProvider, GoogleAuthProvider } from './providers';
