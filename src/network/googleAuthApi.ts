@@ -70,7 +70,13 @@ export async function logoutByGoogle(
       config.endpoints.googleLogout,  // logout → googleLogout으로 변경
       {
         method: 'POST',
+<<<<<<< HEAD
         body: { refreshToken: request.refreshToken }
+=======
+        headers: {
+          'Authorization': `Bearer ${request.accessToken}`,
+        }
+>>>>>>> 2bdd20e (fix: 구글 로그인 엔드포인트 불일치 해결)
       }
     );
 
