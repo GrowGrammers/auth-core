@@ -19,16 +19,22 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
     fakeHttpClient = new FakeHttpClient();
     
     apiConfig = {
-      apiBaseUrl: 'https://fake-api.example.com',
+      apiBaseUrl: 'http://localhost:3000',
       endpoints: {
-        requestVerification: '/auth/verify',
-        login: '/auth/login',
-        logout: '/auth/logout',
-        refresh: '/auth/refresh',
-        validate: '/auth/validate',
-        me: '/auth/me',
-        health: '/auth/health'
-      }
+        requestVerification: '/api/v1/auth/email/request',
+        verifyEmail: '/api/v1/auth/email/verify',
+        login: '/api/v1/auth/email/login',
+        logout: '/api/v1/auth/email/logout',
+        refresh: '/api/v1/auth/email/refresh',
+        validate: '/api/v1/auth/validate-token',
+        me: '/api/v1/auth/user-info',
+        health: '/api/v1/health',
+        // 구글 인증 엔드포인트 추가
+        googleLogin: '/api/v1/auth/google/login',
+        googleLogout: '/api/v1/auth/google/logout',
+        googleRefresh: '/api/v1/auth/google/refresh'
+      },
+      timeout: 10000
     };
 
     // AuthManager 생성 (테스트 더블들 주입)
@@ -50,7 +56,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   describe('로그인 플로우', () => {
     it('정상 로그인 시 토큰 저장 및 사용자 정보 반환', async () => {
       // Given: 정상적인 로그인 요청
-      const loginRequest = { email: 'test@example.com', verificationCode: '123456', provider: 'email' as const };
+      const loginRequest = { email: 'test@example.com', provider: 'email' as const };
 
       // When: 로그인 실행
       const result = await manager.login(loginRequest);
@@ -73,7 +79,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
 
     it('로그인 실패 시 에러 응답 반환', async () => {
       // Given: 실패할 로그인 요청
-      const loginRequest = { email: 'fail@example.com', verificationCode: 'wrong', provider: 'email' as const };
+              const loginRequest = { email: 'fail@example.com', provider: 'email' as const };
 
       // When & Then: 로그인 실패 확인
       const result = await manager.login(loginRequest);
@@ -85,7 +91,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
 
     it('로그인 타임아웃 시 에러 처리', async () => {
       // Given: 타임아웃이 발생할 로그인 요청
-      const loginRequest = { email: 'timeout@example.com', verificationCode: '123456', provider: 'email' as const };
+              const loginRequest = { email: 'timeout@example.com', provider: 'email' as const };
 
       // When & Then: 타임아웃 에러 확인
       const result = await manager.login(loginRequest);
@@ -99,7 +105,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   describe('토큰 관리', () => {
     it('토큰 저장 및 조회', async () => {
       // Given: 로그인으로 토큰 획득
-      await manager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
+      await manager.login({ email: 'test@example.com', provider: 'email' as const });
 
       // When: 토큰 조회
       const tokenResult = await manager.getToken();
@@ -121,7 +127,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       }
 
       // When: 로그인으로 토큰 획득
-      await manager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
+      await manager.login({ email: 'test@example.com', provider: 'email' as const });
 
       // Then: 토큰 존재 확인
       isAuth = await manager.isAuthenticated();
@@ -133,7 +139,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
 
     it('토큰 만료 여부 확인', async () => {
       // Given: 로그인으로 토큰 획득
-      await manager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
+      await manager.login({ email: 'test@example.com', provider: 'email' as const });
 
       // When: 토큰 만료 여부 확인 (validateCurrentToken 사용)
       const validationResult = await manager.validateCurrentToken();
@@ -149,7 +155,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   describe('토큰 갱신', () => {
     it('리프레시 토큰으로 액세스 토큰 갱신', async () => {
       // Given: 로그인으로 토큰 획득
-      await manager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
+      await manager.login({ email: 'test@example.com', provider: 'email' as const });
 
       // When: 토큰 갱신
       const refreshResult = await manager.refreshToken({ refreshToken: 'fake-refresh-token-123', provider: 'email' as const });
@@ -185,7 +191,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   describe('로그아웃 플로우', () => {
     it('로그아웃 시 토큰 및 사용자 정보 정리', async () => {
       // Given: 로그인된 상태
-      await manager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
+      await manager.login({ email: 'test@example.com', provider: 'email' as const });
 
       // Then: 로그인 후 토큰이 저장소에 있는지 확인
       const tokenBeforeLogout = await manager.getToken();
@@ -261,6 +267,38 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         expect(result.message).toContain('이메일 인증 요청 실패');
       }
     });
+
+    it('이메일 인증번호 확인 성공', async () => {
+      // Given: 정상적인 이메일과 인증번호
+      const verifyRequest = { 
+        email: 'test@example.com', 
+        verifyCode: '123456' 
+      };
+
+      // When: 인증번호 확인
+      const result = await manager.verifyEmail(verifyRequest);
+
+      // Then: 확인 성공
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.message).toBe('이메일 인증이 완료되었습니다.');
+      }
+    });
+
+    it('이메일 인증번호 확인 실패', async () => {
+      // Given: 잘못된 인증번호
+      const verifyRequest = { 
+        email: 'test@example.com', 
+        verifyCode: '999999' 
+      };
+
+      // When & Then: 확인 실패 확인
+      const result = await manager.verifyEmail(verifyRequest);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.message).toContain('이메일 인증 실패');
+      }
+    });
   });
 
   describe('인증 상태 관리', () => {
@@ -273,7 +311,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       }
 
       // When: 로그인
-      await manager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
+      await manager.login({ email: 'test@example.com', provider: 'email' as const });
 
       // Then: 인증됨
       isAuthenticated = await manager.isAuthenticated();
@@ -318,7 +356,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       });
 
       // When & Then: 네트워크 에러 처리 확인
-      const result = await errorManager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
+      const result = await errorManager.login({ email: 'test@example.com', provider: 'email' as const });
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.message).toContain('로그인 중 오류가 발생했습니다');
@@ -336,7 +374,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       }
 
       // 2. 로그인
-      const loginResult = await manager.login({ email: 'test@example.com', verificationCode: '123456', provider: 'email' as const });
+      const loginResult = await manager.login({ email: 'test@example.com', provider: 'email' as const });
       expect(loginResult.success).toBe(true);
 
       // 3. 인증 상태 확인

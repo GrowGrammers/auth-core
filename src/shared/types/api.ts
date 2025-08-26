@@ -5,10 +5,17 @@ import { ErrorResponse, SuccessResponse } from './common';
 
 // API 엔드포인트 설정
 export interface ApiEndpoints {
+  // 이메일 인증
   requestVerification: string;
+  verifyEmail: string; // 이메일 인증 엔드포인트 추가
   login: string;
   logout: string;
   refresh: string;
+  // 구글 인증 (신규 추가)
+  googleLogin: string;     // 구글 로그인
+  googleLogout: string;    // 구글 로그아웃  
+  googleRefresh: string;   // 구글 토큰 갱신
+  // 공통
   validate: string;
   me: string;
   health: string;

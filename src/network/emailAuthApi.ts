@@ -13,7 +13,9 @@ import {
   RefreshTokenRequest,
   TokenValidationApiResponse,
   UserInfoApiResponse,
-  ServiceAvailabilityApiResponse
+  ServiceAvailabilityApiResponse,
+  EmailVerificationConfirmRequest,
+  EmailVerificationConfirmApiResponse
 } from '../providers/interfaces/dtos/auth.dto';
 import { makeRequest, makeRequestWithRetry, handleHttpResponse, createToken, createUserInfo } from './utils/httpUtils';
 import { 
@@ -55,6 +57,36 @@ export async function requestEmailVerification(
 }
 
 /**
+ * 이메일 인증번호 확인
+ */
+export async function verifyEmail(
+  httpClient: HttpClient,
+  config: ApiConfig,
+  request: EmailVerificationConfirmRequest
+): Promise<EmailVerificationConfirmApiResponse> {
+  try {
+    // 이메일과 인증번호 검증
+    if (!request.email) {
+      return createValidationErrorResponse('이메일');
+    }
+    if (!request.verifyCode) {
+      return createValidationErrorResponse('인증번호');
+    }
+
+    const response = await makeRequestWithRetry(httpClient, config, config.endpoints.verifyEmail, {
+      method: 'POST',
+      body: { email: request.email, verifyCode: request.verifyCode }  // code → verifyCode로 통일
+    });
+
+    const data = await handleHttpResponse<EmailVerificationConfirmApiResponse>(response, '이메일 인증에 실패했습니다.');
+    return data;
+
+  } catch (error) {
+    return createNetworkErrorResponse();
+  }
+}
+
+/**
  * 이메일 로그인
  */
 export async function loginByEmail(
@@ -71,15 +103,14 @@ export async function loginByEmail(
     const emailRequest = request as EmailLoginRequest;
 
     // 이메일 로그인 검증
-    if (!emailRequest.email || !emailRequest.verificationCode) {
-      return createErrorResponse('이메일과 인증코드가 필요합니다.');
+    if (!emailRequest.email) {
+      return createErrorResponse('이메일이 필요합니다.');
     }
 
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.login, {
       method: 'POST',
       body: {
         email: emailRequest.email,
-        verificationCode: emailRequest.verificationCode,
         rememberMe: emailRequest.rememberMe
       }
     });

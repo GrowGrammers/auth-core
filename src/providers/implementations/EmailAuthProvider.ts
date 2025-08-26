@@ -15,7 +15,9 @@ import {
   TokenValidationApiResponse,
   UserInfoApiResponse,
   ServiceAvailabilityApiResponse,
-  LoginResponseData
+  LoginResponseData,
+  EmailVerificationConfirmRequest,
+  EmailVerificationConfirmApiResponse
 } from '../interfaces/dtos/auth.dto';
 import { ILoginProvider, IEmailVerifiable } from '../interfaces';
 import {
@@ -25,7 +27,8 @@ import {
   validateTokenByEmail,
   getUserInfoByEmail,
   requestEmailVerification,
-  checkEmailServiceAvailability
+  checkEmailServiceAvailability,
+  verifyEmail
 } from '../../network';
 
 export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvider, IEmailVerifiable {
@@ -72,6 +75,13 @@ export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvide
 
   async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationApiResponse> {
     const apiResponse = await requestEmailVerification(this.httpClient, this.apiConfig, request);
+    
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
+  }
+
+  async verifyEmail(request: EmailVerificationConfirmRequest): Promise<EmailVerificationConfirmApiResponse> {
+    const apiResponse = await verifyEmail(this.httpClient, this.apiConfig, request);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;

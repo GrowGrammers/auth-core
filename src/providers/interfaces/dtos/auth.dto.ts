@@ -10,10 +10,19 @@ export interface EmailVerificationRequest {
 export interface EmailVerificationResponse extends SuccessResponse<void> {
 }
 
+// 이메일 인증 DTO (인증번호 검증)
+export interface EmailVerificationConfirmRequest {
+  email: string;
+  verifyCode: string;
+}
+
+// 이메일 인증 확인 응답 DTO
+export interface EmailVerificationConfirmResponse extends SuccessResponse<void> {
+}
+
 // 이메일 로그인 요청 DTO
 export interface EmailLoginRequest extends BaseRequest {
   email: string;
-  verificationCode: string;
 }
 
 // OAuth 로그인 요청 DTO
@@ -22,8 +31,13 @@ export interface OAuthLoginRequest extends BaseRequest {
   redirectUri?: string;
 }
 
+// 구글 로그인 요청 DTO
+export interface GoogleLoginRequest extends BaseRequest {
+  googleToken: string;
+}
+
 // 통합 로그인 요청 DTO (유니온 타입)
-export type LoginRequest = EmailLoginRequest | OAuthLoginRequest;
+export type LoginRequest = EmailLoginRequest | OAuthLoginRequest | GoogleLoginRequest;
 
 // 백엔드 로그인 응답 데이터 구조
 export interface LoginResponseData {
@@ -39,6 +53,7 @@ export interface LoginResponse extends SuccessResponse<LoginResponseData> {}
 // 로그아웃 요청 DTO
 export interface LogoutRequest extends BaseRequest {
   token?: Token;
+  accessToken?: string; // 직접 액세스 토큰을 받을 수 있도록 추가
 }
 
 // 로그아웃 응답 DTO
@@ -63,8 +78,9 @@ export interface UserInfoResponse extends SuccessResponse<UserInfo> {}
 // 서비스 가용성 확인 응답 DTO
 export interface ServiceAvailabilityResponse extends SuccessResponse<boolean> {}
 
-// 응답 타입들을 ErrorResponse와의 유니온 타입으로 정의
+// API 응답 타입들
 export type EmailVerificationApiResponse = EmailVerificationResponse | ErrorResponse;
+export type EmailVerificationConfirmApiResponse = EmailVerificationConfirmResponse | ErrorResponse;
 export type LoginApiResponse = LoginResponse | ErrorResponse;
 export type LogoutApiResponse = LogoutResponse | ErrorResponse;
 export type RefreshTokenApiResponse = RefreshTokenResponse | ErrorResponse;

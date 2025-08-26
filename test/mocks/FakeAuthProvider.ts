@@ -15,7 +15,10 @@ import {
   ServiceAvailabilityApiResponse,
   EmailVerificationRequest,
   EmailVerificationResponse,
-  EmailVerificationApiResponse
+  EmailVerificationApiResponse,
+  EmailVerificationConfirmRequest,
+  EmailVerificationConfirmResponse,
+  EmailVerificationConfirmApiResponse
 } from '../../src/providers/interfaces/dtos/auth.dto';
 import { Token, UserInfo } from '../../src/shared/types';
 import { createSuccessResponse, createErrorResponse } from '../../src/shared/utils';
@@ -187,6 +190,25 @@ export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
     const response: EmailVerificationResponse = {
       success: true,
       message: '인증번호가 이메일로 전송되었습니다.',
+      data: undefined
+    };
+
+    return response;
+  }
+
+  async verifyEmail(request: EmailVerificationConfirmRequest): Promise<EmailVerificationConfirmApiResponse> {
+    if (request.verifyCode === '999999') {
+      return {
+        success: false,
+        message: '이메일 인증 실패: 잘못된 인증번호',
+        data: null,
+        error: '이메일 인증 실패: 잘못된 인증번호'
+      };
+    }
+
+    const response: EmailVerificationConfirmResponse = {
+      success: true,
+      message: '이메일 인증이 완료되었습니다.',
       data: undefined
     };
 

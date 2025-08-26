@@ -16,7 +16,7 @@ export const config = {
   
   // 로컬 백엔드 테스트
   localBackend: {
-    apiBaseUrl: 'http://localhost:3000',
+    apiBaseUrl: 'http://localhost:8080',
     httpClient: 'RealHttpClient',
     description: '로컬 백엔드 서버 사용'
   },
