@@ -7,9 +7,11 @@ export class MockHttpClient implements HttpClient {
     const random = Math.random().toString(36).substr(2, 9);
     return `${prefix}-${timestamp}-${random}`;
   }
+
   private generateExpiredAt(): number {
     return Date.now() + 3600000; // 1시간 후 만료
   }
+
   async request(config: HttpRequestConfig): Promise<HttpResponse> {
     const { method = 'GET', url, body } = config;
     

@@ -116,7 +116,6 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
       await manager.login(loginRequest);
 
-
       // When: 저장된 토큰 조회
       const tokenResult = await manager.getToken();
 

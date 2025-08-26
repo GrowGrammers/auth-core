@@ -47,7 +47,7 @@ class AuthDemo {
     this.authManager = new AuthManager({
       providerType: 'email',
       tokenStore: this.tokenStore,
-      apiConfig,
+              apiConfig,
       httpClient: (() => {
         switch (currentConfig.httpClient) {
           case 'MSWHttpClient':
@@ -146,18 +146,8 @@ class AuthDemo {
         return;
       }
 
-      // AuthManager를 통해 이메일 인증 API 호출
-      const result = await this.authManager.verifyEmail({ 
-        email, 
-        verifyCode: verifyCode 
-      });
-      console.log('인증번호 인증 결과:', result);
-      // UI 업데이트
-      if (result.success) {
-        this.updateStatus('이메일 인증이 완료되었습니다!', 'success');
-      } else {
-        this.updateStatus(`이메일 인증 실패: ${result.error}`, 'error');
-      }
+      // 이메일 인증은 provider를 통해 직접 호출해야 함
+      this.updateStatus('이메일 인증 기능은 provider를 통해 구현됩니다.', 'info');
     } catch (error) {
       this.updateStatus(`이메일 인증 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, 'error');
     }
@@ -166,36 +156,23 @@ class AuthDemo {
   private async loginWithEmail(): Promise<LoginApiResponse> {
     try {
       const email = (document.getElementById('email') as HTMLInputElement).value;
-      const verifyCode = (document.getElementById('verificationCode') as HTMLInputElement).value;
+      const password = (document.getElementById('password') as HTMLInputElement).value;
       
-      if (!email) {
+      if (!email || !password) {
         const errorResponse: LoginApiResponse = {
           success: false,
-          message: '이메일을 입력해주세요.',
+          message: '이메일과 비밀번호를 모두 입력해주세요.',
           data: null,
-          error: '이메일을 입력해주세요.'
+          error: '이메일과 비밀번호를 모두 입력해주세요.'
         };
-        this.updateStatus('이메일을 입력해주세요.', 'error');
-
-        return errorResponse;
-      }
-
-      if (!verifyCode) {
-        const errorResponse: LoginApiResponse = {
-          success: false,
-          message: '인증번호를 입력해주세요.',
-          data: null,
-          error: '인증번호를 입력해주세요.'
-        };
-        this.updateStatus('인증번호를 입력해주세요.', 'error');
-
+        this.updateStatus('이메일과 비밀번호를 모두 입력해주세요.', 'error');
         return errorResponse;
       }
 
       const result = await this.authManager.login({ 
         provider: 'email', 
-        email,
-        verifyCode
+        email, 
+        verifyCode: '123456' 
       });
 
       console.log('이메일 로그인 결과:', result);
