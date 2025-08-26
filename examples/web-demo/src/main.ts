@@ -31,6 +31,7 @@ class AuthDemo {
       endpoints: {
         requestVerification: '/api/v1/auth/email/request',
         verifyEmail: '/api/v1/auth/email/verify',
+<<<<<<< HEAD
         login: '/api/v1/auth/members/email-login',
         logout: '/api/v1/auth/members/logout',
         refresh: '/api/v1/auth/members/refresh',
@@ -40,6 +41,14 @@ class AuthDemo {
         googleLogin: '/api/v1/auth/google/login',
         googleLogout: '/api/v1/auth/google/logout',
         googleRefresh: '/api/v1/auth/google/refresh'
+=======
+        login: '/api/v1/auth/email/login',
+        logout: '/api/v1/auth/email/logout',
+        refresh: '/api/v1/auth/email/refresh',
+        validate: '/api/v1/auth/validate-token',
+        me: '/api/v1/auth/user-info',
+        health: '/api/v1/health'
+>>>>>>> fb20e18 (test: 구글 로그인 엔드포인트 테스트 코드에 반영)
       },
       timeout: 10000
     };
@@ -47,7 +56,11 @@ class AuthDemo {
     this.authManager = new AuthManager({
       providerType: 'email',
       tokenStore: this.tokenStore,
+<<<<<<< HEAD
               apiConfig,
+=======
+      apiConfig,
+>>>>>>> fb20e18 (test: 구글 로그인 엔드포인트 테스트 코드에 반영)
       httpClient: (() => {
         switch (currentConfig.httpClient) {
           case 'MSWHttpClient':

@@ -186,7 +186,11 @@ export const handlers = [
       data: {
         accessToken: generateRandomToken('new-google-access-token'),
         refreshToken: generateRandomToken('new-google-refresh-token'),
+<<<<<<< HEAD
         expiredAt: generateExpiredAt(),
+=======
+        expiresAt: generateExpiresAt(),
+>>>>>>> fb20e18 (test: 구글 로그인 엔드포인트 테스트 코드에 반영)
         tokenType: 'Bearer'
       }
     });
