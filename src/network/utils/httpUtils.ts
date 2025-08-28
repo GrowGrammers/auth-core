@@ -16,6 +16,7 @@ export async function makeRequest(
 
   try {
 <<<<<<< HEAD
+<<<<<<< HEAD
   
 =======
     // body가 문자열인지 확인
@@ -30,6 +31,9 @@ export async function makeRequest(
     }
     
 >>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
+=======
+  
+>>>>>>> 848cc0a (style: 필요없는 주석 삭제)
     const httpConfig: HttpRequestConfig = {
       url: `${config.apiBaseUrl}${endpoint}`, // apiBaseUrl로 수정
       method: options.method,
@@ -37,6 +41,7 @@ export async function makeRequest(
         //'Content-Type': 'application/json',
         ...options.headers,
       },
+<<<<<<< HEAD
 <<<<<<< HEAD
       body: options.body,
       timeout: options.timeout || config.timeout || 10000,
@@ -49,6 +54,12 @@ export async function makeRequest(
     //console.log('[makeRequest] typeof body =', typeof options.body, options.body);
 
 >>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
+=======
+      body: options.body,
+      timeout: options.timeout || config.timeout || 10000,
+    };
+    
+>>>>>>> 848cc0a (style: 필요없는 주석 삭제)
     const response = await httpClient.request(httpConfig);
     clearTimeout(timeoutId);
     return response;
