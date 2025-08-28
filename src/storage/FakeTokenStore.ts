@@ -66,11 +66,11 @@ export const FakeTokenStore: TokenStore = {
 
   async isTokenExpired(): Promise<IsTokenExpiredResponse> {
     try {
-      if (!memoryToken || !memoryToken.expiresAt) {
+      if (!memoryToken || !memoryToken.expiredAt) {
         return createStorageSuccessResponse('토큰 만료 시간이 설정되지 않았습니다.', false);
       }
 
-      const isExpired = Date.now() > memoryToken.expiresAt;
+      const isExpired = Date.now() > memoryToken.expiredAt;
       return createStorageSuccessResponse(
         isExpired ? '토큰이 만료되었습니다.' : '토큰이 유효합니다.',
         isExpired
