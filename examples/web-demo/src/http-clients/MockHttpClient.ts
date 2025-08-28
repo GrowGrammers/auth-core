@@ -1,4 +1,4 @@
-import { HttpClient, HttpRequestConfig, HttpResponse } from 'auth-core';
+import type { HttpClient, HttpRequestConfig, HttpResponse } from 'auth-core';
 
 // 간단한 모킹 HTTP 클라이언트 - MSW 없이도 API 응답을 모킹
 export class MockHttpClient implements HttpClient {
@@ -8,7 +8,7 @@ export class MockHttpClient implements HttpClient {
     return `${prefix}-${timestamp}-${random}`;
   }
 
-  private generateExpiresAt(): number {
+  private generateexpiredAt(): number {
     return Date.now() + 3600000; // 1시간 후 만료
   }
   async request(config: HttpRequestConfig): Promise<HttpResponse> {
@@ -78,7 +78,7 @@ export class MockHttpClient implements HttpClient {
     }
     
     // 이메일 로그인
-    if (url.includes('/api/v1/auth/email/login') && method === 'POST') {
+    if (url.includes('/api/v1/auth/members/email-login') && method === 'POST') {
       // 요청 본문에서 email 확인
       let requestBody: any;
       if (typeof body === 'string') {
@@ -138,7 +138,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('mock-access-token'),
             refreshToken: this.generateRandomToken('mock-refresh-token'),
-            expiresAt: this.generateExpiresAt(),
+            expiredAt: this.generateexpiredAt(),
             userInfo: {
               id: 'user-123',
               email: email,
@@ -186,7 +186,7 @@ export class MockHttpClient implements HttpClient {
       };
     }
     
-    if (url.includes('/api/v1/auth/email/refresh') && method === 'POST') {
+    if (url.includes('/api/v1/auth/members/refresh') && method === 'POST') {
       return {
         ok: true,
         status: 200,
@@ -198,14 +198,14 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('new-mock-access-token'),
             refreshToken: this.generateRandomToken('new-mock-refresh-token'),
-            expiresAt: this.generateExpiresAt()
+            expiredAt: this.generateexpiredAt()
           }
         }),
         text: async () => 'mock refresh response'
       };
     }
     
-    if (url.includes('/api/v1/auth/email/logout') && method === 'POST') {
+    if (url.includes('/api/v1/auth/members/logout') && method === 'POST') {
       return {
         ok: true,
         status: 200,
@@ -264,7 +264,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('google-access-token'),
             refreshToken: this.generateRandomToken('google-refresh-token'),
-            expiresAt: this.generateExpiresAt(),
+            expiredAt: this.generateexpiredAt(),
             userInfo: {
               id: 'google-user-123',
               email: 'google@example.com',
@@ -306,7 +306,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('new-google-access-token'),
             refreshToken: this.generateRandomToken('new-google-refresh-token'),
-            expiresAt: this.generateExpiresAt(),
+            expiredAt: this.generateexpiredAt(),
             tokenType: 'Bearer'
           }
         }),
