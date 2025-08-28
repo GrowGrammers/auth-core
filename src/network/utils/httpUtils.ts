@@ -15,17 +15,7 @@ export async function makeRequest(
   const timeoutId = setTimeout(() => controller.abort(), options.timeout || config.timeout || 10000);
 
   try {
-    // body가 문자열인지 확인
-    if (typeof options.body === 'string') {
-      //console.log(`🔍 makeRequest: body가 이미 문자열입니다:`, options.body);
-      try {
-        const parsed = JSON.parse(options.body);
-        //console.log(`🔍 makeRequest: 문자열 body를 JSON으로 파싱 성공:`, parsed);
-      } catch (e) {
-        //console.log(`🔍 makeRequest: 문자열 body를 JSON으로 파싱 실패:`, e);
-      }
-    }
-    
+  
     const httpConfig: HttpRequestConfig = {
       url: `${config.apiBaseUrl}${endpoint}`, // apiBaseUrl로 수정
       method: options.method,
@@ -33,11 +23,10 @@ export async function makeRequest(
         //'Content-Type': 'application/json',
         ...options.headers,
       },
-      body: options.body, // JSON.stringify 제거 - RealHttpClient에서 처리
+      body: options.body,
       timeout: options.timeout || config.timeout || 10000,
     };
-    //console.log('[makeRequest] typeof body =', typeof options.body, options.body);
-
+    
     const response = await httpClient.request(httpConfig);
     clearTimeout(timeoutId);
     return response;
