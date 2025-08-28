@@ -106,12 +106,15 @@ export async function loginByEmail(
     if (!emailRequest.email) {
       return createErrorResponse('이메일이 필요합니다.');
     }
+    if (!emailRequest.verifyCode) {
+      return createErrorResponse('인증번호가 필요합니다.');
+    }
 
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.login, {
       method: 'POST',
       body: {
         email: emailRequest.email,
-        rememberMe: emailRequest.rememberMe
+        verifyCode: emailRequest.verifyCode
       }
     });
 

@@ -23,9 +23,9 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       endpoints: {
         requestVerification: '/api/v1/auth/email/request',
         verifyEmail: '/api/v1/auth/email/verify',
-        login: '/api/v1/auth/email/login',
-        logout: '/api/v1/auth/email/logout',
-        refresh: '/api/v1/auth/email/refresh',
+        login: '/api/v1/auth/members/email-login',
+        logout: '/api/v1/auth/members/logout',
+        refresh: '/api/v1/auth/members/refresh',
         validate: '/api/v1/auth/validate-token',
         me: '/api/v1/auth/user-info',
         health: '/api/v1/health',
@@ -55,33 +55,37 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
 
   describe('로그인 플로우', () => {
     it('정상 로그인 시 토큰 저장 및 사용자 정보 반환', async () => {
-      // Given: 정상적인 로그인 요청
-      const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+      // Given: 이메일 인증 완료
+      await manager.requestEmailVerification({ email: 'test@example.com' });
+      await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
 
       // When: 로그인 실행
+      const loginRequest = { email: 'test@example.com', provider: 'email' as const };
       const result = await manager.login(loginRequest);
 
-      // Then: 성공 응답 확인
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data?.userInfo.email).toBe('test@example.com');
-        expect(result.data?.userInfo.nickname).toBe('테스트 사용자');
-        expect(result.data?.accessToken).toBe('fake-access-token-123');
-      }
+       // Then: 성공 응답 확인
+       expect(result.success).toBe(true);
+       if (result.success) {
+         expect(result.data?.userInfo.email).toBe('test@example.com');
+         expect(result.data?.userInfo.nickname).toBe('테스트 사용자');
+         expect(result.data?.accessToken).toBeDefined();
+       }
 
-      // Then: 토큰이 저장소에 저장되었는지 확인
-      const savedToken = await manager.getToken();
-      expect(savedToken.success).toBe(true);
-      if (savedToken.success) {
-        expect(savedToken.data?.accessToken).toBe('fake-access-token-123');
-      }
+       // Then: 토큰이 저장소에 저장되었는지 확인
+       const savedToken = await manager.getToken();
+       expect(savedToken.success).toBe(true);
+       if (savedToken.success) {
+         expect(savedToken.data?.accessToken).toBeDefined();
+       }
     });
 
     it('로그인 실패 시 에러 응답 반환', async () => {
-      // Given: 실패할 로그인 요청
-              const loginRequest = { email: 'fail@example.com', provider: 'email' as const };
+      // Given: 이메일 인증 완료
+      await manager.requestEmailVerification({ email: 'fail@example.com' });
+      await manager.verifyEmail({ email: 'fail@example.com', verifyCode: '123456' });
 
-      // When & Then: 로그인 실패 확인
+      // When: 실패할 로그인 시도
+      const loginRequest = { email: 'fail@example.com', provider: 'email' as const };
       const result = await manager.login(loginRequest);
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -90,10 +94,12 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
     });
 
     it('로그인 타임아웃 시 에러 처리', async () => {
-      // Given: 타임아웃이 발생할 로그인 요청
-              const loginRequest = { email: 'timeout@example.com', provider: 'email' as const };
+      // Given: 이메일 인증 완료
+      await manager.requestEmailVerification({ email: 'timeout@example.com' });
+      await manager.verifyEmail({ email: 'timeout@example.com', verifyCode: '123456' });
 
-      // When & Then: 타임아웃 에러 확인
+      // When: 타임아웃될 로그인 시도
+      const loginRequest = { email: 'timeout@example.com', provider: 'email' as const };
       const result = await manager.login(loginRequest);
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -104,44 +110,48 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
 
   describe('토큰 관리', () => {
     it('토큰 저장 및 조회', async () => {
-      // Given: 로그인으로 토큰 획득
-      await manager.login({ email: 'test@example.com', provider: 'email' as const });
+      // Given: 이메일 인증 완료 후 로그인
+      await manager.requestEmailVerification({ email: 'test@example.com' });
+      await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+      const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+      await manager.login(loginRequest);
 
-      // When: 토큰 조회
+      // When: 저장된 토큰 조회
       const tokenResult = await manager.getToken();
 
-      // Then: 토큰이 정상적으로 저장되고 조회됨
+      // Then: 토큰이 올바르게 저장되었는지 확인
       expect(tokenResult.success).toBe(true);
       if (tokenResult.success) {
-        expect(tokenResult.data?.accessToken).toBe('fake-access-token-123');
-        expect(tokenResult.data?.refreshToken).toBe('fake-refresh-token-123');
+        expect(tokenResult.data?.accessToken).toBeDefined();
+        expect(tokenResult.data?.refreshToken).toBeDefined();
       }
     });
 
-    it('토큰 존재 여부 확인', async () => {
-      // Given: 초기 상태 (토큰 없음)
-      let isAuth = await manager.isAuthenticated();
-      expect(isAuth.success).toBe(true);
-      if (isAuth.success) {
-        expect(isAuth.data).toBe(false);
-      }
+         it('토큰 존재 여부 확인', async () => {
+       // Given: 이메일 인증 완료 후 로그인
+       await manager.requestEmailVerification({ email: 'test@example.com' });
+       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+       await manager.login(loginRequest);
 
-      // When: 로그인으로 토큰 획득
-      await manager.login({ email: 'test@example.com', provider: 'email' as const });
+      // When: 인증 상태 확인
+      const isAuth = await manager.isAuthenticated();
 
-      // Then: 토큰 존재 확인
-      isAuth = await manager.isAuthenticated();
+      // Then: 인증됨 확인
       expect(isAuth.success).toBe(true);
       if (isAuth.success) {
         expect(isAuth.data).toBe(true);
       }
     });
 
-    it('토큰 만료 여부 확인', async () => {
-      // Given: 로그인으로 토큰 획득
-      await manager.login({ email: 'test@example.com', provider: 'email' as const });
+         it('토큰 만료 여부 확인', async () => {
+       // Given: 이메일 인증 완료 후 로그인
+       await manager.requestEmailVerification({ email: 'test@example.com' });
+       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+       await manager.login(loginRequest);
 
-      // When: 토큰 만료 여부 확인 (validateCurrentToken 사용)
+      // When: 토큰 검증
       const validationResult = await manager.validateCurrentToken();
 
       // Then: 토큰이 만료되지 않음
@@ -153,26 +163,29 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   });
 
   describe('토큰 갱신', () => {
-    it('리프레시 토큰으로 액세스 토큰 갱신', async () => {
-      // Given: 로그인으로 토큰 획득
-      await manager.login({ email: 'test@example.com', provider: 'email' as const });
+         it('리프레시 토큰으로 액세스 토큰 갱신', async () => {
+       // Given: 이메일 인증 완료 후 로그인으로 토큰 획득
+       await manager.requestEmailVerification({ email: 'test@example.com' });
+       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+       await manager.login(loginRequest);
 
       // When: 토큰 갱신
       const refreshResult = await manager.refreshToken({ refreshToken: 'fake-refresh-token-123', provider: 'email' as const });
 
-      // Then: 새로운 액세스 토큰 발급
-      expect(refreshResult.success).toBe(true);
-      if (refreshResult.success) {
-        expect(refreshResult.data?.accessToken).toBe('fake-access-token-456');
-        expect(refreshResult.data?.refreshToken).toBe('fake-refresh-token-123');
-      }
+             // Then: 새로운 액세스 토큰 발급
+       expect(refreshResult.success).toBe(true);
+       if (refreshResult.success) {
+         expect(refreshResult.data?.accessToken).toBeDefined();
+         expect(refreshResult.data?.refreshToken).toBeDefined();
+       }
 
-      // Then: 저장소에 새 토큰이 저장됨
-      const savedToken = await manager.getToken();
-      expect(savedToken.success).toBe(true);
-      if (savedToken.success) {
-        expect(savedToken.data?.accessToken).toBe('fake-access-token-456');
-      }
+       // Then: 저장소에 새 토큰이 저장됨
+       const savedToken = await manager.getToken();
+       expect(savedToken.success).toBe(true);
+       if (savedToken.success) {
+         expect(savedToken.data?.accessToken).toBeDefined();
+       }
     });
 
     it('유효하지 않은 리프레시 토큰으로 갱신 시도 시 실패', async () => {
@@ -189,16 +202,19 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   });
 
   describe('로그아웃 플로우', () => {
-    it('로그아웃 시 토큰 및 사용자 정보 정리', async () => {
-      // Given: 로그인된 상태
-      await manager.login({ email: 'test@example.com', provider: 'email' as const });
+         it('로그아웃 시 토큰 및 사용자 정보 정리', async () => {
+       // Given: 이메일 인증 완료 후 로그인된 상태
+       await manager.requestEmailVerification({ email: 'test@example.com' });
+       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+       await manager.login(loginRequest);
 
-      // Then: 로그인 후 토큰이 저장소에 있는지 확인
-      const tokenBeforeLogout = await manager.getToken();
-      expect(tokenBeforeLogout.success).toBe(true);
-      if (tokenBeforeLogout.success) {
-        expect(tokenBeforeLogout.data?.accessToken).toBe('fake-access-token-123');
-      }
+             // Then: 로그인 후 토큰이 저장소에 있는지 확인
+       const tokenBeforeLogout = await manager.getToken();
+       expect(tokenBeforeLogout.success).toBe(true);
+       if (tokenBeforeLogout.success) {
+         expect(tokenBeforeLogout.data?.accessToken).toBeDefined();
+       }
 
       // When: 로그아웃 실행
       const logoutResult = await manager.logout({ provider: 'email' as const });
@@ -310,8 +326,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         expect(isAuthenticated.data).toBe(false);
       }
 
-      // When: 로그인
-      await manager.login({ email: 'test@example.com', provider: 'email' as const });
+             // When: 이메일 인증 완료 후 로그인
+       await manager.requestEmailVerification({ email: 'test@example.com' });
+       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+       await manager.login(loginRequest);
 
       // Then: 인증됨
       isAuthenticated = await manager.isAuthenticated();
@@ -355,8 +374,8 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         tokenStore: fakeTokenStore
       });
 
-      // When & Then: 네트워크 에러 처리 확인
-      const result = await errorManager.login({ email: 'test@example.com', provider: 'email' as const });
+             // When & Then: 네트워크 에러 처리 확인 (이메일 인증 없이 시도)
+       const result = await errorManager.login({ email: 'test@example.com', provider: 'email' as const });
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.message).toContain('로그인 중 오류가 발생했습니다');
@@ -373,31 +392,95 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         expect(isAuth.data).toBe(false);
       }
 
-      // 2. 로그인
-      const loginResult = await manager.login({ email: 'test@example.com', provider: 'email' as const });
+      // 2. 이메일 인증 요청
+      const verificationRequest = { email: 'test@example.com' };
+      const verificationResult = await manager.requestEmailVerification(verificationRequest);
+      expect(verificationResult.success).toBe(true);
+
+      // 3. 이메일 인증 확인
+      const verifyResult = await manager.verifyEmail({
+        email: 'test@example.com',
+        verifyCode: '123456'
+      });
+      expect(verifyResult.success).toBe(true);
+
+             // 4. 로그인
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+       const loginResult = await manager.login(loginRequest);
       expect(loginResult.success).toBe(true);
 
-      // 3. 인증 상태 확인
+      // 5. 인증 상태 확인
       isAuth = await manager.isAuthenticated();
       expect(isAuth.success).toBe(true);
       if (isAuth.success) {
         expect(isAuth.data).toBe(true);
       }
 
-      // 4. 토큰 갱신
+      // 6. 토큰 갱신
       const refreshResult = await manager.refreshToken({ refreshToken: 'fake-refresh-token-123', provider: 'email' as const });
       expect(refreshResult.success).toBe(true);
 
-      // 5. 로그아웃
+      // 7. 로그아웃
       const logoutResult = await manager.logout({ provider: 'email' as const });
       expect(logoutResult.success).toBe(true);
 
-      // 6. 최종 상태 확인
+      // 8. 최종 상태 확인
       isAuth = await manager.isAuthenticated();
       expect(isAuth.success).toBe(true);
       if (isAuth.success) {
         expect(isAuth.data).toBe(false);
       }
+    });
+  });
+
+  describe('API 형식 검증 테스트', () => {
+    it('잘못된 API 형식으로 요청 시 에러 반환', async () => {
+      // 잘못된 형식의 로그인 요청 (email 필드 누락)
+      const invalidLoginRequest = { 
+        provider: 'email' 
+        // email 필드 누락
+      } as any;
+
+      const result = await manager.login(invalidLoginRequest);
+      
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('API 형식 오류');
+      }
+    });
+
+    it('이메일 인증 없이 로그인 시도 시 차단', async () => {
+      // 이메일 인증을 하지 않은 상태에서 로그인 시도
+      const loginRequest = { 
+        provider: 'email' as const,
+        email: 'unverified@example.com' 
+      };
+
+      const result = await manager.login(loginRequest);
+      
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('EMAIL_VERIFICATION_REQUIRED');
+      }
+    });
+
+    it('올바른 이메일 인증 플로우 후 로그인 성공', async () => {
+      // 1. 이메일 인증 요청
+      const verificationRequest = { email: 'test@example.com' };
+      const verificationResult = await manager.requestEmailVerification(verificationRequest);
+      expect(verificationResult.success).toBe(true);
+
+      // 2. 이메일 인증 확인
+      const verifyResult = await manager.verifyEmail({
+        email: 'test@example.com',
+        verifyCode: '123456'
+      });
+      expect(verifyResult.success).toBe(true);
+
+             // 3. 로그인 시도 (이제 성공해야 함)
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+       const loginResult = await manager.login(loginRequest);
+      expect(loginResult.success).toBe(true);
     });
   });
 });

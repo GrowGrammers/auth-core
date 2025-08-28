@@ -23,6 +23,7 @@ export interface EmailVerificationConfirmResponse extends SuccessResponse<void> 
 // 이메일 로그인 요청 DTO
 export interface EmailLoginRequest extends BaseRequest {
   email: string;
+  verifyCode: string;
 }
 
 // OAuth 로그인 요청 DTO
@@ -43,7 +44,7 @@ export type LoginRequest = EmailLoginRequest | OAuthLoginRequest | GoogleLoginRe
 export interface LoginResponseData {
   accessToken: string;
   refreshToken: string;
-  expiresAt?: number;
+  expiredAt?: number;
   userInfo: UserInfo;
 }
 
