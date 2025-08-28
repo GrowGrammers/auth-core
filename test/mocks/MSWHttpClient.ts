@@ -13,7 +13,7 @@ export class MSWHttpClient implements HttpClient {
           'Content-Type': 'application/json',
           ...headers,
         },
-        body: body, // body는 이미 makeRequest에서 JSON.stringify되었음
+        body: body, // body는 makeRequest에서 전달된 그대로 사용
       });
 
       const responseData = await response.json();
@@ -23,7 +23,7 @@ export class MSWHttpClient implements HttpClient {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
-        text: async () => JSON.stringify(responseData),
+        text: async () => responseData,
         json: async () => responseData
       };
       
