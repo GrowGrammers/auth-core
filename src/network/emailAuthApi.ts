@@ -106,12 +106,15 @@ export async function loginByEmail(
     if (!emailRequest.email) {
       return createErrorResponse('이메일이 필요합니다.');
     }
+    if (!emailRequest.verifyCode) {
+      return createErrorResponse('인증번호가 필요합니다.');
+    }
 
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.login, {
       method: 'POST',
       body: {
         email: emailRequest.email,
-        rememberMe: emailRequest.rememberMe
+        verifyCode: emailRequest.verifyCode
       }
     });
 
@@ -132,15 +135,13 @@ export async function logoutByEmail(
   request: LogoutRequest
 ): Promise<LogoutApiResponse> {
   try {
-    if (!request.token?.accessToken) {
-      return createValidationErrorResponse('액세스 토큰');
+    if (!request.refreshToken) {
+      return createValidationErrorResponse('리프레시 토큰');
     }
 
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.logout, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${request.token.accessToken}`,
-      }
+      body: { refreshToken: request.refreshToken }
     });
 
     const data = await handleHttpResponse<LogoutApiResponse>(response, '로그아웃에 실패했습니다.');

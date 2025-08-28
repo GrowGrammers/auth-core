@@ -9,6 +9,11 @@ dist/
 build/
 *.tsbuildinfo
 
+# Source maps and compiled files (unnecessary for production)
+*.map
+*.js
+*.d.ts
+
 # Environment variables
 .env
 .env.local

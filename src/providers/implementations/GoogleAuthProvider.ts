@@ -36,6 +36,14 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   }
 
   async login(request: LoginRequest): Promise<LoginApiResponse> {
+    // GoogleLoginRequest 타입 가드
+    if (!('googleToken' in request)) {
+      return this.createErrorResponse(
+        '구글 로그인 요청이 아닙니다.',
+        'GoogleAuthProvider는 GoogleLoginRequest 타입만 지원합니다.'
+      );
+    }
+
     const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, request);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)

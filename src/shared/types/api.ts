@@ -2,6 +2,7 @@
 // shared/types/api.ts
 
 import { ErrorResponse, SuccessResponse } from './common';
+import { JsonBody } from '../../network/interfaces/HttpClient';
 
 // API 엔드포인트 설정
 export interface ApiEndpoints {
@@ -32,7 +33,7 @@ export interface ApiConfig {
 export interface RequestOptions {
   method: string;
   headers?: Record<string, string>;
-  body?: unknown;
+  body?: JsonBody | FormData | Blob | ArrayBuffer | ArrayBufferView | undefined;
   timeout?: number;
 }
 

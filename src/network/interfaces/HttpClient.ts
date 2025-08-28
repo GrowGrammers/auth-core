@@ -1,9 +1,14 @@
 // HTTP 클라이언트 인터페이스
+
+// JSON 본문 타입 정의
+export type JsonBody = Record<string, unknown> | unknown[];
+
+// HTTP 요청 설정 인터페이스
 export interface HttpRequestConfig {
   url: string; // 추가: URL 정보 명시
   method: string;
   headers?: Record<string, string>;
-  body?: any;
+  body?: JsonBody | FormData | Blob | ArrayBuffer | ArrayBufferView | undefined;
   timeout?: number;
 }
 

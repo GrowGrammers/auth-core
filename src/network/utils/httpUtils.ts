@@ -15,17 +15,18 @@ export async function makeRequest(
   const timeoutId = setTimeout(() => controller.abort(), options.timeout || config.timeout || 10000);
 
   try {
+  
     const httpConfig: HttpRequestConfig = {
       url: `${config.apiBaseUrl}${endpoint}`, // apiBaseUrl로 수정
       method: options.method,
       headers: {
-        'Content-Type': 'application/json',
+        //'Content-Type': 'application/json',
         ...options.headers,
       },
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      body: options.body,
       timeout: options.timeout || config.timeout || 10000,
     };
-
+    
     const response = await httpClient.request(httpConfig);
     clearTimeout(timeoutId);
     return response;
@@ -74,7 +75,7 @@ export async function handleHttpResponse<T>(
 ): Promise<T> {
   try {
     const data = await response.json();
-    
+  
     // 백엔드가 BaseResponse 형태로 응답을 보내는 경우 (성공/실패 모두 포함)
     if (data && typeof data === 'object' && 'success' in data) {
       return data as T; // 백엔드 응답을 그대로 반환 (success: false인 경우도 포함)
@@ -110,11 +111,11 @@ export async function handleHttpResponse<T>(
 /**
  * 토큰 생성 헬퍼 함수
  */
-export function createToken(data: { accessToken: string; refreshToken: string; expiresAt?: number }): Token {
+export function createToken(data: { accessToken: string; refreshToken: string; expiredAt?: number }): Token {
   return {
     accessToken: data.accessToken,
     refreshToken: data.refreshToken,
-    expiresAt: data.expiresAt ? Date.now() + data.expiresAt * 1000 : undefined
+    expiredAt: data.expiredAt ? Date.now() + data.expiredAt * 1000 : undefined
   };
 }
 

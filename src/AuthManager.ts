@@ -179,7 +179,7 @@ export class AuthManager {
         const token: Token = {
           accessToken: loginResponse.data.accessToken,
           refreshToken: loginResponse.data.refreshToken,
-          expiresAt: loginResponse.data.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : undefined
+          expiredAt: loginResponse.data.expiredAt
         };
         const saveResult = await this.tokenStore.saveToken(token);
         if (saveResult.success) {
@@ -210,17 +210,22 @@ export class AuthManager {
       // 저장된 토큰 가져오기
       const tokenResult = await this.tokenStore.getToken();
       if (!tokenResult.success || !tokenResult.data) {
-        return createErrorResponse('액세스 토큰이 필요합니다.');
+        return createErrorResponse('저장된 토큰이 없습니다.');
       }
       
-      // 토큰을 request에 추가
-      const logoutRequestWithToken = {
+      // refreshToken이 있는지 확인
+      if (!tokenResult.data.refreshToken) {
+        return createErrorResponse('리프레시 토큰이 없습니다.');
+      }
+      
+      // refreshToken을 request에 추가 (API 호출용)
+      const logoutRequestWithRefreshToken: LogoutRequest = {
         ...request,
-        token: tokenResult.data
+        refreshToken: tokenResult.data.refreshToken
       };
       
       // ⑦ 로그아웃 시도 (누가? 전달받은 provider가!)
-      const logoutResponse = await this.provider.logout(logoutRequestWithToken);
+      const logoutResponse = await this.provider.logout(logoutRequestWithRefreshToken);
       
       if (logoutResponse.success) {
         // ⑧ 로그아웃 성공 시 저장된 토큰 삭제

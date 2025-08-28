@@ -23,6 +23,7 @@ export interface EmailVerificationConfirmResponse extends SuccessResponse<void> 
 // 이메일 로그인 요청 DTO
 export interface EmailLoginRequest extends BaseRequest {
   email: string;
+  verifyCode: string;
 }
 
 // OAuth 로그인 요청 DTO
@@ -43,7 +44,7 @@ export type LoginRequest = EmailLoginRequest | OAuthLoginRequest | GoogleLoginRe
 export interface LoginResponseData {
   accessToken: string;
   refreshToken: string;
-  expiresAt?: number;
+  expiredAt?: number;
   userInfo: UserInfo;
 }
 
@@ -52,8 +53,7 @@ export interface LoginResponse extends SuccessResponse<LoginResponseData> {}
 
 // 로그아웃 요청 DTO
 export interface LogoutRequest extends BaseRequest {
-  token?: Token;
-  accessToken?: string; // 직접 액세스 토큰을 받을 수 있도록 추가
+  refreshToken?: string; // 선택적 필드 (AuthManager에서 자동으로 채움)
 }
 
 // 로그아웃 응답 DTO

@@ -126,7 +126,8 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     console.log('    4단계: 로그인');
     const loginRequest: LoginRequest = {
       provider: 'email',
-      email: 'test@example.com'
+      email: 'test@example.com',
+      verifyCode: '123456'
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
@@ -249,6 +250,7 @@ async function testTokenManagement(authManager: AuthManager): Promise<TestResult
     const loginRequest: LoginRequest = {
       provider: 'email',
       email: 'test@example.com',
+      verifyCode: '123456', // 테스트용 임의 코드
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
@@ -328,6 +330,8 @@ async function testErrorHandling(authManager: AuthManager): Promise<TestResult> 
     const loginWithoutVerification: LoginRequest = {
       provider: 'email',
       email: 'unverified@example.com',
+      verifyCode: '000000', // 임의의 잘못된 인증번호 입력
+
     };
     const loginWithoutVerificationResponse = await authManager.login(loginWithoutVerification);
     
@@ -422,6 +426,7 @@ async function testStateManagement(authManager: AuthManager): Promise<TestResult
     const loginRequest: LoginRequest = {
       provider: 'email',
       email: 'test@example.com',
+      verifyCode: '123456', // 예시 코드, 실제 테스트에 맞게 수정 필요
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
