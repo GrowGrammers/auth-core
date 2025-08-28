@@ -71,12 +71,16 @@ export async function logoutByGoogle(
       {
         method: 'POST',
 <<<<<<< HEAD
+<<<<<<< HEAD
         body: { refreshToken: request.refreshToken }
 =======
         headers: {
           'Authorization': `Bearer ${request.accessToken}`,
         }
 >>>>>>> 2bdd20e (fix: 구글 로그인 엔드포인트 불일치 해결)
+=======
+        body: { refreshToken: request.refreshToken }
+>>>>>>> 717299d (refactor: 로그아웃 요청에서 리프레시 토큰 사용으로 변경 (백엔드와 맞춤))
       }
     );
 
