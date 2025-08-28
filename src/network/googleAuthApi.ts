@@ -60,8 +60,8 @@ export async function logoutByGoogle(
   request: LogoutRequest
 ): Promise<LogoutApiResponse> {
   try {
-    if (!request.accessToken) {
-      return createValidationErrorResponse('액세스 토큰');
+    if (!request.refreshToken) {
+      return createValidationErrorResponse('리프레시 토큰');
     }
 
     const response = await makeRequestWithRetry(
@@ -70,9 +70,7 @@ export async function logoutByGoogle(
       config.endpoints.googleLogout,  // logout → googleLogout으로 변경
       {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${request.accessToken}`,
-        }
+        body: { refreshToken: request.refreshToken }
       }
     );
 
