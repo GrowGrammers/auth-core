@@ -55,7 +55,7 @@ export {
 } from './storage/TokenStore.interface';
 
 // HTTP 클라이언트 인터페이스
-export { HttpClient, HttpRequestConfig, HttpResponse } from './network/interfaces/HttpClient';
+export { HttpClient, HttpRequestConfig, HttpResponse, JsonBody } from './network/interfaces/HttpClient';
 
 // 타입들
 export { Token, UserInfo, AuthProviderType, BaseResponse, BaseRequest, ApiConfig, ApiEndpoints } from './shared/types';
