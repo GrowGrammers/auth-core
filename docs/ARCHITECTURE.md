@@ -447,10 +447,14 @@ test/
 // API 응답 모킹
 export const handlers = [
 <<<<<<< HEAD
+<<<<<<< HEAD
   rest.post('/api/v1/auth/members/email-login', (req, res, ctx) => {
 =======
   rest.post('/api/v1/auth/email/login', (req, res, ctx) => {
 >>>>>>> 094bc86 (docs: 이메일 로그인 API 엔드포인트 버전 업데이트)
+=======
+  rest.post('/api/v1/auth/members/email-login', (req, res, ctx) => {
+>>>>>>> 97602f5 (docs: 문서 파일에 변경된  API 엔드포인트로 수정)
     return res(
       ctx.json({
         accessToken: 'mock-access-token',
