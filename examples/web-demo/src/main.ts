@@ -32,6 +32,7 @@ class AuthDemo {
         requestVerification: '/api/v1/auth/email/request',
         verifyEmail: '/api/v1/auth/email/verify',
 <<<<<<< HEAD
+<<<<<<< HEAD
         login: '/api/v1/auth/members/email-login',
         logout: '/api/v1/auth/members/logout',
         refresh: '/api/v1/auth/members/refresh',
@@ -49,6 +50,17 @@ class AuthDemo {
         me: '/api/v1/auth/user-info',
         health: '/api/v1/health'
 >>>>>>> fb20e18 (test: 구글 로그인 엔드포인트 테스트 코드에 반영)
+=======
+        login: '/api/v1/auth/members/email-login',
+        logout: '/api/v1/auth/members/logout',
+        refresh: '/api/v1/auth/members/refresh',
+        validate: '/api/v1/auth/validate-token',
+        me: '/api/v1/auth/user-info',
+        health: '/api/v1/health',
+        googleLogin: '/api/v1/auth/google/login',
+        googleLogout: '/api/v1/auth/google/logout',
+        googleRefresh: '/api/v1/auth/google/refresh'
+>>>>>>> f733fc1 (fix: 이메일 및 구글 인증 관련 API 엔드포인트 수정)
       },
       timeout: 10000
     };
@@ -159,8 +171,23 @@ class AuthDemo {
         return;
       }
 
+<<<<<<< HEAD
       // 이메일 인증은 provider를 통해 직접 호출해야 함
       this.updateStatus('이메일 인증 기능은 provider를 통해 구현됩니다.', 'info');
+=======
+      // AuthManager를 통해 이메일 인증 API 호출
+      const result = await this.authManager.verifyEmail({ 
+        email, 
+        verifyCode: verifyCode 
+      });
+      console.log('인증번호 인증 결과:', result);
+      // UI 업데이트
+      if (result.success) {
+        this.updateStatus('이메일 인증이 완료되었습니다!', 'success');
+      } else {
+        this.updateStatus(`이메일 인증 실패: ${result.error}`, 'error');
+      }
+>>>>>>> f733fc1 (fix: 이메일 및 구글 인증 관련 API 엔드포인트 수정)
     } catch (error) {
       this.updateStatus(`이메일 인증 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, 'error');
     }
@@ -169,7 +196,11 @@ class AuthDemo {
   private async loginWithEmail(): Promise<LoginApiResponse> {
     try {
       const email = (document.getElementById('email') as HTMLInputElement).value;
+<<<<<<< HEAD
       const password = (document.getElementById('password') as HTMLInputElement).value;
+=======
+      const verifyCode = (document.getElementById('verificationCode') as HTMLInputElement).value;
+>>>>>>> f733fc1 (fix: 이메일 및 구글 인증 관련 API 엔드포인트 수정)
       
       if (!email || !password) {
         const errorResponse: LoginApiResponse = {
@@ -182,10 +213,26 @@ class AuthDemo {
         return errorResponse;
       }
 
+      if (!verifyCode) {
+        const errorResponse: LoginApiResponse = {
+          success: false,
+          message: '인증번호를 입력해주세요.',
+          data: null,
+          error: '인증번호를 입력해주세요.'
+        };
+        this.updateStatus('인증번호를 입력해주세요.', 'error');
+        return errorResponse;
+      }
+
       const result = await this.authManager.login({ 
         provider: 'email', 
+<<<<<<< HEAD
         email, 
         verifyCode: '123456' 
+=======
+        email,
+        verifyCode
+>>>>>>> f733fc1 (fix: 이메일 및 구글 인증 관련 API 엔드포인트 수정)
       });
 
       console.log('이메일 로그인 결과:', result);
