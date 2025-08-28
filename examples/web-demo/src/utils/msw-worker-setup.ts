@@ -20,11 +20,11 @@ export async function setupMSWWorker() {
     console.log('📡 모킹된 API 엔드포인트:');
     console.log('   - POST /api/v1/auth/email/request');
     console.log('   - POST /api/v1/auth/email/verify');
-    console.log('   - POST /api/v1/auth/email/login');
+    console.log('   - POST /api/v1/auth/members/email-login');
     console.log('   - GET  /api/v1/auth/validate-token');
     console.log('   - GET  /api/v1/auth/user-info');
-    console.log('   - POST /api/v1/auth/email/refresh');
-    console.log('   - POST /api/v1/auth/email/logout');
+    console.log('   - POST /api/v1/auth/members/refresh');
+    console.log('   - POST /api/v1/auth/members/logout');
     console.log('   - GET  /api/v1/health');
     console.log('');
     

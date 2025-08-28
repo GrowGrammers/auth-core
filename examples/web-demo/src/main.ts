@@ -31,12 +31,15 @@ class AuthDemo {
       endpoints: {
         requestVerification: '/api/v1/auth/email/request',
         verifyEmail: '/api/v1/auth/email/verify',
-        login: '/api/v1/auth/email/login',
-        logout: '/api/v1/auth/email/logout',
-        refresh: '/api/v1/auth/email/refresh',
+        login: '/api/v1/auth/members/email-login',
+        logout: '/api/v1/auth/members/logout',
+        refresh: '/api/v1/auth/members/refresh',
         validate: '/api/v1/auth/validate-token',
         me: '/api/v1/auth/user-info',
-        health: '/api/v1/health'
+        health: '/api/v1/health',
+        googleLogin: '/api/v1/auth/google/login',
+        googleLogout: '/api/v1/auth/google/logout',
+        googleRefresh: '/api/v1/auth/google/refresh'
       },
       timeout: 10000
     };
@@ -102,7 +105,6 @@ class AuthDemo {
         this.updateStatus('이메일을 입력해주세요.', 'error');
         return errorResponse;
       }
-
       const result = await this.authManager.requestEmailVerification({ email });
       
       console.log('인증번호 요청 결과:', result);
@@ -111,7 +113,14 @@ class AuthDemo {
       if (result.success) {
         this.updateStatus('인증번호가 이메일로 전송되었습니다.', 'success');
       } else {
-        this.updateStatus(`인증번호 요청 실패: ${result.error}`, 'error');
+        const errorMsg = result.error || result.message || '알 수 없는 오류';
+        console.error('❌ 인증번호 요청 실패 상세:', {
+          success: result.success,
+          message: result.message,
+          error: result.error,
+          data: result.data
+        });
+        this.updateStatus(`인증번호 요청 실패: ${errorMsg}`, 'error');
       }
       
       return result;
@@ -142,7 +151,7 @@ class AuthDemo {
         email, 
         verifyCode: verifyCode 
       });
-      
+      console.log('인증번호 인증 결과:', result);
       // UI 업데이트
       if (result.success) {
         this.updateStatus('이메일 인증이 완료되었습니다!', 'success');
@@ -157,6 +166,7 @@ class AuthDemo {
   private async loginWithEmail(): Promise<LoginApiResponse> {
     try {
       const email = (document.getElementById('email') as HTMLInputElement).value;
+      const verifyCode = (document.getElementById('verificationCode') as HTMLInputElement).value;
       
       if (!email) {
         const errorResponse: LoginApiResponse = {
@@ -169,11 +179,25 @@ class AuthDemo {
         return errorResponse;
       }
 
+      if (!verifyCode) {
+        const errorResponse: LoginApiResponse = {
+          success: false,
+          message: '인증번호를 입력해주세요.',
+          data: null,
+          error: '인증번호를 입력해주세요.'
+        };
+        this.updateStatus('인증번호를 입력해주세요.', 'error');
+        return errorResponse;
+      }
+
       const result = await this.authManager.login({ 
         provider: 'email', 
-        email
+        email,
+        verifyCode
       });
-      
+
+      console.log('이메일 로그인 결과:', result);
+
       // UI 업데이트
       if (result.success && result.data) {
         this.updateStatus('이메일 로그인이 성공했습니다!', 'success');
@@ -240,6 +264,8 @@ class AuthDemo {
         provider: 'email', 
         refreshToken: tokenResult.data.refreshToken || ''
       });
+
+      console.log('토큰 갱신 결과:', result);
       
       // UI 업데이트
       if (result.success && result.data) {
