@@ -66,6 +66,9 @@ export const handlers = [
     const body = await request.json() as any;
     
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
     // 저장된 인증 코드와 비교
     const storedCode = verificationCodes.get(body.email);
     
@@ -79,10 +82,13 @@ export const handlers = [
     }
     
     if (body.verifyCode !== storedCode) {
+<<<<<<< HEAD
 =======
     // 잘못된 인증번호에 대한 에러 응답
     if (body.verifyCode === '999999') {  // code → verifyCode로 통일
 >>>>>>> 6c0d715 (fix: 이메일 인증 확인 바디 키 혼선 해결)
+=======
+>>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
       return HttpResponse.json({
         success: false,
         message: '잘못된 인증번호입니다.',
@@ -192,10 +198,14 @@ export const handlers = [
         accessToken: generateRandomToken('new-google-access-token'),
         refreshToken: generateRandomToken('new-google-refresh-token'),
 <<<<<<< HEAD
+<<<<<<< HEAD
         expiredAt: generateExpiredAt(),
 =======
         expiresAt: generateExpiresAt(),
 >>>>>>> fb20e18 (test: 구글 로그인 엔드포인트 테스트 코드에 반영)
+=======
+        expiredAt: generateExpiredAt(),
+>>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
         tokenType: 'Bearer'
       }
     });

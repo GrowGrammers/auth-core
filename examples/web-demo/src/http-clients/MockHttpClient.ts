@@ -9,10 +9,14 @@ export class MockHttpClient implements HttpClient {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   private generateExpiredAt(): number {
 =======
   private generateexpiredAt(): number {
 >>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
+=======
+  private generateExpiredAt(): number {
+>>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
     return Date.now() + 3600000; // 1시간 후 만료
   }
 
@@ -152,10 +156,14 @@ export class MockHttpClient implements HttpClient {
             accessToken: this.generateRandomToken('mock-access-token'),
             refreshToken: this.generateRandomToken('mock-refresh-token'),
 <<<<<<< HEAD
+<<<<<<< HEAD
             expiredAt: this.generateExpiredAt(),
 =======
             expiredAt: this.generateexpiredAt(),
 >>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
+=======
+            expiredAt: this.generateExpiredAt(),
+>>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
             userInfo: {
               id: 'user-123',
               email: email,
@@ -219,10 +227,14 @@ export class MockHttpClient implements HttpClient {
             accessToken: this.generateRandomToken('new-mock-access-token'),
             refreshToken: this.generateRandomToken('new-mock-refresh-token'),
 <<<<<<< HEAD
+<<<<<<< HEAD
             expiredAt: this.generateExpiredAt()
 =======
             expiredAt: this.generateexpiredAt()
 >>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
+=======
+            expiredAt: this.generateExpiredAt()
+>>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
           }
         }),
         text: async () => 'mock refresh response'
@@ -292,10 +304,14 @@ export class MockHttpClient implements HttpClient {
             accessToken: this.generateRandomToken('google-access-token'),
             refreshToken: this.generateRandomToken('google-refresh-token'),
 <<<<<<< HEAD
+<<<<<<< HEAD
             expiredAt: this.generateExpiredAt(),
 =======
             expiredAt: this.generateexpiredAt(),
 >>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
+=======
+            expiredAt: this.generateExpiredAt(),
+>>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
             userInfo: {
               id: 'google-user-123',
               email: 'google@example.com',
@@ -339,6 +355,7 @@ export class MockHttpClient implements HttpClient {
             refreshToken: this.generateRandomToken('new-google-refresh-token'),
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
             expiredAt: this.generateExpiredAt(),
 =======
             expiresAt: this.generateExpiresAt(),
@@ -346,6 +363,9 @@ export class MockHttpClient implements HttpClient {
 =======
             expiredAt: this.generateexpiredAt(),
 >>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
+=======
+            expiredAt: this.generateExpiredAt(),
+>>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
             tokenType: 'Bearer'
           }
         }),
