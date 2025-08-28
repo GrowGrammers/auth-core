@@ -27,7 +27,6 @@ export async function setupMSWWorker() {
     console.log('   - POST /api/v1/auth/members/logout');
     console.log('   - GET  /api/v1/health');
     console.log('');
-    
     return worker;
   } catch (error) {
     console.error('MSW 워커 시작 실패:', error);

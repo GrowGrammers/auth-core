@@ -176,6 +176,7 @@ class AuthDemo {
           error: '이메일을 입력해주세요.'
         };
         this.updateStatus('이메일을 입력해주세요.', 'error');
+
         return errorResponse;
       }
 
@@ -187,6 +188,7 @@ class AuthDemo {
           error: '인증번호를 입력해주세요.'
         };
         this.updateStatus('인증번호를 입력해주세요.', 'error');
+
         return errorResponse;
       }
 

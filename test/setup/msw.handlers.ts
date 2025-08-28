@@ -224,6 +224,7 @@ export const handlers = [
         accessToken: generateRandomToken('new-mock-access-token'),
         refreshToken: generateRandomToken('new-mock-refresh-token'),
         expiredAt: generateExpiredAt(),
+
         tokenType: 'Bearer'
       }
     });

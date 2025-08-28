@@ -7,7 +7,6 @@ export class MockHttpClient implements HttpClient {
     const random = Math.random().toString(36).substr(2, 9);
     return `${prefix}-${timestamp}-${random}`;
   }
-
   private generateExpiredAt(): number {
     return Date.now() + 3600000; // 1시간 후 만료
   }
@@ -185,7 +184,6 @@ export class MockHttpClient implements HttpClient {
         text: async () => 'mock user info response'
       };
     }
-    
     if (url.includes('/api/v1/auth/members/refresh') && method === 'POST') {
       return {
         ok: true,
@@ -204,7 +202,6 @@ export class MockHttpClient implements HttpClient {
         text: async () => 'mock refresh response'
       };
     }
-    
     if (url.includes('/api/v1/auth/members/logout') && method === 'POST') {
       return {
         ok: true,

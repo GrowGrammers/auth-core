@@ -116,6 +116,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
       await manager.login(loginRequest);
 
+
       // When: 저장된 토큰 조회
       const tokenResult = await manager.getToken();
 
@@ -143,7 +144,6 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         expect(isAuth.data).toBe(true);
       }
     });
-
          it('토큰 만료 여부 확인', async () => {
        // Given: 이메일 인증 완료 후 로그인
        await manager.requestEmailVerification({ email: 'test@example.com' });

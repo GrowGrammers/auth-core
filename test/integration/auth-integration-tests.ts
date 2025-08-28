@@ -331,6 +331,7 @@ async function testErrorHandling(authManager: AuthManager): Promise<TestResult> 
       provider: 'email',
       email: 'unverified@example.com',
       verifyCode: '000000', // 임의의 잘못된 인증번호 입력
+
     };
     const loginWithoutVerificationResponse = await authManager.login(loginWithoutVerification);
     
