@@ -60,7 +60,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
 
       // When: 로그인 실행
+<<<<<<< HEAD
       const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+      const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
       const result = await manager.login(loginRequest);
 
        // Then: 성공 응답 확인
@@ -85,7 +89,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       await manager.verifyEmail({ email: 'fail@example.com', verifyCode: '123456' });
 
       // When: 실패할 로그인 시도
+<<<<<<< HEAD
       const loginRequest = { email: 'fail@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+      const loginRequest = { email: 'fail@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
       const result = await manager.login(loginRequest);
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -99,7 +107,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       await manager.verifyEmail({ email: 'timeout@example.com', verifyCode: '123456' });
 
       // When: 타임아웃될 로그인 시도
+<<<<<<< HEAD
       const loginRequest = { email: 'timeout@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+      const loginRequest = { email: 'timeout@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
       const result = await manager.login(loginRequest);
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -113,7 +125,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       // Given: 이메일 인증 완료 후 로그인
       await manager.requestEmailVerification({ email: 'test@example.com' });
       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+<<<<<<< HEAD
       const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+      const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
       await manager.login(loginRequest);
 
       // When: 저장된 토큰 조회
@@ -131,7 +147,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
        // Given: 이메일 인증 완료 후 로그인
        await manager.requestEmailVerification({ email: 'test@example.com' });
        await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+<<<<<<< HEAD
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
        await manager.login(loginRequest);
 
       // When: 인증 상태 확인
@@ -150,6 +170,16 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
        await manager.login(loginRequest);
 
+<<<<<<< HEAD
+=======
+         it('토큰 만료 여부 확인', async () => {
+       // Given: 이메일 인증 완료 후 로그인
+       await manager.requestEmailVerification({ email: 'test@example.com' });
+       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+       await manager.login(loginRequest);
+
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
       // When: 토큰 검증
       const validationResult = await manager.validateCurrentToken();
 
@@ -166,7 +196,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
        // Given: 이메일 인증 완료 후 로그인으로 토큰 획득
        await manager.requestEmailVerification({ email: 'test@example.com' });
        await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+<<<<<<< HEAD
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
        await manager.login(loginRequest);
 
       // When: 토큰 갱신
@@ -205,7 +239,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
        // Given: 이메일 인증 완료 후 로그인된 상태
        await manager.requestEmailVerification({ email: 'test@example.com' });
        await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+<<<<<<< HEAD
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
        await manager.login(loginRequest);
 
              // Then: 로그인 후 토큰이 저장소에 있는지 확인
@@ -328,7 +366,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
              // When: 이메일 인증 완료 후 로그인
        await manager.requestEmailVerification({ email: 'test@example.com' });
        await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+<<<<<<< HEAD
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
        await manager.login(loginRequest);
 
       // Then: 인증됨
@@ -374,7 +416,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       });
 
              // When & Then: 네트워크 에러 처리 확인 (이메일 인증 없이 시도)
+<<<<<<< HEAD
        const result = await errorManager.login({ email: 'test@example.com', verifyCode: '123456', provider: 'email' as const });
+=======
+       const result = await errorManager.login({ email: 'test@example.com', provider: 'email' as const });
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.message).toContain('로그인 중 오류가 발생했습니다');
@@ -404,7 +450,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       expect(verifyResult.success).toBe(true);
 
              // 4. 로그인
+<<<<<<< HEAD
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
        const loginResult = await manager.login(loginRequest);
       expect(loginResult.success).toBe(true);
 
@@ -444,7 +494,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       
       expect(result.success).toBe(false);
       if (!result.success) {
+<<<<<<< HEAD
         expect(result.error).toContain('지원하지 않는 로그인 방식입니다');
+=======
+        expect(result.error).toContain('API 형식 오류');
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
       }
     });
 
@@ -452,12 +506,17 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       // 이메일 인증을 하지 않은 상태에서 로그인 시도
       const loginRequest = { 
         provider: 'email' as const,
+<<<<<<< HEAD
         email: 'unverified@example.com',
         verifyCode: '123456'
+=======
+        email: 'unverified@example.com' 
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
       };
 
       const result = await manager.login(loginRequest);
       
+<<<<<<< HEAD
       // Mock Provider를 사용하므로 실제로는 성공하지만, 
       // 실제 구현에서는 이메일 인증 검증이 이루어져야 함
       expect(result.success).toBe(true);
@@ -466,6 +525,12 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       // if (!result.success) {
       //   expect(result.error).toBe('EMAIL_VERIFICATION_REQUIRED');
       // }
+=======
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('EMAIL_VERIFICATION_REQUIRED');
+      }
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
     });
 
     it('올바른 이메일 인증 플로우 후 로그인 성공', async () => {
@@ -482,7 +547,11 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       expect(verifyResult.success).toBe(true);
 
              // 3. 로그인 시도 (이제 성공해야 함)
+<<<<<<< HEAD
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+=======
+       const loginRequest = { email: 'test@example.com', provider: 'email' as const };
+>>>>>>> 943ba0e (fix: 이메일 로그인 요청에 인증번호 추가 및 관련 테스트 코드 수정)
        const loginResult = await manager.login(loginRequest);
       expect(loginResult.success).toBe(true);
     });
