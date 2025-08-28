@@ -7,7 +7,7 @@ import { AuthProviderType } from './literals';
 export interface Token {
   accessToken: string;
   refreshToken?: string;
-  expiresAt?: number; // unix timestamp
+  expiredAt?: number; // unix timestamp
 }
 
 // 사용자 정보 인터페이스

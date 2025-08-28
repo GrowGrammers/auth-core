@@ -8,7 +8,7 @@ export class MockHttpClient implements HttpClient {
     return `${prefix}-${timestamp}-${random}`;
   }
 
-  private generateexpiredAt(): number {
+  private generateExpiredAt(): number {
     return Date.now() + 3600000; // 1시간 후 만료
   }
   async request(config: HttpRequestConfig): Promise<HttpResponse> {
@@ -138,7 +138,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('mock-access-token'),
             refreshToken: this.generateRandomToken('mock-refresh-token'),
-            expiredAt: this.generateexpiredAt(),
+            expiredAt: this.generateExpiredAt(),
             userInfo: {
               id: 'user-123',
               email: email,
@@ -198,7 +198,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('new-mock-access-token'),
             refreshToken: this.generateRandomToken('new-mock-refresh-token'),
-            expiredAt: this.generateexpiredAt()
+            expiredAt: this.generateExpiredAt()
           }
         }),
         text: async () => 'mock refresh response'
@@ -264,7 +264,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('google-access-token'),
             refreshToken: this.generateRandomToken('google-refresh-token'),
-            expiredAt: this.generateexpiredAt(),
+            expiredAt: this.generateExpiredAt(),
             userInfo: {
               id: 'google-user-123',
               email: 'google@example.com',
@@ -306,7 +306,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('new-google-access-token'),
             refreshToken: this.generateRandomToken('new-google-refresh-token'),
-            expiredAt: this.generateexpiredAt(),
+            expiredAt: this.generateExpiredAt(),
             tokenType: 'Bearer'
           }
         }),

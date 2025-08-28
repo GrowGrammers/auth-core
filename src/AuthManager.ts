@@ -179,7 +179,7 @@ export class AuthManager {
         const token: Token = {
           accessToken: loginResponse.data.accessToken,
           refreshToken: loginResponse.data.refreshToken,
-          expiresAt: loginResponse.data.expiresAt ? Date.now() + loginResponse.data.expiresAt * 1000 : undefined
+          expiredAt: loginResponse.data.expiredAt
         };
         const saveResult = await this.tokenStore.saveToken(token);
         if (saveResult.success) {
