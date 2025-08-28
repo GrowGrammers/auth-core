@@ -446,7 +446,7 @@ test/
 ```typescript
 // API 응답 모킹
 export const handlers = [
-  rest.post('/api/v1/auth/email/login', (req, res, ctx) => {
+  rest.post('/api/v1/auth/members/email-login', (req, res, ctx) => {
     return res(
       ctx.json({
         accessToken: 'mock-access-token',
