@@ -1,6 +1,6 @@
 // Google OAuth 인증 제공자 구현
 import { HttpClient } from '../../network/interfaces/HttpClient';
-import { AuthProviderConfig } from '../interfaces/config/auth-config';
+import { AuthProviderConfig, GoogleAuthProviderConfig } from '../interfaces/config/auth-config';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
 import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
 import {
@@ -21,14 +21,15 @@ import {
   logoutByGoogle,
   refreshTokenByGoogle
 } from '../../network';
+import { verifyGoogleAccessToken } from '../../shared/utils/googleOAuthUtils';
 
 export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvider {
   readonly providerName = 'google' as const;
-  readonly config: AuthProviderConfig;
+  readonly config: GoogleAuthProviderConfig;
   private httpClient: HttpClient;
   private apiConfig: ApiConfig;
 
-  constructor(config: AuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
+  constructor(config: GoogleAuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
     super();
     this.config = config;
     this.httpClient = httpClient;
@@ -65,12 +66,48 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   }
 
   async validateToken(token: Token): Promise<TokenValidationApiResponse> {
-    // Google 토큰 검증 로직 구현
-    // TODO: v2.0에서 Google OAuth 구현
-    return this.createErrorResponse(
-      'Google 토큰 검증은 아직 구현되지 않았습니다.',
-      'Google 토큰 검증은 아직 구현되지 않았습니다.'
-    );
+    try {
+      if (!token.accessToken) {
+        return this.createErrorResponse(
+          '액세스 토큰이 필요합니다.',
+          '토큰 검증을 위해 액세스 토큰이 필요합니다.'
+        );
+      }
+
+      // Google 액세스 토큰 검증
+      const verifiedToken = await verifyGoogleAccessToken(
+        token.accessToken,
+        this.config.googleClientId
+      );
+
+      if (!verifiedToken) {
+        return this.createErrorResponse(
+          'Google 토큰 검증에 실패했습니다.',
+          '제공된 토큰이 유효하지 않거나 만료되었습니다.'
+        );
+      }
+
+      // 이메일 인증 여부 확인
+      if (!verifiedToken.email_verified) {
+        return this.createErrorResponse(
+          '이메일이 인증되지 않았습니다.',
+          'Google 계정의 이메일 인증이 필요합니다.'
+        );
+      }
+
+      // 성공 응답 반환 (TokenValidationResponse는 boolean을 반환)
+      return {
+        success: true,
+        message: 'Google 토큰 검증이 성공했습니다.',
+        data: true
+      };
+    } catch (error) {
+      console.error('Google 토큰 검증 중 오류 발생:', error);
+      return this.createErrorResponse(
+        'Google 토큰 검증 중 오류가 발생했습니다.',
+        '토큰 검증 과정에서 예상치 못한 오류가 발생했습니다.'
+      );
+    }
   }
 
   async getUserInfo(token: Token): Promise<UserInfoApiResponse> {
