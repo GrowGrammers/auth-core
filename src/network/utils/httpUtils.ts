@@ -15,6 +15,7 @@ export async function makeRequest(
   const timeoutId = setTimeout(() => controller.abort(), options.timeout || config.timeout || 10000);
 
   try {
+  
     const httpConfig: HttpRequestConfig = {
       url: `${config.apiBaseUrl}${endpoint}`, // apiBaseUrl로 수정
       method: options.method,
