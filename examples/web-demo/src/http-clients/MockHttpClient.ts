@@ -7,19 +7,9 @@ export class MockHttpClient implements HttpClient {
     const random = Math.random().toString(36).substr(2, 9);
     return `${prefix}-${timestamp}-${random}`;
   }
-
-<<<<<<< HEAD
-<<<<<<< HEAD
   private generateExpiredAt(): number {
-=======
-  private generateexpiredAt(): number {
->>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
-=======
-  private generateExpiredAt(): number {
->>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
     return Date.now() + 3600000; // 1시간 후 만료
   }
-
   async request(config: HttpRequestConfig): Promise<HttpResponse> {
     const { method = 'GET', url, body } = config;
     
@@ -87,15 +77,7 @@ export class MockHttpClient implements HttpClient {
     }
     
     // 이메일 로그인
-<<<<<<< HEAD
-<<<<<<< HEAD
     if (url.includes('/api/v1/auth/members/email-login') && method === 'POST') {
-=======
-    if (url.includes('/api/v1/auth/email/login') && method === 'POST') {
->>>>>>> 2164b26 (test: MockHttpClient에도 MSW와 동일한 인증 상태 확인 로직을 추가)
-=======
-    if (url.includes('/api/v1/auth/members/email-login') && method === 'POST') {
->>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
       // 요청 본문에서 email 확인
       let requestBody: any;
       if (typeof body === 'string') {
@@ -155,15 +137,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('mock-access-token'),
             refreshToken: this.generateRandomToken('mock-refresh-token'),
-<<<<<<< HEAD
-<<<<<<< HEAD
             expiredAt: this.generateExpiredAt(),
-=======
-            expiredAt: this.generateexpiredAt(),
->>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
-=======
-            expiredAt: this.generateExpiredAt(),
->>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
             userInfo: {
               id: 'user-123',
               email: email,
@@ -210,10 +184,6 @@ export class MockHttpClient implements HttpClient {
         text: async () => 'mock user info response'
       };
     }
-<<<<<<< HEAD
-=======
-    
->>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
     if (url.includes('/api/v1/auth/members/refresh') && method === 'POST') {
       return {
         ok: true,
@@ -226,24 +196,12 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('new-mock-access-token'),
             refreshToken: this.generateRandomToken('new-mock-refresh-token'),
-<<<<<<< HEAD
-<<<<<<< HEAD
             expiredAt: this.generateExpiredAt()
-=======
-            expiredAt: this.generateexpiredAt()
->>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
-=======
-            expiredAt: this.generateExpiredAt()
->>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
           }
         }),
         text: async () => 'mock refresh response'
       };
     }
-<<<<<<< HEAD
-=======
-    
->>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
     if (url.includes('/api/v1/auth/members/logout') && method === 'POST') {
       return {
         ok: true,
@@ -303,15 +261,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('google-access-token'),
             refreshToken: this.generateRandomToken('google-refresh-token'),
-<<<<<<< HEAD
-<<<<<<< HEAD
             expiredAt: this.generateExpiredAt(),
-=======
-            expiredAt: this.generateexpiredAt(),
->>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
-=======
-            expiredAt: this.generateExpiredAt(),
->>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
             userInfo: {
               id: 'google-user-123',
               email: 'google@example.com',
@@ -353,19 +303,7 @@ export class MockHttpClient implements HttpClient {
           data: {
             accessToken: this.generateRandomToken('new-google-access-token'),
             refreshToken: this.generateRandomToken('new-google-refresh-token'),
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
             expiredAt: this.generateExpiredAt(),
-=======
-            expiresAt: this.generateExpiresAt(),
->>>>>>> fb20e18 (test: 구글 로그인 엔드포인트 테스트 코드에 반영)
-=======
-            expiredAt: this.generateexpiredAt(),
->>>>>>> 05df8d7 (test: HttpClient에서 API  응답 처리 수정하여 이중 직렬화 문제 해결)
-=======
-            expiredAt: this.generateExpiredAt(),
->>>>>>> c054403 (fix: Token 인터페이스의 expiresAt 필드를 expiredAt으로 수정 (백엔드와 일치))
             tokenType: 'Bearer'
           }
         }),
