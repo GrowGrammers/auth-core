@@ -70,7 +70,7 @@ export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
       this.currentToken = {
         accessToken: 'fake-access-token-123',
         refreshToken: 'fake-refresh-token-123',
-        expiresAt: Math.floor(Date.now() / 1000) + 3600
+        expiredAt: Math.floor(Date.now() / 1000) + 3600
       };
 
       const response: LoginResponse = {
@@ -79,7 +79,7 @@ export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
         data: {
           accessToken: this.currentToken!.accessToken,
           refreshToken: this.currentToken!.refreshToken || '',
-          expiresAt: this.currentToken!.expiresAt,
+          expiredAt: this.currentToken!.expiredAt,
           userInfo: this.currentUser!
         }
       };
@@ -123,7 +123,7 @@ export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
     const newToken: Token = {
       accessToken: 'fake-access-token-456',
       refreshToken: 'fake-refresh-token-123',
-      expiresAt: Math.floor(Date.now() / 1000) + 3600
+      expiredAt: Math.floor(Date.now() / 1000) + 3600
     };
 
     this.currentToken = newToken;

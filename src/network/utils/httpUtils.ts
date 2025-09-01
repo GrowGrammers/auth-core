@@ -26,7 +26,6 @@ export async function makeRequest(
       body: options.body,
       timeout: options.timeout || config.timeout || 10000,
     };
-    
     const response = await httpClient.request(httpConfig);
     clearTimeout(timeoutId);
     return response;
