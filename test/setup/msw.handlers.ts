@@ -35,7 +35,18 @@ export function clearVerificationCode(email: string): void {
 export const handlers = [
   // 이메일 인증번호 요청
   http.post('*/api/v1/auth/email/request', async ({ request }) => {
-    const body = await request.json() as any;
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('MSW: JSON 파싱 에러:', error);
+      return HttpResponse.json({
+        success: false,
+        message: '잘못된 요청 형식입니다.',
+        data: null,
+        error: 'INVALID_JSON'
+      }, { status: 400 });
+    }
     
     // 존재하지 않는 이메일에 대한 에러 응답
     if (body.email === 'nonexistent@example.com') {
@@ -63,7 +74,18 @@ export const handlers = [
 
   // 이메일 인증번호 확인
   http.post('*/api/v1/auth/email/verify', async ({ request }) => {
-    const body = await request.json() as any;
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('MSW: JSON 파싱 에러:', error);
+      return HttpResponse.json({
+        success: false,
+        message: '잘못된 요청 형식입니다.',
+        data: null,
+        error: 'INVALID_JSON'
+      }, { status: 400 });
+    }
     
     // 저장된 인증 코드와 비교
     const storedCode = verificationCodes.get(body.email);
@@ -98,7 +120,18 @@ export const handlers = [
 
   // 이메일 로그인
   http.post('*/api/v1/auth/members/email-login', async ({ request }) => {
-    const body = await request.json() as any;
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (error) {
+      console.error('MSW: JSON 파싱 에러:', error);
+      return HttpResponse.json({
+        success: false,
+        message: '잘못된 요청 형식입니다.',
+        data: null,
+        error: 'INVALID_JSON'
+      }, { status: 400 });
+    }
     
     // 이메일이 없는 경우 에러 응답
     if (!body.email) {

@@ -7,6 +7,7 @@ import {
   RefreshTokenRequest
 } from '../../src/providers/interfaces/dtos/auth.dto';
 import { HttpClient } from '../../src/network/interfaces/HttpClient';
+import { getVerificationCode } from '../setup/msw.handlers';
 
 // =====================================
 // 🧪 테스트 전용 인터페이스 (auth-core와 무관)
@@ -108,9 +109,21 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
 
     // 3. 이메일 인증번호 확인
     console.log('    3단계: 이메일 인증번호 확인');
+    
+    // MSW에서 생성된 실제 인증번호 가져오기
+    const actualVerificationCode = getVerificationCode('test@example.com');
+    if (!actualVerificationCode) {
+      return {
+        testName,
+        success: false,
+        error: 'MSW에서 인증번호를 가져올 수 없음',
+        duration: Date.now() - startTime
+      };
+    }
+    
     const verifyEmailResponse = await authManager.verifyEmail({
       email: 'test@example.com',
-      verifyCode: '123456'
+      verifyCode: actualVerificationCode
     });
     if (!verifyEmailResponse.success) {
       return {
@@ -127,7 +140,7 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     const loginRequest: LoginRequest = {
       provider: 'email',
       email: 'test@example.com',
-      verifyCode: '123456'
+      verifyCode: actualVerificationCode
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
@@ -580,9 +593,9 @@ async function main() {
     endpoints: {
       requestVerification: '/api/v1/auth/email/request',
       verifyEmail: '/api/v1/auth/email/verify',
-      login: '/api/v1/auth/email/login',
-      logout: '/api/v1/auth/email/logout',
-      refresh: '/api/v1/auth/email/refresh',
+      login: '/api/v1/auth/members/email-login',
+      logout: '/api/v1/auth/members/logout',
+      refresh: '/api/v1/auth/members/refresh',
       validate: '/api/v1/auth/validate-token',
       me: '/api/v1/auth/user-info',
       health: '/api/v1/health',
