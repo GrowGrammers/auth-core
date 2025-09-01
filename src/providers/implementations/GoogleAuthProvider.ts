@@ -111,12 +111,51 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   }
 
   async getUserInfo(token: Token): Promise<UserInfoApiResponse> {
-    // Google 사용자 정보 조회 로직 구현
-    // TODO: v2.0에서 Google OAuth 구현
-    return this.createErrorResponse(
-      'Google 사용자 정보 조회는 아직 구현되지 않았습니다.',
-      'Google 사용자 정보 조회는 아직 구현되지 않았습니다.'
-    );
+    try {
+      if (!token.accessToken) {
+        return this.createErrorResponse(
+          '액세스 토큰이 필요합니다.',
+          '사용자 정보 조회를 위해 액세스 토큰이 필요합니다.'
+        );
+      }
+
+      const verified = await verifyGoogleAccessToken(
+        token.accessToken,
+        this.config.googleClientId
+      );
+
+      if (!verified) {
+        return this.createErrorResponse(
+          'Google 사용자 정보 조회에 실패했습니다.',
+          '제공된 토큰이 유효하지 않거나 만료되었습니다.'
+        );
+      }
+
+      if (!verified.email_verified) {
+        return this.createErrorResponse(
+          '이메일이 인증되지 않았습니다.',
+          'Google 계정의 이메일 인증이 필요합니다.'
+        );
+      }
+
+      const userInfo: UserInfo = {
+        id: verified.sub,
+        email: verified.email,
+        nickname: verified.name,
+        provider: 'google'
+      };
+
+      return this.createSuccessResponse<UserInfo>(
+        'Google 사용자 정보 조회가 성공했습니다.',
+        userInfo
+      );
+    } catch (error) {
+      console.error('Google 사용자 정보 조회 중 오류 발생:', error);
+      return this.createErrorResponse(
+        'Google 사용자 정보 조회 중 오류가 발생했습니다.',
+        '사용자 정보 조회 과정에서 예상치 못한 오류가 발생했습니다.'
+      );
+    }
   }
 
   async isAvailable(): Promise<ServiceAvailabilityApiResponse> {

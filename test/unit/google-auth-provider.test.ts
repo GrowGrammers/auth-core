@@ -155,4 +155,56 @@ describe('GoogleAuthProvider', () => {
       }
     });
   });
+
+  describe('getUserInfo', () => {
+    it('액세스 토큰이 없으면 에러를 반환해야 한다', async () => {
+      const token: Token = { accessToken: '', refreshToken: 'r', expiredAt: Date.now() + 1000 };
+      const result = await googleProvider.getUserInfo(token);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('사용자 정보 조회를 위해 액세스 토큰이 필요합니다.');
+        expect(result.message).toBe('액세스 토큰이 필요합니다.');
+      }
+    });
+
+    it('토큰이 유효하지 않으면 에러를 반환해야 한다', async () => {
+      const { verifyGoogleAccessToken } = await import('../../src/shared/utils/googleOAuthUtils');
+      vi.mocked(verifyGoogleAccessToken).mockResolvedValue(null);
+      const token: Token = { accessToken: 'x', refreshToken: 'r', expiredAt: Date.now() + 1000 };
+      const result = await googleProvider.getUserInfo(token);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('제공된 토큰이 유효하지 않거나 만료되었습니다.');
+        expect(result.message).toBe('Google 사용자 정보 조회에 실패했습니다.');
+      }
+    });
+
+    it('이메일이 인증되지 않으면 에러를 반환해야 한다', async () => {
+      const { verifyGoogleAccessToken } = await import('../../src/shared/utils/googleOAuthUtils');
+      vi.mocked(verifyGoogleAccessToken).mockResolvedValue({
+        sub: 'u1', email: 'a@b.com', email_verified: false, name: 'A', picture: ''
+      });
+      const token: Token = { accessToken: 'x', refreshToken: 'r', expiredAt: Date.now() + 1000 };
+      const result = await googleProvider.getUserInfo(token);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('Google 계정의 이메일 인증이 필요합니다.');
+        expect(result.message).toBe('이메일이 인증되지 않았습니다.');
+      }
+    });
+
+    it('정상 조회 시 사용자 정보를 반환해야 한다', async () => {
+      const { verifyGoogleAccessToken } = await import('../../src/shared/utils/googleOAuthUtils');
+      vi.mocked(verifyGoogleAccessToken).mockResolvedValue({
+        sub: 'u1', email: 'a@b.com', email_verified: true, name: 'A', picture: ''
+      });
+      const token: Token = { accessToken: 'x', refreshToken: 'r', expiredAt: Date.now() + 1000 };
+      const result = await googleProvider.getUserInfo(token);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.message).toBe('Google 사용자 정보 조회가 성공했습니다.');
+        expect(result.data).toEqual({ id: 'u1', email: 'a@b.com', nickname: 'A', provider: 'google' });
+      }
+    });
+  });
 });
