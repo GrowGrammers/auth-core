@@ -21,7 +21,11 @@ import {
   logoutByGoogle,
   refreshTokenByGoogle
 } from '../../network';
-import { verifyGoogleAccessToken } from '../../shared/utils/googleOAuthUtils';
+import { 
+  checkGoogleServiceAvailability,
+  validateTokenByGoogle,
+  getUserInfoByGoogle
+} from '../../network/googleAuthApi';
 
 export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvider {
   readonly providerName = 'google' as const;
@@ -66,104 +70,23 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   }
 
   async validateToken(token: Token): Promise<TokenValidationApiResponse> {
-    try {
-      if (!token.accessToken) {
-        return this.createErrorResponse(
-          '액세스 토큰이 필요합니다.',
-          '토큰 검증을 위해 액세스 토큰이 필요합니다.'
-        );
-      }
-
-      // Google 액세스 토큰 검증
-      const verifiedToken = await verifyGoogleAccessToken(
-        token.accessToken,
-        this.config.googleClientId
-      );
-
-      if (!verifiedToken) {
-        return this.createErrorResponse(
-          'Google 토큰 검증에 실패했습니다.',
-          '제공된 토큰이 유효하지 않거나 만료되었습니다.'
-        );
-      }
-
-      // 이메일 인증 여부 확인
-      if (!verifiedToken.email_verified) {
-        return this.createErrorResponse(
-          '이메일이 인증되지 않았습니다.',
-          'Google 계정의 이메일 인증이 필요합니다.'
-        );
-      }
-
-      // 성공 응답 반환 (TokenValidationResponse는 boolean을 반환)
-      return {
-        success: true,
-        message: 'Google 토큰 검증이 성공했습니다.',
-        data: true
-      };
-    } catch (error) {
-      console.error('Google 토큰 검증 중 오류 발생:', error);
-      return this.createErrorResponse(
-        'Google 토큰 검증 중 오류가 발생했습니다.',
-        '토큰 검증 과정에서 예상치 못한 오류가 발생했습니다.'
-      );
-    }
+    // 백엔드 OAuth 엔드포인트를 통해 토큰 검증
+    return validateTokenByGoogle(this.httpClient, this.apiConfig, token);
   }
 
   async getUserInfo(token: Token): Promise<UserInfoApiResponse> {
-    try {
-      if (!token.accessToken) {
-        return this.createErrorResponse(
-          '액세스 토큰이 필요합니다.',
-          '사용자 정보 조회를 위해 액세스 토큰이 필요합니다.'
-        );
-      }
-
-      const verified = await verifyGoogleAccessToken(
-        token.accessToken,
-        this.config.googleClientId
-      );
-
-      if (!verified) {
-        return this.createErrorResponse(
-          'Google 사용자 정보 조회에 실패했습니다.',
-          '제공된 토큰이 유효하지 않거나 만료되었습니다.'
-        );
-      }
-
-      if (!verified.email_verified) {
-        return this.createErrorResponse(
-          '이메일이 인증되지 않았습니다.',
-          'Google 계정의 이메일 인증이 필요합니다.'
-        );
-      }
-
-      const userInfo: UserInfo = {
-        id: verified.sub,
-        email: verified.email,
-        nickname: verified.name,
-        provider: 'google'
-      };
-
-      return this.createSuccessResponse<UserInfo>(
-        'Google 사용자 정보 조회가 성공했습니다.',
-        userInfo
-      );
-    } catch (error) {
-      console.error('Google 사용자 정보 조회 중 오류 발생:', error);
-      return this.createErrorResponse(
-        'Google 사용자 정보 조회 중 오류가 발생했습니다.',
-        '사용자 정보 조회 과정에서 예상치 못한 오류가 발생했습니다.'
-      );
-    }
+    // 백엔드 OAuth 엔드포인트를 통해 사용자 정보 조회
+    return getUserInfoByGoogle(this.httpClient, this.apiConfig, token);
   }
 
   async isAvailable(): Promise<ServiceAvailabilityApiResponse> {
-    // Google 서비스 가용성 확인 로직 구현
-    // TODO: v2.0에서 Google OAuth 구현
-    return this.createErrorResponse(
-      'Google 서비스 가용성 확인은 아직 구현되지 않았습니다.',
-      'Google 서비스 가용성 확인은 아직 구현되지 않았습니다.'
-    );
+    try {
+      return await checkGoogleServiceAvailability(this.httpClient, this.apiConfig);
+    } catch (error) {
+      return this.createErrorResponse(
+        'Google 서비스 가용성 확인 중 오류가 발생했습니다.',
+        '서비스 상태 확인 중 오류가 발생했습니다.'
+      );
+    }
   }
 }
