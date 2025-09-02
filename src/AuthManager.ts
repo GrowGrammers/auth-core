@@ -16,6 +16,7 @@ import {
   RefreshTokenApiResponse,
   TokenValidationApiResponse,
   UserInfoApiResponse,
+  ServiceAvailabilityApiResponse,
   EmailVerificationConfirmRequest,
   EmailVerificationConfirmApiResponse
 } from './providers/interfaces/dtos/auth.dto';
@@ -171,8 +172,23 @@ export class AuthManager {
    */
   async login(request: LoginRequest): Promise<LoginApiResponse> {
     try {
+      // Provider 타입별 검증
+      if (!this.isProviderCompatible(request)) {
+        const requestedProvider = request.provider;
+        const capitalizedProvider = requestedProvider.charAt(0).toUpperCase() + requestedProvider.slice(1);
+        return createErrorResponse(`${capitalizedProvider} 로그인을 지원하지 않는 제공자입니다.`);
+      }
+
+      // Provider 타입별 로그인 요청 처리
+      let processedRequest = request;
+      
+      // 소셜 로그인 요청인 경우 Provider 타입에 맞게 변환
+      if ('authCode' in request && request.provider !== 'email') {
+        processedRequest = this.processSocialLoginRequest(request);
+      }
+      
       // ④ 로그인 시도 (누가? 전달받은 provider가!)
-      const loginResponse = await this.provider.login(request);
+      const loginResponse = await this.provider.login(processedRequest);
       
       if (loginResponse.success && loginResponse.data?.accessToken) {
         // ⑤ 로그인 성공 시 토큰 저장
@@ -183,14 +199,14 @@ export class AuthManager {
         };
         const saveResult = await this.tokenStore.saveToken(token);
         if (saveResult.success) {
-          //console.log('[AuthManager] 로그인 성공, 토큰 저장됨');
+          console.log(`[AuthManager] ${this.provider.providerName} 로그인 성공, 토큰 저장됨`);
         } else {
           console.error('[AuthManager] 토큰 저장 실패:', saveResult.error);
         }
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in loginResponse ? loginResponse.error : '알 수 없는 오류';
-        //console.log('[AuthManager] 로그인 실패:', errorMessage);
+        console.log(`[AuthManager] ${this.provider.providerName} 로그인 실패:`, errorMessage);
       }
       
       return loginResponse;
@@ -198,6 +214,44 @@ export class AuthManager {
       console.error('로그인 중 오류 발생:', error);
       return createErrorResponseFromException(error, '로그인 중 오류가 발생했습니다.');
     }
+  }
+
+  /**
+   * Provider 타입 호환성 검증
+   * @param request 로그인 요청
+   * @returns Provider 타입 호환 여부
+   */
+  private isProviderCompatible(request: LoginRequest): boolean {
+    const currentProvider = this.provider.providerName;
+    const requestedProvider = request.provider;
+
+    // 이메일 로그인 요청인 경우
+    if ('email' in request) {
+      return currentProvider === 'email';
+    }
+
+    // OAuth 로그인 요청인 경우
+    if ('authCode' in request) {
+      return currentProvider === requestedProvider;
+    }
+
+    return false;
+  }
+
+  /**
+   * OAuth 로그인 요청을 Provider별 형식으로 변환
+   * @param request OAuth 로그인 요청
+   * @returns Provider별 형식으로 변환된 요청
+   */
+  private processSocialLoginRequest(request: any): any {
+    const { provider, authCode, redirectUri } = request;
+    
+    // 모든 OAuth Provider는 동일한 형식 사용
+    return {
+      provider: provider,
+      authCode: authCode,
+      redirectUri: redirectUri
+    };
   }
 
   /**
@@ -356,5 +410,6 @@ export class AuthManager {
       return createErrorResponseFromException(error, '저장소 초기화 중 오류가 발생했습니다.');
     }
   }
-}
 
+
+}

@@ -26,19 +26,14 @@ export interface EmailLoginRequest extends BaseRequest {
   verifyCode: string;
 }
 
-// OAuth 로그인 요청 DTO
+// OAuth 로그인 요청 DTO (모든 소셜 로그인 통합)
 export interface OAuthLoginRequest extends BaseRequest {
-  authCode: string;
-  redirectUri?: string;
-}
-
-// 구글 로그인 요청 DTO
-export interface GoogleLoginRequest extends BaseRequest {
-  googleToken: string;
+  authCode: string;        // 모든 OAuth에서 공통으로 사용
+  redirectUri?: string;    // OAuth 리다이렉트 URI (선택적)
 }
 
 // 통합 로그인 요청 DTO (유니온 타입)
-export type LoginRequest = EmailLoginRequest | OAuthLoginRequest | GoogleLoginRequest;
+export type LoginRequest = EmailLoginRequest | OAuthLoginRequest;
 
 // 백엔드 로그인 응답 데이터 구조
 export interface LoginResponseData {
