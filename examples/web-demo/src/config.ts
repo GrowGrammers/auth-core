@@ -37,4 +37,4 @@ export const config = {
 };
 
 // 현재 환경 설정 (기본값: development)
-export const currentConfig = config.localBackend;
+export const currentConfig = config.development;

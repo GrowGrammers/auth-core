@@ -4,4 +4,11 @@ export interface AuthProviderConfig {
   // 기타 설정만 유지
   timeout?: number;
   retryCount?: number;
+}
+
+// Google OAuth 전용 설정 인터페이스
+export interface GoogleAuthProviderConfig extends AuthProviderConfig {
+  googleClientId: string;
+  googleClientSecret?: string; // 서버 사이드에서만 필요
+  googleProjectId?: string;
 } 

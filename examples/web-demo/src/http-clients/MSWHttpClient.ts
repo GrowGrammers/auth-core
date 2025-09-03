@@ -4,16 +4,31 @@ import { HttpClient, HttpRequestConfig, HttpResponse } from 'auth-core';
 export class MSWHttpClient implements HttpClient {
   async request(config: HttpRequestConfig): Promise<HttpResponse> {
     const { method = 'GET', url, body, headers = {} } = config;
+
+    // ✅ body 직렬화 보장
+    const isBodyAllowed = !['GET', 'HEAD'].includes(method.toUpperCase());
+    const serializedBody =
+      body == null
+        ? undefined
+        : (typeof body === 'string' ||
+           body instanceof FormData ||
+           body instanceof Blob ||
+           body instanceof URLSearchParams ||
+           // ReadableStream 타입가드 느슨히
+           (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream))
+            ? body
+            : JSON.stringify(body);
     
     try {
+      // FormData/Blob인 경우 Content-Type을 자동으로 설정하도록 함
+      const isFormLike = body instanceof FormData || body instanceof Blob;
+      const baseHeaders = isFormLike ? headers : { 'Content-Type': 'application/json', ...headers };
+      
       // 실제 fetch 요청 (MSW가 가로채서 모의 응답 제공)
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
-        body: body, // body는 makeRequest에서 전달된 그대로 사용
+        headers: baseHeaders,
+        body: isBodyAllowed ? serializedBody : undefined, // GET/HEAD엔 body 금지
       });
 
       const responseData = await response.json();

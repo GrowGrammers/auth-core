@@ -120,12 +120,17 @@
 
     <!-- 구글 인증 섹션 -->
     <div class="auth-section">
-      <h2>🔍 구글 인증</h2>
+      <h2>🔍 구글 OAuth 2.0</h2>
       <div class="form-group">
-        <label for="googleToken">구글 토큰:</label>
-        <input type="text" id="googleToken" placeholder="구글 액세스 토큰" value="fake-google-token">
+        <label for="googleClientId">Google Client ID:</label>
+        <input type="text" id="googleClientId" placeholder="Google Client ID" value="test-google-client-id">
       </div>
-      <button id="loginWithGoogle">구글 로그인</button>
+      <button id="loginWithGoogle" style="background-color: #4285f4; color: white;">
+        🔍 Google로 로그인
+      </button>
+      <button id="loginWithGoogleMock" style="background-color: #34a853; color: white;">
+        🧪 Google 로그인 (Mock)
+      </button>
     </div>
 
     <!-- 토큰 관리 섹션 -->

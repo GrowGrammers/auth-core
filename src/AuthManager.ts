@@ -16,6 +16,7 @@ import {
   RefreshTokenApiResponse,
   TokenValidationApiResponse,
   UserInfoApiResponse,
+  ServiceAvailabilityApiResponse,
   EmailVerificationConfirmRequest,
   EmailVerificationConfirmApiResponse
 } from './providers/interfaces/dtos/auth.dto';
@@ -28,19 +29,23 @@ export type IsAuthenticatedApiResponse = SuccessResponse<boolean> | ErrorRespons
 export type ClearResponse = SuccessResponse<void> | ErrorResponse;
 
 export interface AuthManagerConfig {
-  providerType?: 'email' | 'google'; // 팩토리를 통한 Provider 생성 (권장)
+  providerType?: 'email' | 'google' | 'fake'; // 팩토리를 통한 Provider 생성 (권장)
   provider?: AuthProvider; // 직접 Provider 인스턴스 주입 (테스트에 유리하나, 프로덕션에서는 DI/팩토리 레이어 통해 주입 권장)
   apiConfig: ApiConfig;
   httpClient: HttpClient;  // HttpClient를 필수로 추가
   tokenStore?: TokenStore; // 직접 TokenStore 인스턴스 제공 (선택사항)
   tokenStoreType?: 'web' | 'mobile' | 'fake'; // TokenStore 타입으로 팩토리에서 생성 (선택사항)
+  providerConfig?: any; // Provider별 추가 설정 (Google의 경우 googleClientId 등)
 }
 
 export class AuthManager {
   private provider: AuthProvider; // ① 어떤 방식(이메일, 구글...)으로 로그인할 건지 저장
   private tokenStore: TokenStore; // ② 어떤 방식으로 토큰을 저장할 건지 저장
+  private config: AuthManagerConfig; // 설정 저장
 
   constructor(config: AuthManagerConfig) {
+    this.config = config; // 설정 저장
+    
     // Provider 설정 검증
     if (!config.provider && !config.providerType) {
       throw new Error('[AuthManager] provider 또는 providerType 중 하나는 반드시 제공되어야 합니다.');
@@ -59,16 +64,17 @@ export class AuthManager {
     this.tokenStore = config.tokenStore || this.createTokenStoreFromType(config.tokenStoreType);
   }
 
-  private createProvider(providerType: 'email' | 'google', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
+  private createProvider(providerType: 'email' | 'google' | 'fake', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
     // Provider 팩토리 로직 (apiConfig 주입)
-    const config = { timeout: 10000, retryCount: 3 }; // 기본 설정
+    const config = this.config.providerConfig || { timeout: 10000, retryCount: 3 }; // providerConfig 우선, 없으면 기본 설정
     
     const result = createAuthProvider(providerType, config, httpClient, apiConfig);
     
     // 타입 가드를 사용한 안전한 에러 처리
     if (isAuthProviderFactoryError(result)) {
-      console.error('인증 제공자 생성 실패:', result.error);
-      throw new Error(result.message);
+      const errorMessage = `[AuthManager] Provider 생성 실패: ${result.error}`;
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
     
     // 여기서부터 result는 AuthProvider 타입으로 안전하게 좁혀짐
@@ -171,8 +177,28 @@ export class AuthManager {
    */
   async login(request: LoginRequest): Promise<LoginApiResponse> {
     try {
+      // API 형식 검증 (필수 필드 확인)
+      if (!this.isValidLoginRequest(request)) {
+        return createErrorResponse('지원하지 않는 로그인 방식입니다');
+      }
+
+      // Provider 타입별 검증
+      if (!this.isProviderCompatible(request)) {
+        const requestedProvider = request.provider;
+        const capitalizedProvider = requestedProvider.charAt(0).toUpperCase() + requestedProvider.slice(1);
+        return createErrorResponse(`${capitalizedProvider} 로그인을 지원하지 않는 제공자입니다.`);
+      }
+
+      // Provider 타입별 로그인 요청 처리
+      let processedRequest = request;
+      
+      // 소셜 로그인 요청인 경우 Provider 타입에 맞게 변환
+      if ('authCode' in request && request.provider !== 'email') {
+        processedRequest = this.processSocialLoginRequest(request);
+      }
+      
       // ④ 로그인 시도 (누가? 전달받은 provider가!)
-      const loginResponse = await this.provider.login(request);
+      const loginResponse = await this.provider.login(processedRequest);
       
       if (loginResponse.success && loginResponse.data?.accessToken) {
         // ⑤ 로그인 성공 시 토큰 저장
@@ -183,14 +209,14 @@ export class AuthManager {
         };
         const saveResult = await this.tokenStore.saveToken(token);
         if (saveResult.success) {
-          //console.log('[AuthManager] 로그인 성공, 토큰 저장됨');
+          console.log(`[AuthManager] ${this.provider.providerName} 로그인 성공, 토큰 저장됨`);
         } else {
-          console.error('[AuthManager] 토큰 저장 실패:', saveResult.error);
+          console.error('[AuthManager] 토큰 저장 실패');
         }
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in loginResponse ? loginResponse.error : '알 수 없는 오류';
-        //console.log('[AuthManager] 로그인 실패:', errorMessage);
+        console.log(`[AuthManager] ${this.provider.providerName} 로그인 실패:`, errorMessage);
       }
       
       return loginResponse;
@@ -198,6 +224,68 @@ export class AuthManager {
       console.error('로그인 중 오류 발생:', error);
       return createErrorResponseFromException(error, '로그인 중 오류가 발생했습니다.');
     }
+  }
+
+  /**
+   * 로그인 요청 형식 검증
+   * @param request 로그인 요청
+   * @returns 요청 형식 유효 여부
+   */
+  private isValidLoginRequest(request: LoginRequest): boolean {
+    // 이메일 로그인 요청인 경우
+    if ('email' in request) {
+      return typeof request.email === 'string' && 
+             typeof request.verifyCode === 'string' && 
+             (request.provider === 'email' || request.provider === 'fake');
+    }
+
+    // OAuth 로그인 요청인 경우
+    if ('authCode' in request) {
+      return typeof request.authCode === 'string' && 
+             request.provider && 
+             request.provider !== 'email';
+    }
+
+    return false;
+  }
+
+  /**
+   * Provider 타입 호환성 검증
+   * @param request 로그인 요청
+   * @returns Provider 타입 호환 여부
+   */
+  private isProviderCompatible(request: LoginRequest): boolean {
+    const currentProvider = this.provider.providerName;
+    const requestedProvider = request.provider;
+
+    // 이메일 로그인 요청인 경우
+    if ('email' in request) {
+      // fake provider는 이메일 로그인을 시뮬레이션할 수 있음
+      return currentProvider === 'email' || currentProvider === 'fake';
+    }
+
+    // OAuth 로그인 요청인 경우
+    if ('authCode' in request) {
+      return currentProvider === requestedProvider;
+    }
+
+    return false;
+  }
+
+  /**
+   * OAuth 로그인 요청을 Provider별 형식으로 변환
+   * @param request OAuth 로그인 요청
+   * @returns Provider별 형식으로 변환된 요청
+   */
+  private processSocialLoginRequest(request: any): any {
+    const { provider, authCode, redirectUri } = request;
+    
+    // 모든 OAuth Provider는 동일한 형식 사용
+    return {
+      provider: provider,
+      authCode: authCode,
+      redirectUri: redirectUri
+    };
   }
 
   /**
@@ -356,5 +444,6 @@ export class AuthManager {
       return createErrorResponseFromException(error, '저장소 초기화 중 오류가 발생했습니다.');
     }
   }
-}
 
+
+}

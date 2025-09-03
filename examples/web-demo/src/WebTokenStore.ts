@@ -19,7 +19,7 @@ export class WebTokenStore implements TokenStore {
       console.log('토큰 저장 완료');
       return { success: true, message: '토큰이 성공적으로 저장되었습니다.', data: undefined };
     } catch (error) {
-      console.error('토큰 저장 실패:', error);
+      console.error('토큰 저장 실패');
       return { success: false, message: '토큰 저장에 실패했습니다.', data: null, error: '토큰 저장에 실패했습니다.' };
     }
   }

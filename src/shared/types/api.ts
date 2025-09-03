@@ -16,6 +16,8 @@ export interface ApiEndpoints {
   googleLogin: string;     // 구글 로그인
   googleLogout: string;    // 구글 로그아웃  
   googleRefresh: string;   // 구글 토큰 갱신
+  googleValidate: string;  // 구글 토큰 검증
+  googleUserinfo: string;  // 구글 사용자 정보 조회
   // 공통
   validate: string;
   me: string;

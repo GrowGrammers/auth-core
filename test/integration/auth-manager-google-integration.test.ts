@@ -1,7 +1,6 @@
 import { AuthManager } from '../../src/AuthManager';
 import { ApiConfig } from '../../src/shared/types';
 import { 
-  EmailVerificationRequest,
   LoginRequest,
   LogoutRequest,
   RefreshTokenRequest
@@ -21,41 +20,35 @@ export interface TestResult {
   details?: any;           // auth-core 응답 데이터를 그대로 담음 (참고용)
 }
 
-export async function runIntegrationTests(
+export async function runGoogleIntegrationTests(
   authManager: AuthManager, 
   apiConfig: ApiConfig, 
   testMode: string
 ): Promise<void> {
-  console.log('Auth Core 통합테스트 시작');
+  console.log('Auth Core Google OAuth 통합테스트 시작');
   console.log('=====================================\n');
 
   const testResults: TestResult[] = [];
   const startTime = Date.now();
 
   try {
-    // 시나리오 1: 전체 인증 라이프사이클 테스트
-    console.log('[1/4] 전체 인증 라이프사이클 테스트 시작');
+    // 시나리오 1: Google OAuth 로그인 플로우 테스트
+    console.log('[1/3] Google OAuth 로그인 플로우 테스트 시작');
     await clearAuthState(authManager); // 상태 초기화
-    const lifecycleResult = await testAuthenticationLifecycle(authManager);
-    testResults.push(lifecycleResult);
+    const loginFlowResult = await testGoogleOAuthLoginFlow(authManager);
+    testResults.push(loginFlowResult);
 
-    // 시나리오 2: 토큰 자동 관리 테스트
-    console.log('[2/4] 토큰 자동 관리 테스트 시작');
+    // 시나리오 2: Google OAuth 토큰 관리 테스트
+    console.log('[2/3] Google OAuth 토큰 관리 테스트 시작');
     await clearAuthState(authManager); // 상태 초기화
-    const tokenManagementResult = await testTokenManagement(authManager);
+    const tokenManagementResult = await testGoogleOAuthTokenManagement(authManager);
     testResults.push(tokenManagementResult);
 
-    // 시나리오 3: 에러 처리 및 재시도 테스트
-    console.log('[3/4] 에러 처리 및 재시도 테스트 시작');
+    // 시나리오 3: Google OAuth 에러 처리 테스트
+    console.log('[3/3] Google OAuth 에러 처리 테스트 시작');
     await clearAuthState(authManager); // 상태 초기화
-    const errorHandlingResult = await testErrorHandling(authManager);
+    const errorHandlingResult = await testGoogleOAuthErrorHandling(authManager);
     testResults.push(errorHandlingResult);
-
-    // 시나리오 4: 인증 상태 관리 테스트
-    console.log('[4/4] 인증 상태 관리 테스트 시작');
-    await clearAuthState(authManager); // 상태 초기화
-    const stateManagementResult = await testStateManagement(authManager);
-    testResults.push(stateManagementResult);
 
   } catch (error) {
     console.error('❌ 테스트 실행 중 오류 발생:', error);
@@ -70,9 +63,9 @@ export async function runIntegrationTests(
 // 이 함수들은 auth-core의 실제 인증 흐름을 테스트하기 위한 시나리오입니다.
 // auth-core의 실제 메서드들을 호출하여 올바르게 동작하는지 검증합니다.
 
-// 시나리오 1: 전체 인증 라이프사이클 테스트
-async function testAuthenticationLifecycle(authManager: AuthManager): Promise<TestResult> {
-  const testName = '1. 전체 인증 라이프사이클';
+// 시나리오 1: Google OAuth 로그인 플로우 테스트
+async function testGoogleOAuthLoginFlow(authManager: AuthManager): Promise<TestResult> {
+  const testName = '1. Google OAuth 로그인 플로우';
   const startTime = Date.now();
   
   try {
@@ -90,58 +83,25 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 초기 상태: 로그아웃 상태 확인');
 
-    // 2. 이메일 인증번호 요청
-    console.log('    2단계: 이메일 인증번호 요청');
-    const verificationRequest: EmailVerificationRequest = {
-      email: 'test@example.com'
-    };
-    const verificationResponse = await authManager.requestEmailVerification(verificationRequest);
-    if (!verificationResponse.success) {
-      return {
-        testName,
-        success: false,
-        error: `인증번호 요청 실패: ${verificationResponse.error}`,
-        duration: Date.now() - startTime
-      };
-    }
-    console.log('     ✅ 인증번호 요청 성공');
-
-    // 3. 이메일 인증번호 확인
-    console.log('    3단계: 이메일 인증번호 확인');
-    const verifyEmailResponse = await authManager.verifyEmail({
-      email: 'test@example.com',
-      verifyCode: '123456'
-    });
-    if (!verifyEmailResponse.success) {
-      return {
-        testName,
-        success: false,
-        error: `이메일 인증 실패: ${verifyEmailResponse.error}`,
-        duration: Date.now() - startTime
-      };
-    }
-    console.log('     ✅ 이메일 인증 성공');
-
-    // 4. 로그인
-    console.log('    4단계: 로그인');
+    // 2. Google OAuth 로그인
+    console.log('    2단계: Google OAuth 로그인');
     const loginRequest: LoginRequest = {
-      provider: 'email',
-      email: 'test@example.com',
-      verifyCode: '123456'
+      provider: 'google',
+      authCode: 'valid-google-code'
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
       return {
         testName,
         success: false,
-        error: `로그인 실패: ${loginResponse.error}`,
+        error: `Google 로그인 실패: ${loginResponse.error}`,
         duration: Date.now() - startTime
       };
     }
-    console.log('     ✅ 로그인 성공');
+    console.log('     ✅ Google OAuth 로그인 성공');
 
-    // 5. 로그인 후 사용자 정보 확인
-    console.log('    5단계: 로그인 후 사용자 정보 확인');
+    // 3. 로그인 후 사용자 정보 확인
+    console.log('    3단계: 로그인 후 사용자 정보 확인');
     const userInfoResponse = await authManager.getCurrentUserInfo();
     if (!userInfoResponse.success) {
       return {
@@ -153,8 +113,8 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 사용자 정보 조회 성공');
 
-    // 6. 토큰 검증
-    console.log('    6단계: 토큰 검증');
+    // 4. 토큰 검증
+    console.log('    4단계: 토큰 검증');
     const tokenValidationResponse = await authManager.validateCurrentToken();
     if (!tokenValidationResponse.success) {
       return {
@@ -166,27 +126,10 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 토큰 검증 성공');
 
-    // 7. 토큰 갱신
-    console.log('    7단계: 토큰 갱신');
-    const refreshRequest: RefreshTokenRequest = {
-      provider: 'email',
-      refreshToken: loginResponse.data?.refreshToken || 'invalid-refresh-token'
-    };
-    const refreshResponse = await authManager.refreshToken(refreshRequest);
-    if (!refreshResponse.success) {
-      return {
-        testName,
-        success: false,
-        error: `토큰 갱신 실패: ${refreshResponse.error}`,
-        duration: Date.now() - startTime
-      };
-    }
-    console.log('     ✅ 토큰 갱신 성공');
-
-    // 8. 로그아웃
-    console.log('    8단계: 로그아웃');
+    // 5. 로그아웃
+    console.log('    5단계: 로그아웃');
     const logoutRequest: LogoutRequest = {
-      provider: 'email'
+      provider: 'google'
     };
     const logoutResponse = await authManager.logout(logoutRequest);
     if (!logoutResponse.success) {
@@ -199,8 +142,8 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
     }
     console.log('     ✅ 로그아웃 성공');
 
-    // 9. 로그아웃 후 상태 확인
-    console.log('    9단계: 로그아웃 후 상태 확인');
+    // 6. 로그아웃 후 상태 확인
+    console.log('    6단계: 로그아웃 후 상태 확인');
     const finalUserInfo = await authManager.getCurrentUserInfo();
     if (finalUserInfo.success) {
       return {
@@ -217,11 +160,11 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
 
     return {
       testName,
-      success: true,
+        success: true,
       duration,
       details: {
         loginUser: loginResponse.data?.userInfo,
-        tokenRefreshed: refreshResponse.success
+        tokenValidated: tokenValidationResponse.success
       }
     };
 
@@ -238,26 +181,25 @@ async function testAuthenticationLifecycle(authManager: AuthManager): Promise<Te
   }
 }
 
-// 시나리오 2: 토큰 자동 관리 테스트
-async function testTokenManagement(authManager: AuthManager): Promise<TestResult> {
-  const testName = '2. 토큰 자동 관리';
+// 시나리오 2: Google OAuth 토큰 관리 테스트
+async function testGoogleOAuthTokenManagement(authManager: AuthManager): Promise<TestResult> {
+  const testName = '2. Google OAuth 토큰 관리';
   const startTime = Date.now();
   
   try {
     
     // 1. 로그인하여 토큰 획득
-    console.log('    1단계: 로그인');
+    console.log('    1단계: Google OAuth 로그인');
     const loginRequest: LoginRequest = {
-      provider: 'email',
-      email: 'test@example.com',
-      verifyCode: '123456', // 테스트용 임의 코드
+      provider: 'google',
+      authCode: 'valid-google-code'
     };
     const loginResponse = await authManager.login(loginRequest);
     if (!loginResponse.success) {
       return {
         testName,
         success: false,
-        error: `로그인 실패: ${loginResponse.error}`,
+        error: `Google 로그인 실패: ${loginResponse.error}`,
         duration: Date.now() - startTime
       };
     }
@@ -286,9 +228,25 @@ async function testTokenManagement(authManager: AuthManager): Promise<TestResult
       };
     }
 
-    // 4. 로그아웃하여 토큰 정리
+    // 4. 토큰 갱신 테스트
+    console.log('    4단계: 토큰 갱신 테스트');
+    const refreshRequest: RefreshTokenRequest = {
+      provider: 'google',
+      refreshToken: loginResponse.data?.refreshToken || 'invalid-refresh-token'
+    };
+    const refreshResponse = await authManager.refreshToken(refreshRequest);
+    if (!refreshResponse.success) {
+      return {
+        testName,
+        success: false,
+        error: `토큰 갱신 실패: ${refreshResponse.error}`,
+        duration: Date.now() - startTime
+      };
+    }
+
+    // 5. 로그아웃하여 토큰 정리
     const logoutRequest: LogoutRequest = {
-      provider: 'email'
+      provider: 'google'
     };
     await authManager.logout(logoutRequest);
 
@@ -301,7 +259,8 @@ async function testTokenManagement(authManager: AuthManager): Promise<TestResult
       duration,
       details: {
         tokenAutoSaved: true,
-        tokenAutoValidated: true
+        tokenAutoValidated: true,
+        tokenRefreshed: true
       }
     };
 
@@ -318,164 +277,55 @@ async function testTokenManagement(authManager: AuthManager): Promise<TestResult
   }
 }
 
-// 시나리오 3: 에러 처리 및 재시도 테스트
-async function testErrorHandling(authManager: AuthManager): Promise<TestResult> {
-  const testName = '3. 에러 처리 및 재시도';
+// 시나리오 3: Google OAuth 에러 처리 테스트
+async function testGoogleOAuthErrorHandling(authManager: AuthManager): Promise<TestResult> {
+  const testName = '3. Google OAuth 에러 처리';
   const startTime = Date.now();
   
   try {
     
-    // 1. 이메일 인증 없이 로그인 시도 (실패해야 함)
-    console.log('    1단계: 이메일 인증 없이 로그인 시도');
-    const loginWithoutVerification: LoginRequest = {
-      provider: 'email',
-      email: 'unverified@example.com',
-      verifyCode: '000000', // 임의의 잘못된 인증번호 입력
-
+    // 1. 잘못된 인증 코드로 로그인 시도 (실패해야 함)
+    console.log('    1단계: 잘못된 인증 코드로 로그인 시도');
+    const invalidLoginRequest: LoginRequest = {
+      provider: 'google',
+      authCode: 'invalid-google-code'
     };
-    const loginWithoutVerificationResponse = await authManager.login(loginWithoutVerification);
+    const invalidLoginResponse = await authManager.login(invalidLoginRequest);
     
-    // 이메일 인증 없이는 로그인이 실패해야 함
-    if (loginWithoutVerificationResponse.success) {
+    // 잘못된 인증 코드로는 로그인이 실패해야 함
+    if (invalidLoginResponse.success) {
       return {
         testName,
         success: false,
-        error: '이메일 인증 없이도 로그인이 성공함',
+        error: '잘못된 인증 코드로도 로그인이 성공함',
         duration: Date.now() - startTime
       };
     }
-    console.log('     ✅ 이메일 인증 없이 로그인 시도 시 에러 처리 확인');
+    console.log('     ✅ 잘못된 인증 코드 에러 처리 확인');
 
-    // 2. 잘못된 인증번호로 이메일 인증 시도
-    console.log('    2단계: 잘못된 인증번호로 이메일 인증 시도');
-    const errorVerificationCode = process.env.MSW_ERROR_VERIFICATION_CODE || '999999';
-    const invalidVerificationResponse = await authManager.verifyEmail({
-      email: 'test@example.com',
-      verifyCode: errorVerificationCode
-    });
+    // 2. 유효한 인증 코드로 로그인 시도 (성공해야 함)
+    console.log('    2단계: 유효한 인증 코드로 로그인 시도');
+    const validLoginRequest: LoginRequest = {
+      provider: 'google',
+      authCode: 'valid-google-code'
+    };
+    const validLoginResponse = await authManager.login(validLoginRequest);
     
-    // 잘못된 인증번호로는 인증이 실패해야 함
-    if (invalidVerificationResponse.success) {
+    if (!validLoginResponse.success) {
       return {
         testName,
         success: false,
-        error: '잘못된 인증번호로도 이메일 인증이 성공함',
+        error: `유효한 인증 코드로도 로그인 실패: ${validLoginResponse.error}`,
         duration: Date.now() - startTime
       };
     }
-    console.log('     ✅ 잘못된 인증번호 에러 처리 확인');
+    console.log('     ✅ 유효한 인증 코드 로그인 성공');
 
-    // 3. 존재하지 않는 이메일로 인증번호 요청
-    console.log('    3단계: 존재하지 않는 이메일로 인증번호 요청');
-    const invalidEmailRequest: EmailVerificationRequest = {
-      email: 'nonexistent@example.com'
-    };
-    const invalidEmailResponse = await authManager.requestEmailVerification(invalidEmailRequest);
-    
-    // 에러가 적절히 처리되었는지 확인 (실제로는 성공할 수도 있음)
-    console.log('     ✅ 존재하지 않는 이메일 처리 확인');
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ ${testName} 성공 (${duration}ms)`);
-
-    return {
-      testName,
-      success: true,
-      duration,
-      details: {
-        loginWithoutVerificationHandled: true,
-        invalidVerificationCodeHandled: true,
-        invalidEmailHandled: true
-      }
-    };
-
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`❌ ${testName} 오류 (${duration}ms):`, error);
-    
-    return {
-      testName,
-      success: false,
-      error: error instanceof Error ? error.message : '알 수 없는 오류',
-      duration
-    };
-  }
-}
-
-// 시나리오 4: 인증 상태 관리 테스트
-async function testStateManagement(authManager: AuthManager): Promise<TestResult> {
-  const testName = '4. 인증 상태 관리';
-  const startTime = Date.now();
-  
-  try {
-    
-    // 1. 로그인 전 상태 확인
-    console.log('    1단계: 로그인 전 상태 확인');
-    const beforeLoginUserInfo = await authManager.getCurrentUserInfo();
-    if (beforeLoginUserInfo.success) {
-      return {
-        testName,
-        success: false,
-        error: '로그인 전에 사용자 정보가 존재함',
-        duration: Date.now() - startTime
-      };
-    }
-
-    // 2. 로그인
-    console.log('    2단계: 로그인');
-    const loginRequest: LoginRequest = {
-      provider: 'email',
-      email: 'test@example.com',
-      verifyCode: '123456', // 예시 코드, 실제 테스트에 맞게 수정 필요
-    };
-    const loginResponse = await authManager.login(loginRequest);
-    if (!loginResponse.success) {
-      return {
-        testName,
-        success: false,
-        error: `로그인 실패: ${loginResponse.error}`,
-        duration: Date.now() - startTime
-      };
-    }
-
-    // 3. 로그인 후 상태 확인
-    console.log('    3단계: 로그인 후 상태 확인');
-    const afterLoginUserInfo = await authManager.getCurrentUserInfo();
-    if (!afterLoginUserInfo.success) {
-      return {
-        testName,
-        success: false,
-        error: '로그인 후 사용자 정보가 없음',
-        duration: Date.now() - startTime
-      };
-    }
-
-    // 4. 로그아웃
-    console.log('    4단계: 로그아웃');
+    // 3. 로그아웃
     const logoutRequest: LogoutRequest = {
-      provider: 'email'
+        provider: 'google'
     };
-    const logoutResponse = await authManager.logout(logoutRequest);
-    if (!logoutResponse.success) {
-      return {
-        testName,
-        success: false,
-        error: `로그아웃 실패: ${logoutResponse.error}`,
-        duration: Date.now() - startTime
-      };
-    }
-
-    // 5. 로그아웃 후 상태 확인
-    console.log('    5단계: 로그아웃 후 상태 확인');
-    const afterLogoutUserInfo = await authManager.getCurrentUserInfo();
-    if (afterLogoutUserInfo.success) {
-      return {
-        testName,
-        success: false,
-        error: '로그아웃 후에도 사용자 정보가 존재함',
-        duration: Date.now() - startTime
-      };
-    }
+    await authManager.logout(logoutRequest);
 
     const duration = Date.now() - startTime;
     console.log(`✅ ${testName} 성공 (${duration}ms)`);
@@ -485,9 +335,8 @@ async function testStateManagement(authManager: AuthManager): Promise<TestResult
       success: true,
       duration,
       details: {
-        beforeLoginState: 'logged-out',
-        afterLoginState: 'logged-in',
-        afterLogoutState: 'logged-out'
+        invalidCodeHandled: true,
+        validCodeSuccess: true
       }
     };
 
@@ -518,7 +367,7 @@ async function clearAuthState(authManager: AuthManager): Promise<void> {
     if (userInfo.success) {
       // 토큰이 있으면 로그아웃 시도
       const logoutRequest: LogoutRequest = {
-        provider: 'email'
+        provider: 'google'
       };
       await authManager.logout(logoutRequest);
     }
@@ -534,7 +383,7 @@ async function printTestSummary(testResults: TestResult[], startTime: number): P
   const failedTests = totalTests - passedTests;
 
   console.log('\n=====================================');
-  console.log('📊 Auth Core 통합테스트 결과 요약');
+  console.log('📊 Auth Core Google OAuth 통합테스트 결과 요약');
   console.log('=====================================');
   console.log(`총 시나리오: ${totalTests}`);
   console.log(`✅ 성공: ${passedTests}`);
@@ -553,10 +402,10 @@ async function printTestSummary(testResults: TestResult[], startTime: number): P
   }
 
   if (passedTests === totalTests) {
-    console.log(' 모든 인증 시나리오가 성공했습니다!');
-    console.log(' AuthManager가 인증 흐름을 올바르게 제어하고 있습니다.');
+    console.log('🎉 모든 Google OAuth 시나리오가 성공했습니다!');
+    console.log('✅ AuthManager가 Google OAuth 인증 흐름을 올바르게 제어하고 있습니다.');
   } else {
-    console.log(' 일부 인증 시나리오가 실패했습니다.');
+    console.log('⚠️  일부 Google OAuth 시나리오가 실패했습니다.');
   }
 }
 
@@ -580,16 +429,18 @@ async function main() {
     endpoints: {
       requestVerification: '/api/v1/auth/email/request',
       verifyEmail: '/api/v1/auth/email/verify',
-      login: '/api/v1/auth/email/login',
-      logout: '/api/v1/auth/email/logout',
-      refresh: '/api/v1/auth/email/refresh',
+      login: '/api/v1/auth/members/email-login',
+      logout: '/api/v1/auth/members/logout',
+      refresh: '/api/v1/auth/members/refresh',
       validate: '/api/v1/auth/validate-token',
       me: '/api/v1/auth/user-info',
       health: '/api/v1/health',
-      // 구글 인증 엔드포인트 추가
+      // 구글 인증 엔드포인트
       googleLogin: '/api/v1/auth/google/login',
       googleLogout: '/api/v1/auth/google/logout',
-      googleRefresh: '/api/v1/auth/google/refresh'
+      googleRefresh: '/api/v1/auth/google/refresh',
+      googleValidate: '/api/v1/auth/google/validate',
+      googleUserinfo: '/api/v1/auth/google/userinfo'
     },
     timeout: 10000
   };
@@ -604,11 +455,19 @@ async function main() {
     httpClient = new RealHttpClient();
   }
 
-  // AuthManager 생성
+  // Google Provider 설정
+  const googleConfig = {
+    googleClientId: 'test-google-client-id',
+    timeout: 10000,
+    retryCount: 3
+  };
+
+  // AuthManager 생성 (Google Provider 사용)
   const authManager = new AuthManager({
-    providerType: 'email',
+    providerType: 'google',
     apiConfig,
-    httpClient
+    httpClient,
+    providerConfig: googleConfig
   });
 
   // MSW 모드인 경우 MSW 서버 시작
@@ -618,19 +477,16 @@ async function main() {
     console.log('🚀 MSW 서버를 시작합니다...');
     startMSWServer();
     console.log('✅ MSW 서버가 시작되었습니다.');
-    console.log('📡 모킹된 API 엔드포인트:');
-    console.log(`   - POST ${apiConfig.endpoints.requestVerification}`);
-    console.log(`   - POST ${apiConfig.endpoints.verifyEmail}`);
-    console.log(`   - POST ${apiConfig.endpoints.login}`);
-    console.log(`   - GET  ${apiConfig.endpoints.validate}`);
-    console.log(`   - GET  ${apiConfig.endpoints.me}`);
-    console.log(`   - POST ${apiConfig.endpoints.refresh}`);
-    console.log(`   - POST ${apiConfig.endpoints.logout}`);
-    console.log(`   - GET  ${apiConfig.endpoints.health}`);
+    console.log('📡 모킹된 Google OAuth API 엔드포인트:');
+    console.log(`   - POST ${apiConfig.endpoints.googleLogin}`);
+    console.log(`   - POST ${apiConfig.endpoints.googleLogout}`);
+    console.log(`   - POST ${apiConfig.endpoints.googleRefresh}`);
+    console.log(`   - GET  ${apiConfig.endpoints.googleValidate}`);
+    console.log(`   - GET  ${apiConfig.endpoints.googleUserinfo}`);
     console.log('');
     
     try {
-      await runIntegrationTests(authManager, apiConfig, testMode);
+      await runGoogleIntegrationTests(authManager, apiConfig, testMode);
     } finally {
       console.log('🛑 MSW 서버를 중지합니다...');
       stopMSWServer();
@@ -638,7 +494,7 @@ async function main() {
     }
   } else {
     // 일반 모드 (local, deployed, custom)
-    await runIntegrationTests(authManager, apiConfig, testMode);
+    await runGoogleIntegrationTests(authManager, apiConfig, testMode);
   }
 }
 

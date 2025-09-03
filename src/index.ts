@@ -18,7 +18,6 @@ export type {
   EmailVerificationConfirmApiResponse,
   EmailLoginRequest,
   OAuthLoginRequest,
-  GoogleLoginRequest,
   LoginRequest,
   LoginResponse,
   LoginApiResponse,

@@ -89,6 +89,47 @@ auth-core/
 
 ## 🎯 빠른 시작
 
+### Google OAuth 설정
+
+Google OAuth를 사용하려면 Google Cloud Console에서 설정이 필요합니다:
+
+1. **Google Cloud Console에서 프로젝트 생성**
+2. **OAuth 2.0 클라이언트 ID 생성**
+3. **환경변수 설정**
+
+```bash
+# .env 파일에 추가
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_PROJECT_ID=your_google_project_id_here
+```
+
+4. **AuthManager 설정**
+
+```typescript
+import { AuthManager } from 'auth-core';
+
+const authManager = new AuthManager({
+  providerType: 'google',
+  apiConfig: {
+    apiBaseUrl: 'https://your-api.com',
+    endpoints: {
+      googleLogin: '/auth/google/login',
+      googleLogout: '/auth/google/logout',
+      googleRefresh: '/auth/google/refresh',
+      // ... 기타 엔드포인트
+    }
+  },
+  httpClient: new FetchHttpClient(),
+  // Google 전용 설정
+  provider: new GoogleAuthProvider({
+    googleClientId: process.env.GOOGLE_CLIENT_ID!,
+    timeout: 10000,
+    retryCount: 3
+  }, httpClient, apiConfig)
+});
+```
+
 ### 기본 사용법
 
 ```typescript

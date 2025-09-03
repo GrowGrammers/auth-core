@@ -1,6 +1,6 @@
 // 주어진 타입과 설정(config)에 따라 적절한 인증 제공자 인스턴스를 생성합니다.
 
-import { AuthProvider, AuthProviderConfig, EmailAuthProvider, GoogleAuthProvider } from '../providers';
+import { AuthProvider, AuthProviderConfig, GoogleAuthProviderConfig, EmailAuthProvider, GoogleAuthProvider } from '../providers';
 import { AuthProviderType, ApiConfig, FactoryResult, FactoryErrorResponse, isFactorySuccess, isFactoryError } from '../shared/types';
 import { HttpClient } from '../network/interfaces/HttpClient';
 import { createErrorResponse } from '../shared/utils/errorUtils';
@@ -40,6 +40,13 @@ export function createAuthProvider(
       case 'email':
         return new EmailAuthProvider(config, httpClient, apiConfig);
       case 'google':
+        // Google 제공자의 경우 GoogleAuthProviderConfig가 필요
+        if (!isGoogleAuthProviderConfig(config)) {
+          return createErrorResponse(
+            'Google 인증 제공자에는 googleClientId가 필요합니다.',
+            'Google 인증 제공자를 생성하려면 googleClientId 설정이 필요합니다.'
+          );
+        }
         return new GoogleAuthProvider(config, httpClient, apiConfig);
       default:
         return createErrorResponse(
@@ -54,4 +61,11 @@ export function createAuthProvider(
       '인증 제공자를 생성하는 중 오류가 발생했습니다.'
     );
   }
+}
+
+/**
+ * 타입 가드: config가 GoogleAuthProviderConfig인지 확인
+ */
+function isGoogleAuthProviderConfig(config: AuthProviderConfig): config is GoogleAuthProviderConfig {
+  return 'googleClientId' in config && typeof config.googleClientId === 'string';
 }
