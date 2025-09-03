@@ -29,19 +29,23 @@ export type IsAuthenticatedApiResponse = SuccessResponse<boolean> | ErrorRespons
 export type ClearResponse = SuccessResponse<void> | ErrorResponse;
 
 export interface AuthManagerConfig {
-  providerType?: 'email' | 'google'; // 팩토리를 통한 Provider 생성 (권장)
+  providerType?: 'email' | 'google' | 'fake'; // 팩토리를 통한 Provider 생성 (권장)
   provider?: AuthProvider; // 직접 Provider 인스턴스 주입 (테스트에 유리하나, 프로덕션에서는 DI/팩토리 레이어 통해 주입 권장)
   apiConfig: ApiConfig;
   httpClient: HttpClient;  // HttpClient를 필수로 추가
   tokenStore?: TokenStore; // 직접 TokenStore 인스턴스 제공 (선택사항)
   tokenStoreType?: 'web' | 'mobile' | 'fake'; // TokenStore 타입으로 팩토리에서 생성 (선택사항)
+  providerConfig?: any; // Provider별 추가 설정 (Google의 경우 googleClientId 등)
 }
 
 export class AuthManager {
   private provider: AuthProvider; // ① 어떤 방식(이메일, 구글...)으로 로그인할 건지 저장
   private tokenStore: TokenStore; // ② 어떤 방식으로 토큰을 저장할 건지 저장
+  private config: AuthManagerConfig; // 설정 저장
 
   constructor(config: AuthManagerConfig) {
+    this.config = config; // 설정 저장
+    
     // Provider 설정 검증
     if (!config.provider && !config.providerType) {
       throw new Error('[AuthManager] provider 또는 providerType 중 하나는 반드시 제공되어야 합니다.');
@@ -60,9 +64,9 @@ export class AuthManager {
     this.tokenStore = config.tokenStore || this.createTokenStoreFromType(config.tokenStoreType);
   }
 
-  private createProvider(providerType: 'email' | 'google', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
+  private createProvider(providerType: 'email' | 'google' | 'fake', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
     // Provider 팩토리 로직 (apiConfig 주입)
-    const config = { timeout: 10000, retryCount: 3 }; // 기본 설정
+    const config = this.config.providerConfig || { timeout: 10000, retryCount: 3 }; // providerConfig 우선, 없으면 기본 설정
     
     const result = createAuthProvider(providerType, config, httpClient, apiConfig);
     
@@ -172,6 +176,11 @@ export class AuthManager {
    */
   async login(request: LoginRequest): Promise<LoginApiResponse> {
     try {
+      // API 형식 검증 (필수 필드 확인)
+      if (!this.isValidLoginRequest(request)) {
+        return createErrorResponse('지원하지 않는 로그인 방식입니다');
+      }
+
       // Provider 타입별 검증
       if (!this.isProviderCompatible(request)) {
         const requestedProvider = request.provider;
@@ -217,6 +226,29 @@ export class AuthManager {
   }
 
   /**
+   * 로그인 요청 형식 검증
+   * @param request 로그인 요청
+   * @returns 요청 형식 유효 여부
+   */
+  private isValidLoginRequest(request: LoginRequest): boolean {
+    // 이메일 로그인 요청인 경우
+    if ('email' in request) {
+      return typeof request.email === 'string' && 
+             typeof request.verifyCode === 'string' && 
+             (request.provider === 'email' || request.provider === 'fake');
+    }
+
+    // OAuth 로그인 요청인 경우
+    if ('authCode' in request) {
+      return typeof request.authCode === 'string' && 
+             request.provider && 
+             request.provider !== 'email';
+    }
+
+    return false;
+  }
+
+  /**
    * Provider 타입 호환성 검증
    * @param request 로그인 요청
    * @returns Provider 타입 호환 여부
@@ -227,7 +259,8 @@ export class AuthManager {
 
     // 이메일 로그인 요청인 경우
     if ('email' in request) {
-      return currentProvider === 'email';
+      // fake provider는 이메일 로그인을 시뮬레이션할 수 있음
+      return currentProvider === 'email' || currentProvider === 'fake';
     }
 
     // OAuth 로그인 요청인 경우

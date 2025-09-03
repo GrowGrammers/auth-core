@@ -11,7 +11,7 @@ import {
   TokenValidationApiResponse,
   UserInfoApiResponse,
   ServiceAvailabilityApiResponse,
-  GoogleLoginRequest
+
 } from '../providers/interfaces/dtos/auth.dto';
 
 import { createErrorResponse, createValidationErrorResponse, createNetworkErrorResponse } from '../shared/utils/errorUtils';
@@ -23,17 +23,17 @@ import { makeRequest, makeRequestWithRetry, handleHttpResponse, createToken, cre
 export async function loginByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
-  request: GoogleLoginRequest
+  request: LoginRequest
 ): Promise<LoginApiResponse> {
   try {
-    // GoogleLoginRequest 타입 가드
-    if (!('googleToken' in request)) {
+    // Google 로그인 요청 타입 가드
+    if (!('authCode' in request)) {
       return createErrorResponse('구글 로그인 요청이 아닙니다.');
     }
 
-    // 구글 토큰 검증
-    if (!request.googleToken) {
-      return createValidationErrorResponse('구글 토큰');
+    // 구글 인증 코드 검증
+    if (!request.authCode) {
+      return createValidationErrorResponse('구글 인증 코드');
     }
 
     const response = await makeRequestWithRetry(
@@ -42,7 +42,7 @@ export async function loginByGoogle(
       config.endpoints.googleLogin,  // login → googleLogin으로 변경
       {
         method: 'POST',
-        body: { googleToken: request.googleToken }
+        body: { authCode: request.authCode }
       }
     );
 

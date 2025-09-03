@@ -49,13 +49,8 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
       );
     }
 
-    // authCode를 googleToken으로 변환하여 백엔드 API 호출
-    const googleLoginRequest = {
-      ...request,
-      googleToken: request.authCode // authCode를 googleToken으로 매핑
-    };
-
-    const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, googleLoginRequest);
+    // authCode를 직접 사용하여 백엔드 API 호출
+    const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, request);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;
