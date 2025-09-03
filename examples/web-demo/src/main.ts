@@ -39,7 +39,9 @@ class AuthDemo {
         health: '/api/v1/health',
         googleLogin: '/api/v1/auth/google/login',
         googleLogout: '/api/v1/auth/google/logout',
-        googleRefresh: '/api/v1/auth/google/refresh'
+        googleRefresh: '/api/v1/auth/google/refresh',
+        googleValidate: '/api/v1/auth/google/validate',
+        googleUserinfo: '/api/v1/auth/google/userinfo'
       },
       timeout: 10000
     };
@@ -72,6 +74,9 @@ class AuthDemo {
       console.log(`📡 로컬 백엔드 서버: ${currentConfig.apiBaseUrl}`);
     }
     
+    // OAuth 콜백 처리 설정
+    this.setupOAuthCallbackHandling();
+    
     this.initializeEventListeners();
     this.updateStatus('AuthCore 웹 데모가 준비되었습니다. 🚀', 'info');
   }
@@ -83,12 +88,46 @@ class AuthDemo {
     document.getElementById('loginWithEmail')?.addEventListener('click', () => this.loginWithEmail());
 
     // 구글 인증 관련
-    document.getElementById('loginWithGoogle')?.addEventListener('click', () => this.loginWithGoogle());
+    document.getElementById('loginWithGoogle')?.addEventListener('click', () => this.loginWithGoogleOAuth());
+    document.getElementById('loginWithGoogleMock')?.addEventListener('click', () => this.loginWithGoogleMock());
 
     // 토큰 관리 관련
     document.getElementById('refreshToken')?.addEventListener('click', () => this.refreshToken());
     document.getElementById('logout')?.addEventListener('click', () => this.logout());
     document.getElementById('getTokenInfo')?.addEventListener('click', () => this.getTokenInfo());
+  }
+
+  // OAuth 콜백 처리 설정
+  private setupOAuthCallbackHandling(): void {
+    // URL 파라미터에서 OAuth 콜백 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('oauth_success') === 'true') {
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      
+      if (code && state) {
+        console.log('OAuth 콜백 감지됨:', { code, state });
+        this.handleGoogleOAuthCallback(code, state);
+        
+        // URL에서 OAuth 파라미터 제거
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('oauth_success');
+        newUrl.searchParams.delete('code');
+        newUrl.searchParams.delete('state');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    }
+
+    // 팝업 창에서 OAuth 콜백 메시지 수신
+    window.addEventListener('message', (event) => {
+      if (event.data.type === 'OAUTH_SUCCESS') {
+        console.log('OAuth 성공 메시지 수신:', event.data);
+        this.handleGoogleOAuthCallback(event.data.code, event.data.state);
+      } else if (event.data.type === 'OAUTH_ERROR') {
+        console.error('OAuth 에러 메시지 수신:', event.data);
+        this.updateStatus(`OAuth 에러: ${event.data.error}`, 'error');
+      }
+    });
   }
 
   private async requestVerification(): Promise<EmailVerificationApiResponse> {
@@ -221,30 +260,190 @@ class AuthDemo {
     }
   }
 
-  private async loginWithGoogle(): Promise<void> {
+  private async loginWithGoogleOAuth(): Promise<void> {
     try {
-      const googleToken = (document.getElementById('googleToken') as HTMLInputElement).value;
+      const googleClientId = (document.getElementById('googleClientId') as HTMLInputElement).value;
       
-      if (!googleToken) {
-        this.updateStatus('구글 토큰을 입력해주세요.', 'error');
+      if (!googleClientId) {
+        this.updateStatus('Google Client ID를 입력해주세요.', 'error');
         return;
       }
 
-      // AuthManager를 통해 구글 로그인 API 호출
-      const result = await this.authManager.login({ 
+      // Google OAuth 2.0 URL 생성
+      const redirectUri = window.location.origin + '/auth/google/callback';
+      const scope = 'openid email profile';
+      const state = Math.random().toString(36).substring(7);
+      
+      // state를 localStorage에 저장 (보안을 위해)
+      localStorage.setItem('google_oauth_state', state);
+      
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${encodeURIComponent(googleClientId)}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `state=${encodeURIComponent(state)}&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `response_type=code`;
+      
+      this.updateStatus('Google OAuth 페이지로 이동합니다...', 'info');
+      
+      // 팝업 창으로 OAuth 열기 (MSW 모킹을 위해)
+      const popup = window.open(googleAuthUrl, 'google_oauth', 'width=500,height=600');
+      
+      if (!popup) {
+        this.updateStatus('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.', 'error');
+        return;
+      }
+      
+    } catch (error) {
+      this.updateStatus(`Google OAuth 시작 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, 'error');
+    }
+  }
+
+  // Google OAuth 콜백 처리
+  private async handleGoogleOAuthCallback(code: string, state: string): Promise<void> {
+    try {
+      console.log('Google OAuth 콜백 처리 시작:', { code, state });
+      
+      // 저장된 state와 비교 (보안 검증)
+      const savedState = localStorage.getItem('google_oauth_state');
+      if (state !== savedState) {
+        this.updateStatus('OAuth state 불일치. 보안상 로그인을 취소합니다.', 'error');
+        return;
+      }
+      
+      // state 사용 후 제거
+      localStorage.removeItem('google_oauth_state');
+      
+      this.updateStatus('Google OAuth 인증 코드를 받았습니다. 로그인을 진행합니다...', 'info');
+      
+      // Google Provider로 AuthManager 재생성
+      const apiConfig: ApiConfig = {
+        apiBaseUrl: currentConfig.apiBaseUrl,
+        endpoints: {
+          requestVerification: '/api/v1/auth/email/request',
+          verifyEmail: '/api/v1/auth/email/verify',
+          login: '/api/v1/auth/members/email-login',
+          logout: '/api/v1/auth/members/logout',
+          refresh: '/api/v1/auth/members/refresh',
+          validate: '/api/v1/auth/validate-token',
+          me: '/api/v1/auth/user-info',
+          health: '/api/v1/health',
+          googleLogin: '/api/v1/auth/google/login',
+          googleLogout: '/api/v1/auth/google/logout',
+          googleRefresh: '/api/v1/auth/google/refresh',
+          googleValidate: '/api/v1/auth/google/validate',
+          googleUserinfo: '/api/v1/auth/google/userinfo'
+        },
+        timeout: 10000
+      };
+
+      const googleConfig = {
+        googleClientId: 'test-google-client-id',
+        timeout: 10000,
+        retryCount: 3
+      };
+
+      const googleAuthManager = new AuthManager({
+        providerType: 'google',
+        apiConfig,
+        httpClient: new MSWHttpClient(),
+        providerConfig: googleConfig
+      });
+
+      // 받은 authCode로 로그인 시도
+      const result = await googleAuthManager.login({ 
         provider: 'google',
-        googleToken 
+        authCode: code  // ← 실제 받은 authCode 사용!
+      });
+      
+      if (result.success && result.data) {
+        this.updateStatus('Google OAuth 로그인이 성공했습니다!', 'success');
+        this.displayTokenInfo(result.data);
+      } else {
+        this.updateStatus(`Google OAuth 로그인 실패: ${result.error}`, 'error');
+      }
+      
+    } catch (error) {
+      this.updateStatus(`Google OAuth 콜백 처리 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, 'error');
+    }
+  }
+
+  private async loginWithGoogleMock(): Promise<void> {
+    try {
+      const googleClientId = (document.getElementById('googleClientId') as HTMLInputElement).value;
+      
+      if (!googleClientId) {
+        this.updateStatus('Google Client ID를 입력해주세요.', 'error');
+        return;
+      }
+
+      // Mock Google OAuth - 실제 Google API 호출 없이 테스트
+      this.updateStatus('Mock Google OAuth 로그인을 시작합니다...', 'info');
+      
+      // Google Provider로 AuthManager 재생성
+      const apiConfig: ApiConfig = {
+        apiBaseUrl: currentConfig.apiBaseUrl,
+        endpoints: {
+          requestVerification: '/api/v1/auth/email/request',
+          verifyEmail: '/api/v1/auth/email/verify',
+          login: '/api/v1/auth/members/email-login',
+          logout: '/api/v1/auth/members/logout',
+          refresh: '/api/v1/auth/members/refresh',
+          validate: '/api/v1/auth/validate-token',
+          me: '/api/v1/auth/user-info',
+          health: '/api/v1/health',
+          googleLogin: '/api/v1/auth/google/login',
+          googleLogout: '/api/v1/auth/google/logout',
+          googleRefresh: '/api/v1/auth/google/refresh',
+          googleValidate: '/api/v1/auth/google/validate',
+          googleUserinfo: '/api/v1/auth/google/userinfo'
+        },
+        timeout: 10000
+      };
+
+      // Google Provider 설정
+      const googleConfig = {
+        googleClientId: googleClientId,
+        timeout: 10000,
+        retryCount: 3
+      };
+
+      // Google Provider로 AuthManager 재생성
+      const googleAuthManager = new AuthManager({
+        providerType: 'google',
+        apiConfig,
+        httpClient: (() => {
+          switch (currentConfig.httpClient) {
+            case 'MSWHttpClient':
+              return new MSWHttpClient();
+            case 'MockHttpClient':
+              return new MockHttpClient();
+            case 'RealHttpClient':
+              return new RealHttpClient();
+            default:
+              return new MSWHttpClient();
+          }
+        })(),
+        providerConfig: googleConfig
+      });
+
+      // Mock authCode로 로그인 시도
+      const result = await googleAuthManager.login({ 
+        provider: 'google',
+        authCode: 'valid-google-code'  // MSW에서 성공으로 처리하는 코드
       });
       
       // UI 업데이트
       if (result.success && result.data) {
-        this.updateStatus('구글 로그인이 성공했습니다!', 'success');
+        this.updateStatus('Mock Google 로그인이 성공했습니다!', 'success');
         this.displayTokenInfo(result.data);
+        
+        // 토큰은 AuthManager가 자동으로 저장함
       } else {
-        this.updateStatus(`구글 로그인 실패: ${result.error}`, 'error');
+        this.updateStatus(`Mock Google 로그인 실패: ${result.error}`, 'error');
       }
     } catch (error) {
-      this.updateStatus(`구글 로그인 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, 'error');
+      this.updateStatus(`Mock Google 로그인 실패: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, 'error');
     }
   }
 
@@ -394,7 +593,45 @@ class AuthDemo {
   }
 }
 
-// 페이지 로드 시 데모 초기화
+// Google OAuth 콜백 처리
+function handleGoogleOAuthCallback(): void {
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get('code');
+  const state = urlParams.get('state');
+  const error = urlParams.get('error');
+  
+  if (error) {
+    console.error('Google OAuth 에러:', error);
+    return;
+  }
+  
+  if (code && state) {
+    const savedState = localStorage.getItem('google_oauth_state');
+    if (state === savedState) {
+      // state 검증 성공
+      localStorage.removeItem('google_oauth_state');
+      
+      // authCode를 사용하여 로그인 처리
+      console.log('Google OAuth 인증 코드 받음:', code);
+      
+      // URL에서 OAuth 파라미터 제거
+      const newUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // 여기서 실제 Google 로그인 처리
+      // (실제 구현에서는 백엔드 API를 통해 authCode를 accessToken으로 교환)
+      alert(`Google OAuth 인증 코드: ${code}\n\n실제 구현에서는 이 코드를 백엔드로 전송하여 accessToken을 받아야 합니다.`);
+    } else {
+      console.error('Google OAuth state 검증 실패');
+    }
+  }
+}
+
+// 페이지 로드 시 데모 초기화 및 OAuth 콜백 처리
 document.addEventListener('DOMContentLoaded', () => {
+  // Google OAuth 콜백 처리
+  handleGoogleOAuthCallback();
+  
+  // 데모 초기화
   new AuthDemo();
 });
