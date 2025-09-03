@@ -23,11 +23,22 @@ export function delay(ms: number): Promise<void> {
 }
 
 /**
+ * 강한 랜덤 문자열 생성 (crypto.getRandomValues 사용)
+ * @param length 생성할 바이트 길이
+ * @returns URL-safe base64 인코딩된 랜덤 문자열
+ */
+export function generateSecureRandom(length: number): string {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array)).replace(/[\+\/=]/g, '');
+}
+
+/**
  * 테스트용 랜덤 이메일 생성
  */
 export function generateTestEmail(): string {
   const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(7);
+  const random = generateSecureRandom(8);
   return `test-${timestamp}-${random}@example.com`;
 }
 
@@ -35,7 +46,7 @@ export function generateTestEmail(): string {
  * 테스트용 랜덤 문자열 생성
  */
 export function generateRandomString(length: number = 10): string {
-  return Math.random().toString(36).substring(2, length + 2);
+  return generateSecureRandom(Math.ceil(length / 4) * 3); // base64 인코딩 고려
 }
 
 /**

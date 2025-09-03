@@ -106,7 +106,7 @@ class AuthDemo {
       const state = urlParams.get('state');
       
       if (code && state) {
-        console.log('OAuth 콜백 감지됨:', { code, state });
+        console.log('OAuth 콜백 감지됨');
         this.handleGoogleOAuthCallback(code, state);
         
         // URL에서 OAuth 파라미터 제거
@@ -118,13 +118,26 @@ class AuthDemo {
       }
     }
 
-    // 팝업 창에서 OAuth 콜백 메시지 수신
+    // 팝업 창에서 OAuth 콜백 메시지 수신 (보안 검증 포함)
     window.addEventListener('message', (event) => {
+      // P1: origin 검증 - 보안을 위해 필수
+      const allowedOrigin = window.location.origin;
+      if (event.origin !== allowedOrigin) {
+        console.warn('OAuth 메시지: 허용되지 않은 origin에서 메시지 수신', event.origin);
+        return;
+      }
+
+      // 메시지 데이터 구조 검증
+      if (!event.data || typeof event.data !== 'object') {
+        console.warn('OAuth 메시지: 유효하지 않은 메시지 데이터');
+        return;
+      }
+
       if (event.data.type === 'OAUTH_SUCCESS') {
-        console.log('OAuth 성공 메시지 수신:', event.data);
+        console.log('OAuth 성공 메시지 수신');
         this.handleGoogleOAuthCallback(event.data.code, event.data.state);
       } else if (event.data.type === 'OAUTH_ERROR') {
-        console.error('OAuth 에러 메시지 수신:', event.data);
+        console.error('OAuth 에러 메시지 수신');
         this.updateStatus(`OAuth 에러: ${event.data.error}`, 'error');
       }
     });
@@ -269,20 +282,31 @@ class AuthDemo {
         return;
       }
 
-      // Google OAuth 2.0 URL 생성
+      // Google OAuth 2.0 URL 생성 (PKCE 적용)
       const redirectUri = window.location.origin + '/auth/google/callback';
       const scope = 'openid email profile';
-      const state = Math.random().toString(36).substring(7);
       
-      // state를 localStorage에 저장 (보안을 위해)
+      // 강한 랜덤 state 생성 (32바이트)
+      const state = this.generateSecureRandom(32);
+      
+      // PKCE 파라미터 생성
+      const codeVerifier = this.generateCodeVerifier();
+      const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+      
+      // state와 code_verifier를 localStorage에 저장 (보안을 위해)
       localStorage.setItem('google_oauth_state', state);
+      localStorage.setItem('google_oauth_code_verifier', codeVerifier);
       
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${encodeURIComponent(googleClientId)}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `state=${encodeURIComponent(state)}&` +
         `scope=${encodeURIComponent(scope)}&` +
-        `response_type=code`;
+        `response_type=code&` +
+        `code_challenge=${encodeURIComponent(codeChallenge)}&` +
+        `code_challenge_method=S256&` +
+        `access_type=offline&` +
+        `prompt=consent`;
       
       this.updateStatus('Google OAuth 페이지로 이동합니다...', 'info');
       
@@ -591,6 +615,37 @@ class AuthDemo {
       tokenInfoElement.style.display = 'none';
     }
   }
+
+  /**
+   * 강한 랜덤 문자열 생성 (crypto.getRandomValues 사용)
+   * @param length 생성할 바이트 길이
+   * @returns URL-safe base64 인코딩된 랜덤 문자열
+   */
+  private generateSecureRandom(length: number): string {
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return btoa(String.fromCharCode(...array)).replace(/[\+\/=]/g, '');
+  }
+
+  /**
+   * PKCE code_verifier 생성
+   * @returns 64바이트 랜덤 code_verifier
+   */
+  private generateCodeVerifier(): string {
+    return this.generateSecureRandom(64);
+  }
+
+  /**
+   * PKCE code_challenge 생성 (SHA-256 + base64url)
+   * @param codeVerifier code_verifier
+   * @returns code_challenge
+   */
+  private async generateCodeChallenge(codeVerifier: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/[\+\/=]/g, '');
+  }
 }
 
 // Google OAuth 콜백 처리
@@ -612,7 +667,7 @@ function handleGoogleOAuthCallback(): void {
       localStorage.removeItem('google_oauth_state');
       
       // authCode를 사용하여 로그인 처리
-      console.log('Google OAuth 인증 코드 받음:', code);
+      console.log('Google OAuth 인증 코드 받음');
       
       // URL에서 OAuth 파라미터 제거
       const newUrl = window.location.origin + window.location.pathname;
@@ -620,7 +675,7 @@ function handleGoogleOAuthCallback(): void {
       
       // 여기서 실제 Google 로그인 처리
       // (실제 구현에서는 백엔드 API를 통해 authCode를 accessToken으로 교환)
-      alert(`Google OAuth 인증 코드: ${code}\n\n실제 구현에서는 이 코드를 백엔드로 전송하여 accessToken을 받아야 합니다.`);
+      alert('Google OAuth 인증 완료. 로그인 처리 중...\n\n실제 구현에서는 이 코드를 백엔드로 전송하여 accessToken을 받아야 합니다.');
     } else {
       console.error('Google OAuth state 검증 실패');
     }
