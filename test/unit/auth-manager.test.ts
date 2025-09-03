@@ -1,9 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AuthManager } from '../../src/AuthManager';
 import { FakeAuthProvider } from '../mocks/FakeAuthProvider';
 import { InMemoryTokenStore } from '../mocks/InMemoryTokenStore';
 import { FakeHttpClient } from '../mocks/FakeHttpClient';
 import { ApiConfig } from '../../src/shared/types';
+
+// Google Auth API 모킹
+vi.mock('../../src/network/googleAuthApi', () => ({
+  validateTokenByGoogle: vi.fn(),
+  getUserInfoByGoogle: vi.fn(),
+  checkGoogleServiceAvailability: vi.fn(),
+  loginByGoogle: vi.fn(),
+  logoutByGoogle: vi.fn(),
+  refreshTokenByGoogle: vi.fn()
+}));
 
 describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   let manager: AuthManager;
@@ -11,8 +21,9 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
   let fakeTokenStore: InMemoryTokenStore;
   let fakeHttpClient: FakeHttpClient;
   let apiConfig: ApiConfig;
+  let googleProvider: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // 테스트 더블들 초기화
     fakeProvider = new FakeAuthProvider();
     fakeTokenStore = new InMemoryTokenStore();
@@ -32,10 +43,20 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         // 구글 인증 엔드포인트 추가
         googleLogin: '/api/v1/auth/google/login',
         googleLogout: '/api/v1/auth/google/logout',
-        googleRefresh: '/api/v1/auth/google/refresh'
+        googleRefresh: '/api/v1/auth/google/refresh',
+        googleValidate: '/api/v1/auth/google/validate',
+        googleUserinfo: '/api/v1/auth/google/userinfo'
       },
       timeout: 10000
     };
+    
+    // Google Provider도 준비 (필요시 사용)
+    const { GoogleAuthProvider } = await import('../../src/providers/implementations/GoogleAuthProvider');
+    googleProvider = new GoogleAuthProvider({
+      googleClientId: 'test-google-client-id',
+      timeout: 10000,
+      retryCount: 3
+    }, fakeHttpClient, apiConfig);
 
     // AuthManager 생성 (테스트 더블들 주입)
     manager = new AuthManager({
@@ -53,14 +74,14 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
     fakeHttpClient.reset();
   });
 
-  describe('로그인 플로우', () => {
+  describe('이메일 로그인 플로우', () => {
     it('정상 로그인 시 토큰 저장 및 사용자 정보 반환', async () => {
       // Given: 이메일 인증 완료
       await manager.requestEmailVerification({ email: 'test@example.com' });
       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
 
       // When: 로그인 실행
-      const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+      const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'fake' as const };
       const result = await manager.login(loginRequest);
 
        // Then: 성공 응답 확인
@@ -85,7 +106,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       await manager.verifyEmail({ email: 'fail@example.com', verifyCode: '123456' });
 
       // When: 실패할 로그인 시도
-      const loginRequest = { email: 'fail@example.com', verifyCode: '123456', provider: 'email' as const };
+      const loginRequest = { email: 'fail@example.com', verifyCode: '123456', provider: 'fake' as const };
       const result = await manager.login(loginRequest);
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -99,7 +120,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       await manager.verifyEmail({ email: 'timeout@example.com', verifyCode: '123456' });
 
       // When: 타임아웃될 로그인 시도
-      const loginRequest = { email: 'timeout@example.com', verifyCode: '123456', provider: 'email' as const };
+      const loginRequest = { email: 'timeout@example.com', verifyCode: '123456', provider: 'fake' as const };
       const result = await manager.login(loginRequest);
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -113,7 +134,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       // Given: 이메일 인증 완료 후 로그인
       await manager.requestEmailVerification({ email: 'test@example.com' });
       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
-      const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+      const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'fake' as const };
       await manager.login(loginRequest);
 
 
@@ -128,12 +149,12 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       }
     });
 
-         it('토큰 존재 여부 확인', async () => {
-       // Given: 이메일 인증 완료 후 로그인
-       await manager.requestEmailVerification({ email: 'test@example.com' });
-       await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
-       const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
-       await manager.login(loginRequest);
+             it('토큰 존재 여부 확인', async () => {
+      // Given: 이메일 인증 완료 후 로그인
+      await manager.requestEmailVerification({ email: 'test@example.com' });
+      await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+      const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'fake' as const };
+      await manager.login(loginRequest);
 
       // When: 인증 상태 확인
       const isAuth = await manager.isAuthenticated();
@@ -486,6 +507,84 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
        const loginResult = await manager.login(loginRequest);
       expect(loginResult.success).toBe(true);
+    });
+  });
+
+  describe('구글 로그인 플로우', () => {
+    beforeEach(async () => {
+      // Google Provider로 AuthManager 재설정
+      manager = new AuthManager({
+        provider: googleProvider,
+        apiConfig,
+        httpClient: fakeHttpClient,
+        tokenStore: fakeTokenStore
+      });
+    });
+
+    it('Google OAuth 로그인 성공 시 토큰 저장 및 사용자 정보 반환', async () => {
+      // Google API 모킹
+      const { loginByGoogle } = await import('../../src/network/googleAuthApi');
+      vi.mocked(loginByGoogle).mockResolvedValue({
+        success: true,
+        message: 'Google 로그인 성공',
+        data: {
+          accessToken: 'google-access-token',
+          refreshToken: 'google-refresh-token',
+          expiredAt: Math.floor(Date.now() / 1000) + 3600,
+          userInfo: {
+            id: 'google-user-123',
+            email: 'user@gmail.com',
+            nickname: 'Google User',
+            provider: 'google'
+          }
+        }
+      });
+
+      // When: Google OAuth 로그인 실행
+      const loginRequest = { 
+        provider: 'google' as const, 
+        authCode: 'google-auth-code-123' 
+      };
+      const result = await manager.login(loginRequest);
+
+      // Then: 성공 응답 확인
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data?.userInfo.email).toBe('user@gmail.com');
+        expect(result.data?.userInfo.provider).toBe('google');
+        expect(result.data?.accessToken).toBe('google-access-token');
+      }
+
+      // Then: 토큰이 저장소에 저장되었는지 확인
+      const savedToken = await manager.getToken();
+      expect(savedToken.success).toBe(true);
+      if (savedToken.success) {
+        expect(savedToken.data?.accessToken).toBeDefined();
+      }
+    });
+
+    it('Google OAuth 로그인 실패 시 에러 응답 반환', async () => {
+      // Google API 모킹 (실패 시나리오)
+      const { loginByGoogle } = await import('../../src/network/googleAuthApi');
+      vi.mocked(loginByGoogle).mockResolvedValue({
+        success: false,
+        error: 'Google OAuth 인증 실패',
+        message: 'Google 계정 인증에 실패했습니다.',
+        data: null
+      });
+
+      // When: 실패할 Google 로그인 시도
+      const loginRequest = { 
+        provider: 'google' as const, 
+        authCode: 'invalid-auth-code' 
+      };
+      const result = await manager.login(loginRequest);
+
+      // Then: 실패 응답 확인
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('Google OAuth 인증 실패');
+      }
     });
   });
 });
