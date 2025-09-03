@@ -425,8 +425,6 @@ export const handlers = [
     const code = url.searchParams.get('code');
     
     console.log('MSW: Google OAuth 콜백 호출됨');
-    console.log('MSW: state =', state);
-    console.log('MSW: code =', code);
     
     // state 검증 (실제 OAuth에서는 보안을 위해 필수)
     if (!state || !code) {
@@ -441,7 +439,7 @@ export const handlers = [
             window.opener.postMessage({ 
               type: 'OAUTH_ERROR', 
               error: 'Invalid parameters' 
-            }, '*');
+            }, window.location.origin);
             window.close();
           </script>
         </body>
@@ -459,7 +457,7 @@ export const handlers = [
       <head><title>OAuth Success</title></title>
       <body>
         <h1>OAuth Success!</h1>
-        <p>Authorization code received: ${code}</p>
+        <p>Authorization code received successfully</p>
         <script>
           // 부모 창에 성공 메시지 전송
           if (window.opener) {
@@ -467,7 +465,7 @@ export const handlers = [
               type: 'OAUTH_SUCCESS', 
               code: '${code}',
               state: '${state}'
-            }, '*');
+            }, window.location.origin);
             window.close();
           } else {
             // 팝업이 아닌 경우 현재 창에서 처리
