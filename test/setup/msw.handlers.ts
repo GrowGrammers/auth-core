@@ -173,24 +173,40 @@ export const handlers = [
 
   // 구글 로그인
   http.post('*/api/v1/auth/google/login', async ({ request }) => {
-    const body = await request.json() as any;
-    
-    // 잘못된 구글 토큰에 대한 에러 응답
-    if (body.googleToken === 'invalid-token') {
+    let body: any = {};
+    try {
+      body = await request.json();           // ← 핵심!
+    } catch (error) {
+      console.error('MSW: Google 로그인 body 파싱 에러:', error);
       return HttpResponse.json({
         success: false,
-        message: '잘못된 구글 토큰입니다.',
+        message: '잘못된 요청 형식입니다.',
         data: null,
-        error: 'INVALID_GOOGLE_TOKEN'
+        error: 'INVALID_REQUEST_BODY'
       }, { status: 400 });
     }
-    
+
+    const { authCode } = body;
+    console.log('MSW: parsed body.authCode =', authCode);
+
+    if (authCode !== 'valid-google-code') {
+      return HttpResponse.json({
+        success: false,
+        message: '유효하지 않은 Google 인증 코드입니다.',
+        data: null,
+        error: 'INVALID_GOOGLE_CODE'
+      }, { status: 400 });
+    }
+
+    const googleAccessToken = generateRandomToken('google-access-token');
+    const googleRefreshToken = generateRandomToken('google-refresh-token');
+
     return HttpResponse.json({
       success: true,
       message: '구글 로그인에 성공했습니다.',
       data: {
-        accessToken: generateRandomToken('google-access-token'),
-        refreshToken: generateRandomToken('google-refresh-token'),
+        accessToken: googleAccessToken,
+        refreshToken: googleRefreshToken,
         expiredAt: generateExpiredAt(),
         userInfo: {
           id: 'google-user-123',
@@ -234,6 +250,60 @@ export const handlers = [
     });
   }),
 
+  // Google 토큰 검증 (Google 전용) - GET 방식
+  http.get('*/api/v1/auth/google/validate', ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    
+    // Google 액세스 토큰 검증
+    if (!authHeader || !authHeader.startsWith('Bearer google-access-token-')) {
+      return HttpResponse.json({
+        success: false,
+        message: '유효하지 않은 Google 액세스 토큰입니다.',
+        data: false,
+        error: 'INVALID_GOOGLE_TOKEN'
+      }, { status: 401 });
+    }
+    
+    return HttpResponse.json({
+      success: true,
+      message: 'Google 토큰이 유효합니다.',
+      data: true
+    });
+  }),
+
+  // Google 토큰 검증 (Google 전용) - POST 방식
+  http.post('*/api/v1/auth/google/validate', async ({ request }) => {
+    let body: any;
+    
+    try {
+      // MSW에서는 항상 request.json()을 사용해야 함
+      body = await request.json();
+    } catch (error) {
+      return HttpResponse.json({
+        success: false,
+        message: '잘못된 요청 형식입니다.',
+        data: false,
+        error: 'INVALID_REQUEST_BODY'
+      }, { status: 400 });
+    }
+    
+    // Google 액세스 토큰 검증
+    if (!body.accessToken || !body.accessToken.startsWith('google-access-token-')) {
+      return HttpResponse.json({
+        success: false,
+        message: '유효하지 않은 Google 액세스 토큰입니다.',
+        data: false,
+        error: 'INVALID_GOOGLE_TOKEN'
+      }, { status: 401 });
+    }
+    
+    return HttpResponse.json({
+      success: true,
+      message: 'Google 토큰이 유효합니다.',
+      data: true
+    });
+  }),
+
   // 사용자 정보 조회
   http.get('*/api/v1/auth/user-info', () => {
     return HttpResponse.json({
@@ -244,6 +314,70 @@ export const handlers = [
         email: 'test@example.com',
         nickname: '테스트 사용자',
         provider: 'email'
+      }
+    });
+  }),
+
+  // Google 사용자 정보 조회 (Google 전용) - GET 방식
+  http.get('*/api/v1/auth/google/userinfo', ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    
+    // Google 액세스 토큰 검증
+    if (!authHeader || !authHeader.startsWith('Bearer google-access-token-')) {
+      return HttpResponse.json({
+        success: false,
+        message: '유효하지 않은 Google 액세스 토큰입니다.',
+        data: null,
+        error: 'INVALID_GOOGLE_TOKEN'
+      }, { status: 401 });
+    }
+    
+    return HttpResponse.json({
+      success: true,
+      message: 'Google 사용자 정보를 성공적으로 가져왔습니다.',
+      data: {
+        id: 'google-user-123',
+        email: 'google@example.com',
+        nickname: '구글 사용자',
+        provider: 'google'
+      }
+    });
+  }),
+
+  // Google 사용자 정보 조회 (Google 전용) - POST 방식
+  http.post('*/api/v1/auth/google/userinfo', async ({ request }) => {
+    let body: any;
+    
+    try {
+      // MSW에서는 항상 request.json()을 사용해야 함
+      body = await request.json();
+    } catch (error) {
+      return HttpResponse.json({
+        success: false,
+        message: '잘못된 요청 형식입니다.',
+        data: null,
+        error: 'INVALID_REQUEST_BODY'
+      }, { status: 400 });
+    }
+    
+    // Google 액세스 토큰 검증
+    if (!body.accessToken || !body.accessToken.startsWith('google-access-token-')) {
+      return HttpResponse.json({
+        success: false,
+        message: '유효하지 않은 Google 액세스 토큰입니다.',
+        data: null,
+        error: 'INVALID_GOOGLE_TOKEN'
+      }, { status: 401 });
+    }
+    
+    return HttpResponse.json({
+      success: true,
+      message: 'Google 사용자 정보를 성공적으로 가져왔습니다.',
+      data: {
+        id: 'google-user-123',
+        email: 'google@example.com',
+        nickname: '구글 사용자',
+        provider: 'google'
       }
     });
   }),
@@ -281,6 +415,70 @@ export const handlers = [
         status: 'healthy',
         timestamp: new Date().toISOString()
       }
+    });
+  }),
+
+  // Google OAuth 콜백 모킹 (MSW로 OAuth 플로우 완전 모킹)
+  http.get('*/auth/google/callback', ({ request }) => {
+    const url = new URL(request.url);
+    const state = url.searchParams.get('state');
+    const code = url.searchParams.get('code');
+    
+    console.log('MSW: Google OAuth 콜백 호출됨');
+    console.log('MSW: state =', state);
+    console.log('MSW: code =', code);
+    
+    // state 검증 (실제 OAuth에서는 보안을 위해 필수)
+    if (!state || !code) {
+      return new Response(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>OAuth Error</title></head>
+        <body>
+          <h1>OAuth Error</h1>
+          <p>Invalid state or code parameter</p>
+          <script>
+            window.opener.postMessage({ 
+              type: 'OAUTH_ERROR', 
+              error: 'Invalid parameters' 
+            }, '*');
+            window.close();
+          </script>
+        </body>
+        </html>
+      `, {
+        status: 400,
+        headers: { 'Content-Type': 'text/html' }
+      });
+    }
+    
+    // 성공적인 OAuth 콜백 응답
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>OAuth Success</title></title>
+      <body>
+        <h1>OAuth Success!</h1>
+        <p>Authorization code received: ${code}</p>
+        <script>
+          // 부모 창에 성공 메시지 전송
+          if (window.opener) {
+            window.opener.postMessage({ 
+              type: 'OAUTH_SUCCESS', 
+              code: '${code}',
+              state: '${state}'
+            }, '*');
+            window.close();
+          } else {
+            // 팝업이 아닌 경우 현재 창에서 처리
+            window.location.href = '/?oauth_success=true&code=${code}&state=${state}';
+          }
+        </script>
+      </body>
+      </html>
+    `, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
     });
   })
 ];
