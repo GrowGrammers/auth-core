@@ -20,13 +20,14 @@ export class MSWHttpClient implements HttpClient {
             : JSON.stringify(body);
     
     try {
+      // FormData/Blob인 경우 Content-Type을 자동으로 설정하도록 함
+      const isFormLike = body instanceof FormData || body instanceof Blob;
+      const baseHeaders = isFormLike ? headers : { 'Content-Type': 'application/json', ...headers };
+      
       // 실제 fetch 요청 (MSW가 가로채서 모의 응답 제공)
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
+        headers: baseHeaders,
         body: isBodyAllowed ? serializedBody : undefined, // GET/HEAD엔 body 금지
       });
 
