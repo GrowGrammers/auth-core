@@ -15,6 +15,7 @@ import { currentConfig } from './config';
 class AuthDemo {
   private authManager: AuthManager;
   private tokenStore: TokenStore;
+  private messageHandler: ((event: MessageEvent) => void) | null = null;
 
   constructor() {
     const tokenStoreResult = createTokenStore('auto' as TokenStoreType);
@@ -119,28 +120,55 @@ class AuthDemo {
     }
 
     // 팝업 창에서 OAuth 콜백 메시지 수신 (보안 검증 포함)
-    window.addEventListener('message', (event) => {
-      // P1: origin 검증 - 보안을 위해 필수
-      const allowedOrigin = window.location.origin;
-      if (event.origin !== allowedOrigin) {
-        console.warn('OAuth 메시지: 허용되지 않은 origin에서 메시지 수신', event.origin);
-        return;
-      }
+    this.messageHandler = this.handleMessage.bind(this);
+    window.addEventListener('message', this.messageHandler);
+  }
 
-      // 메시지 데이터 구조 검증
-      if (!event.data || typeof event.data !== 'object') {
-        console.warn('OAuth 메시지: 유효하지 않은 메시지 데이터');
-        return;
-      }
+  // 메시지 핸들러 (클래스 내부로 일원화)
+  private handleMessage = (event: MessageEvent): void => {
+    // P1: origin 검증 - 보안을 위해 필수
+    const allowedOrigin = window.location.origin;
+    if (event.origin !== allowedOrigin) {
+      console.warn('OAuth 메시지: 허용되지 않은 origin에서 메시지 수신', event.origin);
+      return;
+    }
 
+    // 메시지 데이터 구조 검증
+    if (!event.data || typeof event.data !== 'object') {
+      console.warn('OAuth 메시지: 유효하지 않은 메시지 데이터');
+      return;
+    }
+
+    // 메시지 타입 검증
+    if (!event.data.type || typeof event.data.type !== 'string') {
+      console.warn('OAuth 메시지: 유효하지 않은 메시지 타입');
+      return;
+    }
+
+    try {
       if (event.data.type === 'OAUTH_SUCCESS') {
+        // OAUTH_SUCCESS 메시지 스키마 검증
+        if (typeof event.data.code !== 'string' || typeof event.data.state !== 'string') {
+          console.warn('OAuth 메시지: OAUTH_SUCCESS 메시지 스키마가 올바르지 않음');
+          return;
+        }
         console.log('OAuth 성공 메시지 수신');
         this.handleGoogleOAuthCallback(event.data.code, event.data.state);
       } else if (event.data.type === 'OAUTH_ERROR') {
+        // OAUTH_ERROR 메시지 스키마 검증
+        if (typeof event.data.error !== 'string') {
+          console.warn('OAuth 메시지: OAUTH_ERROR 메시지 스키마가 올바르지 않음');
+          return;
+        }
         console.error('OAuth 에러 메시지 수신');
         this.updateStatus(`OAuth 에러: ${event.data.error}`, 'error');
+      } else {
+        console.warn('OAuth 메시지: 알 수 없는 메시지 타입', event.data.type);
       }
-    });
+    } catch (error) {
+      console.error('OAuth 메시지 처리 중 오류:', error);
+      this.updateStatus('OAuth 메시지 처리 중 오류가 발생했습니다.', 'error');
+    }
   }
 
   private async requestVerification(): Promise<EmailVerificationApiResponse> {
@@ -326,11 +354,17 @@ class AuthDemo {
   // Google OAuth 콜백 처리
   private async handleGoogleOAuthCallback(code: string, state: string): Promise<void> {
     try {
-      console.log('Google OAuth 콜백 처리 시작:', { code, state });
+      // 입력 파라미터 검증
+      if (!code || typeof code !== 'string' || !state || typeof state !== 'string') {
+        this.updateStatus('OAuth 콜백 파라미터가 올바르지 않습니다.', 'error');
+        return;
+      }
+
+      console.log('Google OAuth 콜백 처리 시작');
       
       // 저장된 state와 비교 (보안 검증)
       const savedState = localStorage.getItem('google_oauth_state');
-      if (state !== savedState) {
+      if (!savedState || state !== savedState) {
         this.updateStatus('OAuth state 불일치. 보안상 로그인을 취소합니다.', 'error');
         return;
       }
@@ -646,47 +680,18 @@ class AuthDemo {
     const digest = await crypto.subtle.digest('SHA-256', data);
     return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/[\+\/=]/g, '');
   }
-}
 
-// Google OAuth 콜백 처리
-function handleGoogleOAuthCallback(): void {
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
-  const state = urlParams.get('state');
-  const error = urlParams.get('error');
-  
-  if (error) {
-    console.error('Google OAuth 에러:', error);
-    return;
-  }
-  
-  if (code && state) {
-    const savedState = localStorage.getItem('google_oauth_state');
-    if (state === savedState) {
-      // state 검증 성공
-      localStorage.removeItem('google_oauth_state');
-      
-      // authCode를 사용하여 로그인 처리
-      console.log('Google OAuth 인증 코드 받음');
-      
-      // URL에서 OAuth 파라미터 제거
-      const newUrl = window.location.origin + window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-      
-      // 여기서 실제 Google 로그인 처리
-      // (실제 구현에서는 백엔드 API를 통해 authCode를 accessToken으로 교환)
-      alert('Google OAuth 인증 완료. 로그인 처리 중...\n\n실제 구현에서는 이 코드를 백엔드로 전송하여 accessToken을 받아야 합니다.');
-    } else {
-      console.error('Google OAuth state 검증 실패');
+  // 컴포넌트 정리 (메모리 누수 방지)
+  public destroy(): void {
+    if (this.messageHandler) {
+      window.removeEventListener('message', this.messageHandler);
+      this.messageHandler = null;
     }
   }
 }
 
-// 페이지 로드 시 데모 초기화 및 OAuth 콜백 처리
+// 페이지 로드 시 데모 초기화
 document.addEventListener('DOMContentLoaded', () => {
-  // Google OAuth 콜백 처리
-  handleGoogleOAuthCallback();
-  
   // 데모 초기화
   new AuthDemo();
 });
