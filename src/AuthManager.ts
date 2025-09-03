@@ -72,8 +72,9 @@ export class AuthManager {
     
     // 타입 가드를 사용한 안전한 에러 처리
     if (isAuthProviderFactoryError(result)) {
-      console.error('인증 제공자 생성 실패:', result.error);
-      throw new Error(result.message);
+      const errorMessage = `[AuthManager] Provider 생성 실패: ${result.error}`;
+      console.error(errorMessage);
+      throw new Error(errorMessage);
     }
     
     // 여기서부터 result는 AuthProvider 타입으로 안전하게 좁혀짐

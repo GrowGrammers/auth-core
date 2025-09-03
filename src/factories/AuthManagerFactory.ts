@@ -22,7 +22,12 @@ export function createAuthManager(
   tokenStoreType?: TokenStoreType,
   tokenStoreRegistry?: TokenStoreRegistry
 ): AuthManager {
-  return new AuthManager(config);
+  try {
+    return new AuthManager(config);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+    throw new Error(`[AuthManagerFactory] AuthManager 생성 실패: ${errorMessage}`);
+  }
 }
 
 /**
