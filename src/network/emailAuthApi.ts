@@ -192,10 +192,8 @@ export async function validateTokenByEmail(
     }
 
     const response = await makeRequest(httpClient, config, config.endpoints.validate, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token.accessToken}`,
-      }
+      method: 'POST',
+      body: { accessToken: token.accessToken }
     });
 
     const data = await handleHttpResponse<TokenValidationApiResponse>(response, '토큰 검증에 실패했습니다.');
@@ -220,10 +218,8 @@ export async function getUserInfoByEmail(
     }
 
     const response = await makeRequest(httpClient, config, config.endpoints.me, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token.accessToken}`,
-      }
+      method: 'POST',
+      body: { accessToken: token.accessToken }
     });
 
     const data = await handleHttpResponse<UserInfoApiResponse>(response, '사용자 정보 조회에 실패했습니다.');

@@ -241,8 +241,30 @@ export const handlers = [
     });
   }),
 
-  // 토큰 검증
-  http.get('*/api/v1/auth/validate-token', () => {
+  // 토큰 검증 - POST 방식으로 통일
+  http.post('*/api/v1/auth/validate-token', async ({ request }) => {
+    let body: any;
+    
+    try {
+      body = await request.json();
+    } catch (error) {
+      return HttpResponse.json({
+        success: false,
+        message: '잘못된 요청 형식입니다.',
+        data: false,
+        error: 'INVALID_REQUEST_BODY'
+      }, { status: 400 });
+    }
+    
+    if (!body.accessToken) {
+      return HttpResponse.json({
+        success: false,
+        message: '액세스 토큰이 필요합니다.',
+        data: false,
+        error: 'MISSING_ACCESS_TOKEN'
+      }, { status: 400 });
+    }
+    
     return HttpResponse.json({
       success: true,
       message: '토큰이 유효합니다.',
@@ -250,26 +272,7 @@ export const handlers = [
     });
   }),
 
-  // Google 토큰 검증 (Google 전용) - GET 방식
-  http.get('*/api/v1/auth/google/validate', ({ request }) => {
-    const authHeader = request.headers.get('Authorization');
-    
-    // Google 액세스 토큰 검증
-    if (!authHeader || !authHeader.startsWith('Bearer google-access-token-')) {
-      return HttpResponse.json({
-        success: false,
-        message: '유효하지 않은 Google 액세스 토큰입니다.',
-        data: false,
-        error: 'INVALID_GOOGLE_TOKEN'
-      }, { status: 401 });
-    }
-    
-    return HttpResponse.json({
-      success: true,
-      message: 'Google 토큰이 유효합니다.',
-      data: true
-    });
-  }),
+
 
   // Google 토큰 검증 (Google 전용) - POST 방식
   http.post('*/api/v1/auth/google/validate', async ({ request }) => {
@@ -304,8 +307,30 @@ export const handlers = [
     });
   }),
 
-  // 사용자 정보 조회
-  http.get('*/api/v1/auth/user-info', () => {
+  // 사용자 정보 조회 - POST 방식으로 통일
+  http.post('*/api/v1/auth/user-info', async ({ request }) => {
+    let body: any;
+    
+    try {
+      body = await request.json();
+    } catch (error) {
+      return HttpResponse.json({
+        success: false,
+        message: '잘못된 요청 형식입니다.',
+        data: null,
+        error: 'INVALID_REQUEST_BODY'
+      }, { status: 400 });
+    }
+    
+    if (!body.accessToken) {
+      return HttpResponse.json({
+        success: false,
+        message: '액세스 토큰이 필요합니다.',
+        data: null,
+        error: 'MISSING_ACCESS_TOKEN'
+      }, { status: 400 });
+    }
+    
     return HttpResponse.json({
       success: true,
       message: '사용자 정보를 성공적으로 가져왔습니다.',
@@ -318,31 +343,7 @@ export const handlers = [
     });
   }),
 
-  // Google 사용자 정보 조회 (Google 전용) - GET 방식
-  http.get('*/api/v1/auth/google/userinfo', ({ request }) => {
-    const authHeader = request.headers.get('Authorization');
-    
-    // Google 액세스 토큰 검증
-    if (!authHeader || !authHeader.startsWith('Bearer google-access-token-')) {
-      return HttpResponse.json({
-        success: false,
-        message: '유효하지 않은 Google 액세스 토큰입니다.',
-        data: null,
-        error: 'INVALID_GOOGLE_TOKEN'
-      }, { status: 401 });
-    }
-    
-    return HttpResponse.json({
-      success: true,
-      message: 'Google 사용자 정보를 성공적으로 가져왔습니다.',
-      data: {
-        id: 'google-user-123',
-        email: 'google@example.com',
-        nickname: '구글 사용자',
-        provider: 'google'
-      }
-    });
-  }),
+
 
   // Google 사용자 정보 조회 (Google 전용) - POST 방식
   http.post('*/api/v1/auth/google/userinfo', async ({ request }) => {
