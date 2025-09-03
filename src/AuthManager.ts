@@ -210,7 +210,7 @@ export class AuthManager {
         if (saveResult.success) {
           console.log(`[AuthManager] ${this.provider.providerName} 로그인 성공, 토큰 저장됨`);
         } else {
-          console.error('[AuthManager] 토큰 저장 실패:', saveResult.error);
+          console.error('[AuthManager] 토큰 저장 실패');
         }
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
