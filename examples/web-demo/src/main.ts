@@ -321,6 +321,14 @@ class AuthDemo {
       const codeVerifier = this.generateCodeVerifier();
       const codeChallenge = await this.generateCodeChallenge(codeVerifier);
       
+      // 🔐 PKCE 정보 로깅 (보안을 위해 일부만 표시)
+      const codeVerifierPreview = codeVerifier.substring(0, 10) + '...' + codeVerifier.substring(codeVerifier.length - 10);
+      const codeChallengePreview = codeChallenge.substring(0, 10) + '...' + codeChallenge.substring(codeChallenge.length - 10);
+      console.log('🔐 PKCE 생성 완료:');
+      console.log('  - code_verifier:', codeVerifierPreview);
+      console.log('  - code_challenge:', codeChallengePreview);
+      this.updateStatus(`🔐 PKCE 보안 파라미터 생성 완료`, 'info');
+      
       // state와 code_verifier를 localStorage에 저장 (보안을 위해)
       localStorage.setItem('google_oauth_state', state);
       localStorage.setItem('google_oauth_code_verifier', codeVerifier);
@@ -338,7 +346,8 @@ class AuthDemo {
       
       this.updateStatus('Google OAuth 페이지로 이동합니다...', 'info');
       
-      // 팝업 창으로 OAuth 열기 (MSW 모킹을 위해)
+      // 팝업 창으로 OAuth 열기
+      console.log('🌐 구글 OAuth URL:', googleAuthUrl);
       const popup = window.open(googleAuthUrl, 'google_oauth', 'width=500,height=600');
       
       if (!popup) {
@@ -361,6 +370,11 @@ class AuthDemo {
       }
 
       console.log('Google OAuth 콜백 처리 시작');
+      
+      // 🔍 구글 인증 서버에서 받은 authCode 확인 (보안을 위해 일부만 표시)
+      const authCodePreview = code.substring(0, 10) + '...' + code.substring(code.length - 10);
+      console.log('✅ 구글 인증 서버에서 받은 authCode:', authCodePreview);
+      this.updateStatus(`✅ 구글 인증 서버에서 authCode를 받았습니다: ${authCodePreview}`, 'info');
       
       // 저장된 state와 비교 (보안 검증)
       const savedState = localStorage.getItem('google_oauth_state');
@@ -404,11 +418,17 @@ class AuthDemo {
       const googleAuthManager = new AuthManager({
         providerType: 'google',
         apiConfig,
-        httpClient: new MSWHttpClient(),
+        httpClient: new RealHttpClient(), // MSW 대신 실제 HTTP 클라이언트 사용
         providerConfig: googleConfig
       });
 
       // 받은 authCode로 로그인 시도
+      console.log('🚀 백엔드로 authCode 전송 시작:', authCodePreview);
+      console.log('📤 전송할 데이터:', {
+        authCode: authCodePreview,
+        codeVerifier: localStorage.getItem('google_oauth_code_verifier')?.substring(0, 10) + '...'
+      });
+      
       const result = await googleAuthManager.login({ 
         provider: 'google',
         authCode: code  // ← 실제 받은 authCode 사용!
