@@ -580,7 +580,7 @@ async function printTestSummary(testResults: TestResult[], startTime: number): P
 // 환경 변수 TEST_MODE에 따라 적절한 테스트 모드를 설정합니다.
 
 async function main() {
-  const testMode = process.env.TEST_MODE || 'local';
+  const testMode = process.argv[2] || process.env.TEST_MODE || 'local';
   const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
 
   console.log(`🔧 테스트 모드: ${testMode}`);
@@ -631,7 +631,7 @@ async function main() {
     const { startMSWServer, stopMSWServer } = await import('../setup/msw.server');
     
     console.log('🚀 MSW 서버를 시작합니다...');
-    startMSWServer();
+    await startMSWServer();
     console.log('✅ MSW 서버가 시작되었습니다.');
     console.log('📡 모킹된 API 엔드포인트:');
     console.log(`   - POST ${apiConfig.endpoints.requestVerification}`);

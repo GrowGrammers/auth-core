@@ -258,7 +258,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       }
     });
 
-    it('토큰이 없는 상태에서 로그아웃 시도 시 에러 처리', async () => {
+    it('토큰이 없는 상태에서 로그아웃 시도 시 성공 처리 (쿠키 기반)', async () => {
       // Given: 토큰이 없는 상태 (초기 상태)
       const tokenResult = await manager.getToken();
       expect(tokenResult.success).toBe(true);
@@ -269,10 +269,10 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       // When: 로그아웃 실행
       const logoutResult = await manager.logout({ provider: 'email' as const });
 
-      // Then: 로그아웃 실패 (저장된 토큰이 없음)
-      expect(logoutResult.success).toBe(false);
-      if (!logoutResult.success) {
-        expect(logoutResult.message).toContain('저장된 토큰이 없습니다');
+      // Then: 쿠키 기반 로그아웃에서는 토큰이 없어도 성공 처리
+      expect(logoutResult.success).toBe(true);
+      if (logoutResult.success) {
+        expect(logoutResult.message).toContain('로그아웃');
       }
     });
   });

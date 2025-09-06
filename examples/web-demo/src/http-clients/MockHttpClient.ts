@@ -25,7 +25,8 @@ export class MockHttpClient implements HttpClient {
           message: '인증번호가 전송되었습니다.',
           data: null
         }),
-        text: async () => '{"success":true,"message":"인증번호가 전송되었습니다.","data":null}'
+        text: async () => '{"success":true,"message":"인증번호가 전송되었습니다.","data":null}',
+        getCookies: () => []
       };
     }
     
@@ -57,7 +58,8 @@ export class MockHttpClient implements HttpClient {
             data: null,
             error: 'INVALID_VERIFICATION_CODE'
           }),
-          text: async () => '{"success":false,"message":"잘못된 인증번호입니다.","error":"INVALID_VERIFICATION_CODE"}'
+          text: async () => '{"success":false,"message":"잘못된 인증번호입니다.","error":"INVALID_VERIFICATION_CODE"}',
+          getCookies: () => []
         };
       }
       
@@ -72,7 +74,8 @@ export class MockHttpClient implements HttpClient {
           message: '이메일 인증이 완료되었습니다.',
           data: null
         }),
-        text: async () => '{"success":true,"message":"이메일 인증이 완료되었습니다.","data":null}'
+        text: async () => '{"success":true,"message":"이메일 인증이 완료되었습니다.","data":null}',
+        getCookies: () => []
       };
     }
     
@@ -104,7 +107,8 @@ export class MockHttpClient implements HttpClient {
             data: null,
             error: 'EMAIL_REQUIRED'
           }),
-          text: async () => '{"success":false,"message":"이메일이 필요합니다.","error":"EMAIL_REQUIRED"}'
+          text: async () => '{"success":false,"message":"이메일이 필요합니다.","error":"EMAIL_REQUIRED"}',
+          getCookies: () => []
         };
       }
 
@@ -121,22 +125,26 @@ export class MockHttpClient implements HttpClient {
             data: null,
             error: 'EMAIL_VERIFICATION_REQUIRED'
           }),
-          text: async () => '{"success":false,"message":"이메일 인증이 필요합니다.","error":"EMAIL_VERIFICATION_REQUIRED"}'
+          text: async () => '{"success":false,"message":"이메일 인증이 필요합니다.","error":"EMAIL_VERIFICATION_REQUIRED"}',
+          getCookies: () => []
         };
       }
       
-      // 올바른 이메일인 경우 성공 응답
+      // 올바른 이메일인 경우 성공 응답 (쿠키 기반)
+      const refreshToken = this.generateRandomToken('mock-refresh-token');
       return {
         ok: true,
         status: 200,
         statusText: 'OK',
-        headers: {},
+        headers: {
+          'set-cookie': `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=Strict`
+        },
         json: async () => ({
           success: true,
           message: '로그인에 성공했습니다.',
           data: {
             accessToken: this.generateRandomToken('mock-access-token'),
-            refreshToken: this.generateRandomToken('mock-refresh-token'),
+            // refreshToken은 쿠키로 전송되므로 응답 바디에 포함하지 않음
             expiredAt: this.generateExpiredAt(),
             userInfo: {
               id: 'user-123',
@@ -146,7 +154,8 @@ export class MockHttpClient implements HttpClient {
             }
           }
         }),
-        text: async () => 'mock login response'
+        text: async () => 'mock login response',
+        getCookies: () => [`refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=Strict`]
       };
     }
     
@@ -161,7 +170,8 @@ export class MockHttpClient implements HttpClient {
           message: '토큰이 유효합니다.',
           data: true
         }),
-        text: async () => '{"success":true,"message":"토큰이 유효합니다.","data":true}'
+        text: async () => '{"success":true,"message":"토큰이 유효합니다.","data":true}',
+        getCookies: () => []
       };
     }
     
@@ -181,7 +191,8 @@ export class MockHttpClient implements HttpClient {
             provider: 'email'
           }
         }),
-        text: async () => 'mock user info response'
+        text: async () => 'mock user info response',
+        getCookies: () => []
       };
     }
     if (url.includes('/api/v1/auth/members/refresh') && method === 'POST') {
@@ -199,7 +210,8 @@ export class MockHttpClient implements HttpClient {
             expiredAt: this.generateExpiredAt()
           }
         }),
-        text: async () => 'mock refresh response'
+        text: async () => 'mock refresh response',
+        getCookies: () => []
       };
     }
     if (url.includes('/api/v1/auth/members/logout') && method === 'POST') {
@@ -213,7 +225,8 @@ export class MockHttpClient implements HttpClient {
           message: '로그아웃에 성공했습니다.',
           data: null
         }),
-        text: async () => '{"success":true,"message":"로그아웃에 성공했습니다.","data":null}'
+        text: async () => '{"success":true,"message":"로그아웃에 성공했습니다.","data":null}',
+        getCookies: () => []
       };
     }
     
@@ -245,22 +258,26 @@ export class MockHttpClient implements HttpClient {
             data: null,
             error: 'INVALID_GOOGLE_TOKEN'
           }),
-          text: async () => '{"success":false,"message":"잘못된 구글 토큰입니다.","error":"INVALID_GOOGLE_TOKEN"}'
+          text: async () => '{"success":false,"message":"잘못된 구글 토큰입니다.","error":"INVALID_GOOGLE_TOKEN"}',
+          getCookies: () => []
         };
       }
       
-      // 올바른 구글 토큰인 경우 성공 응답
+      // 올바른 구글 토큰인 경우 성공 응답 (쿠키 기반)
+      const refreshToken = this.generateRandomToken('google-refresh-token');
       return {
         ok: true,
         status: 200,
         statusText: 'OK',
-        headers: {},
+        headers: {
+          'set-cookie': `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=Strict`
+        },
         json: async () => ({
           success: true,
           message: '구글 로그인에 성공했습니다.',
           data: {
             accessToken: this.generateRandomToken('google-access-token'),
-            refreshToken: this.generateRandomToken('google-refresh-token'),
+            // refreshToken은 쿠키로 전송되므로 응답 바디에 포함하지 않음
             expiredAt: this.generateExpiredAt(),
             userInfo: {
               id: 'google-user-123',
@@ -270,7 +287,8 @@ export class MockHttpClient implements HttpClient {
             }
           }
         }),
-        text: async () => 'mock google login response'
+        text: async () => 'mock google login response',
+        getCookies: () => [`refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=Strict`]
       };
     }
 
@@ -286,7 +304,8 @@ export class MockHttpClient implements HttpClient {
           message: '구글 로그아웃에 성공했습니다.',
           data: null
         }),
-        text: async () => '{"success":true,"message":"구글 로그아웃에 성공했습니다.","data":null}'
+        text: async () => '{"success":true,"message":"구글 로그아웃에 성공했습니다.","data":null}',
+        getCookies: () => []
       };
     }
 
@@ -307,7 +326,8 @@ export class MockHttpClient implements HttpClient {
             tokenType: 'Bearer'
           }
         }),
-        text: async () => 'mock google refresh response'
+        text: async () => 'mock google refresh response',
+        getCookies: () => []
       };
     }
     
@@ -325,7 +345,8 @@ export class MockHttpClient implements HttpClient {
             timestamp: new Date().toISOString()
           }
         }),
-        text: async () => 'mock health response'
+        text: async () => 'mock health response',
+        getCookies: () => []
       };
     }
     
@@ -340,7 +361,8 @@ export class MockHttpClient implements HttpClient {
         message: `지원하지 않는 엔드포인트: ${method} ${url}`,
         error: 'ENDPOINT_NOT_FOUND'
       }),
-      text: async () => `지원하지 않는 엔드포인트: ${method} ${url}`
+      text: async () => `지원하지 않는 엔드포인트: ${method} ${url}`,
+      getCookies: () => []
     };
   }
 

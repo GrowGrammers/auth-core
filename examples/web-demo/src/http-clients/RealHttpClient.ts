@@ -84,6 +84,11 @@ export class RealHttpClient implements HttpClient {
         headers: Object.fromEntries(response.headers.entries()),
         json: async () => data,
         text: async () => (typeof data === 'string' ? data : JSON.stringify(data)),
+        getCookies: () => {
+          // Set-Cookie 헤더에서 쿠키 추출
+          const setCookieHeaders = response.headers.get('set-cookie');
+          return setCookieHeaders ? setCookieHeaders.split(',').map(cookie => cookie.trim()) : [];
+        }
       };
     } catch (error) {
       // 네트워크/타임아웃/규칙 위반 등
@@ -94,6 +99,7 @@ export class RealHttpClient implements HttpClient {
         headers: {},
         json: async () => ({ error: error instanceof Error ? error.message : '알 수 없는 오류' }),
         text: async () => (error instanceof Error ? error.message : '알 수 없는 오류'),
+        getCookies: () => []
       };
     }
   }
