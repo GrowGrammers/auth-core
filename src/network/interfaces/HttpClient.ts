@@ -19,6 +19,8 @@ export interface HttpResponse {
   headers: Record<string, string>;
   json(): Promise<any>;
   text(): Promise<string>;
+  // 쿠키 관련 메서드 추가
+  getCookies(): string[]; // Set-Cookie 헤더에서 쿠키 추출
 }
 
 export interface HttpClient {

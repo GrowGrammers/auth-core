@@ -201,10 +201,11 @@ export class AuthManager {
       const loginResponse = await this.provider.login(processedRequest);
       
       if (loginResponse.success && loginResponse.data?.accessToken) {
-        // ⑤ 로그인 성공 시 토큰 저장
+        // ⑤ 로그인 성공 시 토큰 저장 (쿠키 기반)
         const token: Token = {
           accessToken: loginResponse.data.accessToken,
-          refreshToken: loginResponse.data.refreshToken,
+          // refreshToken은 쿠키로 관리되므로 빈 문자열로 설정
+          refreshToken: '',
           expiredAt: loginResponse.data.expiredAt
         };
         const saveResult = await this.tokenStore.saveToken(token);
@@ -295,25 +296,9 @@ export class AuthManager {
    */
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
     try {
-      // 저장된 토큰 가져오기
-      const tokenResult = await this.tokenStore.getToken();
-      if (!tokenResult.success || !tokenResult.data) {
-        return createErrorResponse('저장된 토큰이 없습니다.');
-      }
-      
-      // refreshToken이 있는지 확인
-      if (!tokenResult.data.refreshToken) {
-        return createErrorResponse('리프레시 토큰이 없습니다.');
-      }
-      
-      // refreshToken을 request에 추가 (API 호출용)
-      const logoutRequestWithRefreshToken: LogoutRequest = {
-        ...request,
-        refreshToken: tokenResult.data.refreshToken
-      };
-      
+      // 쿠키 기반 로그아웃: refreshToken은 쿠키에서 자동으로 전송되므로 별도 처리 불필요
       // ⑦ 로그아웃 시도 (누가? 전달받은 provider가!)
-      const logoutResponse = await this.provider.logout(logoutRequestWithRefreshToken);
+      const logoutResponse = await this.provider.logout(request);
       
       if (logoutResponse.success) {
         // ⑧ 로그아웃 성공 시 저장된 토큰 삭제

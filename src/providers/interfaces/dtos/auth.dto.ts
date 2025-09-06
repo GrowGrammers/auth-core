@@ -35,10 +35,10 @@ export interface OAuthLoginRequest extends BaseRequest {
 // 통합 로그인 요청 DTO (유니온 타입)
 export type LoginRequest = EmailLoginRequest | OAuthLoginRequest;
 
-// 백엔드 로그인 응답 데이터 구조
+// 백엔드 로그인 응답 데이터 구조 (쿠키 기반)
 export interface LoginResponseData {
-  accessToken: string;
-  refreshToken: string;
+  accessToken: string; // 응답 바디로 받음
+  // refreshToken은 쿠키로 받음 (응답 바디에 포함되지 않음)
   expiredAt?: number;
   userInfo: UserInfo;
 }
@@ -46,9 +46,9 @@ export interface LoginResponseData {
 // 로그인 응답 DTO
 export interface LoginResponse extends SuccessResponse<LoginResponseData> {}
 
-// 로그아웃 요청 DTO
+// 로그아웃 요청 DTO (쿠키 기반)
 export interface LogoutRequest extends BaseRequest {
-  refreshToken?: string; // 선택적 필드 (AuthManager에서 자동으로 채움)
+  // refreshToken은 쿠키에서 자동으로 추출됨 (요청 바디에 포함되지 않음)
 }
 
 // 로그아웃 응답 DTO

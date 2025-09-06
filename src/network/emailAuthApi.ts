@@ -135,13 +135,11 @@ export async function logoutByEmail(
   request: LogoutRequest
 ): Promise<LogoutApiResponse> {
   try {
-    if (!request.refreshToken) {
-      return createValidationErrorResponse('리프레시 토큰');
-    }
-
+    // 쿠키 기반 로그아웃: 쿠키를 헤더로 전송 (백엔드에서 쿠키에서 refreshToken 추출)
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.logout, {
       method: 'POST',
-      body: { refreshToken: request.refreshToken }
+      // 쿠키는 브라우저가 자동으로 전송하므로 별도 설정 불필요
+      // body에 refreshToken을 포함하지 않음
     });
 
     const data = await handleHttpResponse<LogoutApiResponse>(response, '로그아웃에 실패했습니다.');
