@@ -25,11 +25,6 @@ export class MSWHttpClient implements HttpClient {
         headers: Object.fromEntries(response.headers.entries()),
         text: async () => responseData,
         json: async () => responseData,
-        getCookies: () => {
-          // Set-Cookie 헤더에서 쿠키 추출
-          const setCookieHeaders = response.headers.get('set-cookie');
-          return setCookieHeaders ? setCookieHeaders.split(',').map(cookie => cookie.trim()) : [];
-        }
       };
       
     } catch (error) {
@@ -45,7 +40,6 @@ export class MSWHttpClient implements HttpClient {
           data: null,
           error: error instanceof Error ? error.message : '알 수 없는 오류'
         }),
-        getCookies: () => []
       };
     }
   }
