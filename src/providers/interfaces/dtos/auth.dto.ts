@@ -58,7 +58,7 @@ export interface LogoutResponse extends SuccessResponse<void> {
 
 // 토큰 갱신 요청 DTO
 export interface RefreshTokenRequest extends BaseRequest {
-  refreshToken: string;
+  // refreshToken은 쿠키로 전송됨 (바디에 포함하지 않음)
 }
 
 // 토큰 갱신 응답 DTO

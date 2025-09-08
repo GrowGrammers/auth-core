@@ -540,8 +540,8 @@ class AuthDemo {
       }
 
       const result = await this.authManager.refreshToken({ 
-        provider: 'email', 
-        refreshToken: tokenResult.data.refreshToken || ''
+        provider: 'email'
+        // refreshToken은 쿠키로 전송되므로 필드 없음
       });
 
       console.log('토큰 갱신 결과:', result);

@@ -86,17 +86,14 @@ export async function refreshTokenByGoogle(
   request: RefreshTokenRequest
 ): Promise<RefreshTokenApiResponse> {
   try {
-    if (!request.refreshToken) {
-      return createValidationErrorResponse('리프레시 토큰');
-    }
-
     const response = await makeRequestWithRetry(
       httpClient, 
       config, 
       config.endpoints.googleRefresh,  // refresh → googleRefresh으로 변경
       {
         method: 'POST',
-        body: { refreshToken: request.refreshToken }
+        // refreshToken은 쿠키로 전송되므로 body 없음
+        // credentials: 'include'는 HttpClient에서 공통 적용됨
       }
     );
 

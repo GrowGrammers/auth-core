@@ -152,6 +152,7 @@ export async function logoutByEmail(
 
 /**
  * 토큰 갱신
+ * refreshToken은 쿠키로 전송되므로 요청 바디에 포함하지 않음
  */
 export async function refreshTokenByEmail(
   httpClient: HttpClient,
@@ -159,13 +160,10 @@ export async function refreshTokenByEmail(
   request: RefreshTokenRequest
 ): Promise<RefreshTokenApiResponse> {
   try {
-    if (!request.refreshToken) {
-      return createValidationErrorResponse('리프레시 토큰');
-    }
-
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.refresh, {
       method: 'POST',
-      body: { refreshToken: request.refreshToken }
+      // refreshToken은 쿠키로 전송되므로 body 없음
+      // credentials: 'include'는 HttpClient에서 공통 적용됨
     });
 
     const data = await handleHttpResponse<RefreshTokenApiResponse>(response, '토큰 갱신에 실패했습니다.');

@@ -78,7 +78,7 @@ export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
         message: '로그인 성공',
         data: {
           accessToken: this.currentToken!.accessToken,
-          refreshToken: this.currentToken!.refreshToken || '',
+          // refreshToken은 쿠키로 관리되므로 응답에 포함하지 않음
           expiredAt: this.currentToken!.expiredAt,
           userInfo: this.currentUser!
         }

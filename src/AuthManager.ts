@@ -204,7 +204,7 @@ export class AuthManager {
         // ⑤ 로그인 성공 시 토큰 저장 (쿠키 기반)
         const token: Token = {
           accessToken: loginResponse.data.accessToken,
-          // refreshToken은 쿠키로 관리되므로 빈 문자열로 설정
+          // refreshToken은 쿠키로 관리되므로 토큰 스토어에는 빈 문자열로 설정
           refreshToken: '',
           expiredAt: loginResponse.data.expiredAt
         };

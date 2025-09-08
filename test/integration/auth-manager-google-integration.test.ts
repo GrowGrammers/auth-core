@@ -231,8 +231,8 @@ async function testGoogleOAuthTokenManagement(authManager: AuthManager): Promise
     // 4. 토큰 갱신 테스트
     console.log('    4단계: 토큰 갱신 테스트');
     const refreshRequest: RefreshTokenRequest = {
-      provider: 'google',
-      refreshToken: '' // 쿠키 기반 인증에서는 refreshToken이 쿠키로 관리됨
+      provider: 'google'
+      // refreshToken은 쿠키로 전송되므로 필드 없음
     };
     const refreshResponse = await authManager.refreshToken(refreshRequest);
     if (!refreshResponse.success) {
