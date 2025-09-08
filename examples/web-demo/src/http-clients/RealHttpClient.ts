@@ -67,6 +67,7 @@ export class RealHttpClient implements HttpClient {
         headers: finalHeaders,
         body: payload,
         signal: controller.signal,
+        credentials: 'include', // 쿠키 기반 인증을 위해 자격 증명 포함
       });
 
       clearTimeout(timeoutId);

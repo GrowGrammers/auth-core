@@ -29,6 +29,7 @@ export class MSWHttpClient implements HttpClient {
         method,
         headers: baseHeaders,
         body: isBodyAllowed ? serializedBody : undefined, // GET/HEAD엔 body 금지
+        credentials: 'include', // 쿠키 기반 인증을 위해 자격 증명 포함
       });
 
       const responseData = await response.json();
