@@ -1,7 +1,7 @@
 // 주어진 타입과 설정(config)에 따라 적절한 인증 제공자 인스턴스를 생성합니다.
 
 import { AuthProvider, AuthProviderConfig, GoogleAuthProviderConfig, EmailAuthProvider, GoogleAuthProvider } from '../providers';
-import { AuthProviderType, ApiConfig, FactoryResult, FactoryErrorResponse, isFactorySuccess, isFactoryError } from '../shared/types';
+import { AuthProviderType, ApiConfig, FactoryResult, FactoryErrorResponse, isFactorySuccess, isFactoryError, ClientPlatformType } from '../shared/types';
 import { HttpClient } from '../network/interfaces/HttpClient';
 import { createErrorResponse } from '../shared/utils/errorUtils';
 
@@ -27,18 +27,20 @@ export function isAuthProviderFactoryError(result: AuthProviderFactoryResult): r
  * @param config - 인증 제공자별 공통 설정 객체
  * @param httpClient - HTTP 클라이언트 인스턴스
  * @param apiConfig - API 설정 객체
+ * @param platform - 클라이언트 플랫폼 타입 (기본값: 'web')
  * @returns AuthProvider 구현체 인스턴스 또는 에러 응답
  */
 export function createAuthProvider(
   type: AuthProviderType, 
   config: AuthProviderConfig, 
   httpClient: HttpClient,
-  apiConfig: ApiConfig
+  apiConfig: ApiConfig,
+  platform: ClientPlatformType = 'web'
 ): AuthProviderFactoryResult {
   try {
     switch (type) {
       case 'email':
-        return new EmailAuthProvider(config, httpClient, apiConfig);
+        return new EmailAuthProvider(config, httpClient, apiConfig, platform);
       case 'google':
         // Google 제공자의 경우 GoogleAuthProviderConfig가 필요
         if (!isGoogleAuthProviderConfig(config)) {
@@ -47,7 +49,7 @@ export function createAuthProvider(
             'Google 인증 제공자를 생성하려면 googleClientId 설정이 필요합니다.'
           );
         }
-        return new GoogleAuthProvider(config, httpClient, apiConfig);
+        return new GoogleAuthProvider(config, httpClient, apiConfig, platform);
       default:
         return createErrorResponse(
           `지원하지 않는 인증 제공자입니다: ${type}`,

@@ -24,21 +24,24 @@ export interface EmailVerificationConfirmResponse extends SuccessResponse<void> 
 export interface EmailLoginRequest extends BaseRequest {
   email: string;
   verifyCode: string;
+  deviceId?: string; // 모바일용 디바이스 ID (선택적)
 }
 
 // OAuth 로그인 요청 DTO (모든 소셜 로그인 통합)
 export interface OAuthLoginRequest extends BaseRequest {
   authCode: string;        // 모든 OAuth에서 공통으로 사용
+  codeVerifier?: string;   // PKCE 검증용 코드 (웹에서 사용)
   redirectUri?: string;    // OAuth 리다이렉트 URI (선택적)
+  deviceId?: string;       // 모바일용 디바이스 ID (선택적)
 }
 
 // 통합 로그인 요청 DTO (유니온 타입)
 export type LoginRequest = EmailLoginRequest | OAuthLoginRequest;
 
-// 백엔드 로그인 응답 데이터 구조
+// 백엔드 로그인 응답 데이터 구조 (플랫폼 통일)
 export interface LoginResponseData {
-  accessToken: string;
-  refreshToken: string;
+  accessToken: string;     // 응답 바디로 받음 (웹/모바일 공통)
+  refreshToken: string | null; // 웹: null (쿠키로 받음), 모바일: 실제 토큰 값
   expiredAt?: number;
   userInfo: UserInfo;
 }
@@ -46,19 +49,25 @@ export interface LoginResponseData {
 // 로그인 응답 DTO
 export interface LoginResponse extends SuccessResponse<LoginResponseData> {}
 
-// 로그아웃 요청 DTO
+// 로그아웃 요청 DTO (플랫폼별 처리)
 export interface LogoutRequest extends BaseRequest {
-  refreshToken?: string; // 선택적 필드 (AuthManager에서 자동으로 채움)
+  // 웹: refreshToken은 쿠키에서 자동으로 추출됨 (요청 바디에 포함되지 않음)
+  // 모바일: refreshToken을 바디에 포함해서 전송
+  refreshToken?: string;   // 모바일용 (앱에서는 바디에 포함)
+  deviceId?: string;       // 모바일용 디바이스 ID (선택적)
 }
 
 // 로그아웃 응답 DTO
 export interface LogoutResponse extends SuccessResponse<void> {
+  refreshToken?: string;   // 모바일용 (앱에서는 바디에 포함)
   // SuccessResponse의 success: true, message, data 필드를 상속받음
 }
 
 // 토큰 갱신 요청 DTO
 export interface RefreshTokenRequest extends BaseRequest {
-  refreshToken: string;
+  // refreshToken은 쿠키로 전송됨 (바디에 포함하지 않음)
+  deviceId?: string;       // 모바일용 디바이스 ID (선택적)
+  refreshToken?: string;   // 모바일용 (앱에서는 바디에 포함)
 }
 
 // 토큰 갱신 응답 DTO

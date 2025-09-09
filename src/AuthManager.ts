@@ -36,6 +36,7 @@ export interface AuthManagerConfig {
   tokenStore?: TokenStore; // 직접 TokenStore 인스턴스 제공 (선택사항)
   tokenStoreType?: 'web' | 'mobile' | 'fake'; // TokenStore 타입으로 팩토리에서 생성 (선택사항)
   providerConfig?: any; // Provider별 추가 설정 (Google의 경우 googleClientId 등)
+  platform?: 'web' | 'app'; // 클라이언트 플랫폼 타입 (기본값: 'web')
 }
 
 export class AuthManager {
@@ -67,8 +68,9 @@ export class AuthManager {
   private createProvider(providerType: 'email' | 'google' | 'fake', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
     // Provider 팩토리 로직 (apiConfig 주입)
     const config = this.config.providerConfig || { timeout: 10000, retryCount: 3 }; // providerConfig 우선, 없으면 기본 설정
+    const platform = this.config.platform || 'web'; // 플랫폼 기본값: 'web'
     
-    const result = createAuthProvider(providerType, config, httpClient, apiConfig);
+    const result = createAuthProvider(providerType, config, httpClient, apiConfig, platform);
     
     // 타입 가드를 사용한 안전한 에러 처리
     if (isAuthProviderFactoryError(result)) {
@@ -201,10 +203,11 @@ export class AuthManager {
       const loginResponse = await this.provider.login(processedRequest);
       
       if (loginResponse.success && loginResponse.data?.accessToken) {
-        // ⑤ 로그인 성공 시 토큰 저장
+        // ⑤ 로그인 성공 시 토큰 저장 (쿠키 기반)
         const token: Token = {
           accessToken: loginResponse.data.accessToken,
-          refreshToken: loginResponse.data.refreshToken,
+          // refreshToken은 쿠키로 관리되므로 토큰 스토어에는 빈 문자열로 설정
+          refreshToken: '',
           expiredAt: loginResponse.data.expiredAt
         };
         const saveResult = await this.tokenStore.saveToken(token);
@@ -278,14 +281,17 @@ export class AuthManager {
    * @returns Provider별 형식으로 변환된 요청
    */
   private processSocialLoginRequest(request: any): any {
-    const { provider, authCode, redirectUri } = request;
+    const { provider, authCode, redirectUri, codeVerifier } = request;
     
     // 모든 OAuth Provider는 동일한 형식 사용
-    return {
+    const processedRequest = {
       provider: provider,
       authCode: authCode,
-      redirectUri: redirectUri
+      redirectUri: redirectUri,
+      codeVerifier: codeVerifier  // ✅ codeVerifier 추가
     };
+    
+    return processedRequest;
   }
 
   /**
@@ -295,25 +301,20 @@ export class AuthManager {
    */
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
     try {
-      // 저장된 토큰 가져오기
-      const tokenResult = await this.tokenStore.getToken();
-      if (!tokenResult.success || !tokenResult.data) {
-        return createErrorResponse('저장된 토큰이 없습니다.');
-      }
+      // 플랫폼별 로그아웃 처리
+      const platform = this.config.platform || 'web';
+      let logoutRequest = { ...request };
       
-      // refreshToken이 있는지 확인
-      if (!tokenResult.data.refreshToken) {
-        return createErrorResponse('리프레시 토큰이 없습니다.');
+      // 모바일 앱인 경우 저장된 refreshToken을 request에 추가
+      if (platform === 'app') {
+        const tokenResult = await this.tokenStore.getToken();
+        if (tokenResult.success && tokenResult.data?.refreshToken) {
+          logoutRequest.refreshToken = tokenResult.data.refreshToken;
+        }
       }
-      
-      // refreshToken을 request에 추가 (API 호출용)
-      const logoutRequestWithRefreshToken: LogoutRequest = {
-        ...request,
-        refreshToken: tokenResult.data.refreshToken
-      };
       
       // ⑦ 로그아웃 시도 (누가? 전달받은 provider가!)
-      const logoutResponse = await this.provider.logout(logoutRequestWithRefreshToken);
+      const logoutResponse = await this.provider.logout(logoutRequest);
       
       if (logoutResponse.success) {
         // ⑧ 로그아웃 성공 시 저장된 토큰 삭제

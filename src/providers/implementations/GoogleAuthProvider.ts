@@ -2,7 +2,7 @@
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig, GoogleAuthProviderConfig } from '../interfaces/config/auth-config';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
-import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
+import { Token, UserInfo, BaseResponse, ApiConfig, ClientPlatformType } from '../../shared/types';
 import {
   LoginRequest,
   LogoutRequest,
@@ -32,12 +32,14 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   readonly config: GoogleAuthProviderConfig;
   private httpClient: HttpClient;
   private apiConfig: ApiConfig;
+  private platform: ClientPlatformType;
 
-  constructor(config: GoogleAuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
+  constructor(config: GoogleAuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig, platform: ClientPlatformType = 'web') {
     super();
     this.config = config;
     this.httpClient = httpClient;
     this.apiConfig = apiConfig;
+    this.platform = platform;
   }
 
   async login(request: LoginRequest): Promise<LoginApiResponse> {
@@ -50,21 +52,21 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
     }
 
     // authCode를 직접 사용하여 백엔드 API 호출
-    const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, request);
+    const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;
   }
 
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
-    const apiResponse = await logoutByGoogle(this.httpClient, this.apiConfig, request);
+    const apiResponse = await logoutByGoogle(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse> {
-    const apiResponse = await refreshTokenByGoogle(this.httpClient, this.apiConfig, request);
+    const apiResponse = await refreshTokenByGoogle(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;

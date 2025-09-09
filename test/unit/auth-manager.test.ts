@@ -191,8 +191,8 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
        const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
        await manager.login(loginRequest);
 
-      // When: 토큰 갱신
-      const refreshResult = await manager.refreshToken({ refreshToken: 'fake-refresh-token-123', provider: 'email' as const });
+      // When: 토큰 갱신 (쿠키 기반)
+      const refreshResult = await manager.refreshToken({ provider: 'email' as const });
 
              // Then: 새로운 액세스 토큰 발급
        expect(refreshResult.success).toBe(true);
@@ -209,12 +209,28 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
        }
     });
 
-    it('유효하지 않은 리프레시 토큰으로 갱신 시도 시 실패', async () => {
-      // Given: 잘못된 리프레시 토큰
-      const invalidRefreshToken = 'invalid-refresh-token';
+    it('로그인되지 않은 상태에서 토큰 갱신 시도 시 실패 (쿠키 기반)', async () => {
+      // Given: 로그인되지 않은 상태 (초기 상태)
+      expect(fakeProvider.getCurrentState().isLoggedIn).toBe(false);
 
-      // When & Then: 갱신 실패 확인
-      const result = await manager.refreshToken({ refreshToken: invalidRefreshToken, provider: 'email' as const });
+      // When & Then: 갱신 실패 확인 (쿠키 기반)
+      const result = await manager.refreshToken({ provider: 'email' as const });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.message).toContain('리프레시 토큰이 유효하지 않습니다');
+      }
+    });
+
+    it('로그아웃 후 토큰 갱신 시도 시 실패 (쿠키 기반)', async () => {
+      // Given: 로그인 후 로그아웃
+      await manager.requestEmailVerification({ email: 'test@example.com' });
+      await manager.verifyEmail({ email: 'test@example.com', verifyCode: '123456' });
+      const loginRequest = { email: 'test@example.com', verifyCode: '123456', provider: 'email' as const };
+      await manager.login(loginRequest);
+      await manager.logout({ provider: 'email' as const });
+
+      // When & Then: 로그아웃 후 갱신 실패 확인
+      const result = await manager.refreshToken({ provider: 'email' as const });
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.message).toContain('리프레시 토큰이 유효하지 않습니다');
@@ -258,7 +274,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       }
     });
 
-    it('토큰이 없는 상태에서 로그아웃 시도 시 에러 처리', async () => {
+    it('토큰이 없는 상태에서 로그아웃 시도 시 성공 처리 (쿠키 기반)', async () => {
       // Given: 토큰이 없는 상태 (초기 상태)
       const tokenResult = await manager.getToken();
       expect(tokenResult.success).toBe(true);
@@ -269,10 +285,10 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
       // When: 로그아웃 실행
       const logoutResult = await manager.logout({ provider: 'email' as const });
 
-      // Then: 로그아웃 실패 (저장된 토큰이 없음)
-      expect(logoutResult.success).toBe(false);
-      if (!logoutResult.success) {
-        expect(logoutResult.message).toContain('저장된 토큰이 없습니다');
+      // Then: 쿠키 기반 로그아웃에서는 토큰이 없어도 성공 처리
+      expect(logoutResult.success).toBe(true);
+      if (logoutResult.success) {
+        expect(logoutResult.message).toContain('로그아웃');
       }
     });
   });
@@ -437,8 +453,8 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         expect(isAuth.data).toBe(true);
       }
 
-      // 6. 토큰 갱신
-      const refreshResult = await manager.refreshToken({ refreshToken: 'fake-refresh-token-123', provider: 'email' as const });
+      // 6. 토큰 갱신 (쿠키 기반)
+      const refreshResult = await manager.refreshToken({ provider: 'email' as const });
       expect(refreshResult.success).toBe(true);
 
       // 7. 로그아웃
@@ -529,7 +545,7 @@ describe('AuthManager (단위 테스트 - 백엔드 없음)', () => {
         message: 'Google 로그인 성공',
         data: {
           accessToken: 'google-access-token',
-          refreshToken: 'google-refresh-token',
+          // refreshToken은 쿠키로 관리되므로 응답에 포함하지 않음
           expiredAt: Math.floor(Date.now() / 1000) + 3600,
           userInfo: {
             id: 'google-user-123',

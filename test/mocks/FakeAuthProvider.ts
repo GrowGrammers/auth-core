@@ -78,7 +78,7 @@ export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
         message: '로그인 성공',
         data: {
           accessToken: this.currentToken!.accessToken,
-          refreshToken: this.currentToken!.refreshToken || '',
+          // refreshToken은 쿠키로 관리되므로 응답에 포함하지 않음
           expiredAt: this.currentToken!.expiredAt,
           userInfo: this.currentUser!
         }
@@ -111,7 +111,9 @@ export class FakeAuthProvider implements ILoginProvider, IEmailVerifiable {
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse> {
-    if (request.refreshToken !== 'fake-refresh-token-123') {
+    // 쿠키 기반 인증에서는 request에 refreshToken이 포함되지 않음
+    // 대신 로그인 상태를 확인하여 갱신 가능 여부를 판단
+    if (!this.isLoggedIn || !this.currentToken) {
       return {
         success: false,
         message: '리프레시 토큰이 유효하지 않습니다.',

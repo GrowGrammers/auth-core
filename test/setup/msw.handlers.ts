@@ -58,8 +58,8 @@ export const handlers = [
       }, { status: 404 });
     }
     
-    // 인증 코드 생성 및 저장
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // 인증 코드 생성 및 저장 (테스트용으로 고정값 사용)
+    const verificationCode = '123456';
     verificationCodes.set(body.email, verificationCode);
     
     // 테스트 환경에서는 콘솔에 인증 코드 출력 (실제로는 이메일로 전송)
@@ -154,12 +154,14 @@ export const handlers = [
       }, { status: 401 });
     }
     
+    // 쿠키 기반 로그인 응답
+    const refreshToken = generateRandomToken('mock-refresh-token');
     return HttpResponse.json({
       success: true,
       message: '로그인에 성공했습니다.',
       data: {
         accessToken: generateRandomToken('mock-access-token'),
-        refreshToken: generateRandomToken('mock-refresh-token'),
+        // refreshToken은 쿠키로 전송되므로 응답 바디에 포함하지 않음
         expiredAt: generateExpiredAt(),
         userInfo: {
           id: 'user-123',
@@ -167,6 +169,10 @@ export const handlers = [
           nickname: '테스트 사용자',
           provider: 'email'
         }
+      }
+    }, {
+      headers: {
+        'Set-Cookie': `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=Strict`
       }
     });
   }),
@@ -201,12 +207,13 @@ export const handlers = [
     const googleAccessToken = generateRandomToken('google-access-token');
     const googleRefreshToken = generateRandomToken('google-refresh-token');
 
+    // 쿠키 기반 구글 로그인 응답
     return HttpResponse.json({
       success: true,
       message: '구글 로그인에 성공했습니다.',
       data: {
         accessToken: googleAccessToken,
-        refreshToken: googleRefreshToken,
+        // refreshToken은 쿠키로 전송되므로 응답 바디에 포함하지 않음
         expiredAt: generateExpiredAt(),
         userInfo: {
           id: 'google-user-123',
@@ -214,6 +221,10 @@ export const handlers = [
           nickname: '구글 사용자',
           provider: 'google'
         }
+      }
+    }, {
+      headers: {
+        'Set-Cookie': `refreshToken=${googleRefreshToken}; HttpOnly; Secure; SameSite=Strict`
       }
     });
   }),

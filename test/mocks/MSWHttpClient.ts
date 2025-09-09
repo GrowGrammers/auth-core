@@ -14,6 +14,7 @@ export class MSWHttpClient implements HttpClient {
           ...headers,
         },
         body: body ? JSON.stringify(body) : undefined,
+        credentials: 'include', // 쿠키 기반 인증을 위해 자격 증명 포함
       });
 
       const responseData = await response.json();
@@ -24,7 +25,7 @@ export class MSWHttpClient implements HttpClient {
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
         text: async () => responseData,
-        json: async () => responseData
+        json: async () => responseData,
       };
       
     } catch (error) {
@@ -39,7 +40,7 @@ export class MSWHttpClient implements HttpClient {
           message: error instanceof Error ? error.message : '알 수 없는 오류',
           data: null,
           error: error instanceof Error ? error.message : '알 수 없는 오류'
-        })
+        }),
       };
     }
   }

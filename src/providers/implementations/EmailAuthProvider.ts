@@ -1,5 +1,5 @@
 // 이메일 로그인 구현 - API 호출 로직이 외부 모듈로 분리된 버전
-import { Token, UserInfo, ApiConfig } from '../../shared/types';
+import { Token, UserInfo, ApiConfig, ClientPlatformType } from '../../shared/types';
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig } from '../interfaces/config/auth-config';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
@@ -36,30 +36,32 @@ export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvide
   readonly config: AuthProviderConfig;
   private httpClient: HttpClient;
   private apiConfig: ApiConfig;
+  private platform: ClientPlatformType;
 
-  constructor(config: AuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
+  constructor(config: AuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig, platform: ClientPlatformType = 'web') {
     super();
     this.config = config;
     this.httpClient = httpClient;
     this.apiConfig = apiConfig;
+    this.platform = platform;
   }
 
   async login(request: LoginRequest): Promise<LoginApiResponse> {
-    const apiResponse = await loginByEmail(this.httpClient, this.apiConfig, request);
+    const apiResponse = await loginByEmail(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;
   }
 
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
-    const apiResponse = await logoutByEmail(this.httpClient, this.apiConfig, request);
+    const apiResponse = await logoutByEmail(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse> {
-    const apiResponse = await refreshTokenByEmail(this.httpClient, this.apiConfig, request);
+    const apiResponse = await refreshTokenByEmail(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;
