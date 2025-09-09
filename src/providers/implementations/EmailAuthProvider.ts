@@ -54,7 +54,7 @@ export class EmailAuthProvider extends BaseAuthProvider implements ILoginProvide
   }
 
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
-    const apiResponse = await logoutByEmail(this.httpClient, this.apiConfig, request);
+    const apiResponse = await logoutByEmail(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;

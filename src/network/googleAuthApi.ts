@@ -67,24 +67,37 @@ export async function loginByGoogle(
 export async function logoutByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
-  request: LogoutRequest
+  request: LogoutRequest,
+  platform: ClientPlatformType = 'web'
 ): Promise<LogoutApiResponse> {
   try {
-    // 요청 바디 구성 (deviceId가 있는 경우에만 포함)
+    // 요청 바디 구성 (플랫폼별 처리)
     let requestBody: any = undefined;
-    if (request.deviceId) {
-      requestBody = { deviceId: request.deviceId };
+    
+    if (platform === 'app') {
+      // 모바일: refreshToken과 deviceId를 바디에 포함
+      requestBody = {};
+      if (request.refreshToken) {
+        requestBody.refreshToken = request.refreshToken;
+      }
+      if (request.deviceId) {
+        requestBody.deviceId = request.deviceId;
+      }
+    } else {
+      // 웹: deviceId만 포함 (refreshToken은 쿠키로 전송)
+      if (request.deviceId) {
+        requestBody = { deviceId: request.deviceId };
+      }
     }
 
-    // 쿠키 기반 로그아웃: 쿠키를 헤더로 전송 (백엔드에서 쿠키에서 refreshToken 추출)
+    // 플랫폼별 구글 로그아웃 요청
     const response = await makeRequestWithRetry(
       httpClient, 
       config, 
       config.endpoints.googleLogout,  // logout → googleLogout으로 변경
       {
         method: 'POST',
-        // 쿠키는 브라우저가 자동으로 전송하므로 별도 설정 불필요
-        // body에 refreshToken을 포함하지 않음, deviceId만 선택적으로 포함
+        // 웹: 쿠키는 브라우저가 자동으로 전송, 모바일: refreshToken을 바디에 포함
         body: requestBody
       }
     );

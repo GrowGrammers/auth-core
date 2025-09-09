@@ -18,6 +18,7 @@ import {
 import { ILoginProvider } from '../interfaces';
 import {
   loginByGoogle,
+  logoutByGoogle,
   refreshTokenByGoogle
 } from '../../network';
 import { 
@@ -58,13 +59,10 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   }
 
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
-    // 소셜 로그아웃은 클라이언트단에서만 처리 (백엔드 요청 없음)
-    // 토큰 파기는 AuthManager에서 수행
-    return {
-      success: true,
-      message: '구글 로그아웃이 완료되었습니다.',
-      data: undefined
-    };
+    const apiResponse = await logoutByGoogle(this.httpClient, this.apiConfig, request, this.platform);
+    
+    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
+    return apiResponse;
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse> {

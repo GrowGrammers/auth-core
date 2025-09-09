@@ -298,9 +298,20 @@ export class AuthManager {
    */
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
     try {
-      // 쿠키 기반 로그아웃: refreshToken은 쿠키에서 자동으로 전송되므로 별도 처리 불필요
+      // 플랫폼별 로그아웃 처리
+      const platform = this.config.platform || 'web';
+      let logoutRequest = { ...request };
+      
+      // 모바일 앱인 경우 저장된 refreshToken을 request에 추가
+      if (platform === 'app') {
+        const tokenResult = await this.tokenStore.getToken();
+        if (tokenResult.success && tokenResult.data?.refreshToken) {
+          logoutRequest.refreshToken = tokenResult.data.refreshToken;
+        }
+      }
+      
       // ⑦ 로그아웃 시도 (누가? 전달받은 provider가!)
-      const logoutResponse = await this.provider.logout(request);
+      const logoutResponse = await this.provider.logout(logoutRequest);
       
       if (logoutResponse.success) {
         // ⑧ 로그아웃 성공 시 저장된 토큰 삭제

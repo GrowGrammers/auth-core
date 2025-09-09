@@ -48,14 +48,17 @@ export interface LoginResponseData {
 // 로그인 응답 DTO
 export interface LoginResponse extends SuccessResponse<LoginResponseData> {}
 
-// 로그아웃 요청 DTO (쿠키 기반)
+// 로그아웃 요청 DTO (플랫폼별 처리)
 export interface LogoutRequest extends BaseRequest {
-  // refreshToken은 쿠키에서 자동으로 추출됨 (요청 바디에 포함되지 않음)
+  // 웹: refreshToken은 쿠키에서 자동으로 추출됨 (요청 바디에 포함되지 않음)
+  // 모바일: refreshToken을 바디에 포함해서 전송
+  refreshToken?: string;   // 모바일용 (앱에서는 바디에 포함)
   deviceId?: string;       // 모바일용 디바이스 ID (선택적)
 }
 
 // 로그아웃 응답 DTO
 export interface LogoutResponse extends SuccessResponse<void> {
+  refreshToken?: string;   // 모바일용 (앱에서는 바디에 포함)
   // SuccessResponse의 success: true, message, data 필드를 상속받음
 }
 
