@@ -1,5 +1,5 @@
 // Google OAuth 인증 API 구현
-import { ApiConfig, Token, UserInfo } from '../shared/types';
+import { ApiConfig, Token, UserInfo, ClientPlatformType } from '../shared/types';
 import { HttpClient } from './interfaces/HttpClient';
 import { 
   LoginRequest, 
@@ -15,15 +15,16 @@ import {
 } from '../providers/interfaces/dtos/auth.dto';
 
 import { createErrorResponse, createValidationErrorResponse, createNetworkErrorResponse } from '../shared/utils/errorUtils';
-import { makeRequest, makeRequestWithRetry, handleHttpResponse, createToken, createUserInfo } from './utils/httpUtils';
+import { makeRequest, makeRequestWithRetry, handleHttpResponse, createToken, createUserInfo, createPlatformHeaders } from './utils/httpUtils';
 
 /**
- * Google OAuth 로그인
+ * Google OAuth 로그인 (플랫폼별 처리)
  */
 export async function loginByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
-  request: LoginRequest
+  request: LoginRequest,
+  platform: ClientPlatformType = 'web'
 ): Promise<LoginApiResponse> {
   try {
     // Google 로그인 요청 타입 가드
@@ -36,13 +37,22 @@ export async function loginByGoogle(
       return createValidationErrorResponse('구글 인증 코드');
     }
 
+    // 플랫폼별 요청 바디 구성
+    const requestBody: any = { authCode: request.authCode };
+    
+    // 모바일의 경우 deviceId 추가
+    if (platform === 'app' && 'deviceId' in request && request.deviceId) {
+      requestBody.deviceId = request.deviceId;
+    }
+
     const response = await makeRequestWithRetry(
       httpClient, 
       config, 
       config.endpoints.googleLogin,  // login → googleLogin으로 변경
       {
         method: 'POST',
-        body: { authCode: request.authCode }
+        headers: createPlatformHeaders(platform),
+        body: requestBody
       }
     );
 
@@ -60,6 +70,12 @@ export async function logoutByGoogle(
   request: LogoutRequest
 ): Promise<LogoutApiResponse> {
   try {
+    // 요청 바디 구성 (deviceId가 있는 경우에만 포함)
+    let requestBody: any = undefined;
+    if (request.deviceId) {
+      requestBody = { deviceId: request.deviceId };
+    }
+
     // 쿠키 기반 로그아웃: 쿠키를 헤더로 전송 (백엔드에서 쿠키에서 refreshToken 추출)
     const response = await makeRequestWithRetry(
       httpClient, 
@@ -68,7 +84,8 @@ export async function logoutByGoogle(
       {
         method: 'POST',
         // 쿠키는 브라우저가 자동으로 전송하므로 별도 설정 불필요
-        // body에 refreshToken을 포함하지 않음
+        // body에 refreshToken을 포함하지 않음, deviceId만 선택적으로 포함
+        body: requestBody
       }
     );
 
@@ -83,17 +100,32 @@ export async function logoutByGoogle(
 export async function refreshTokenByGoogle(
   httpClient: HttpClient,
   config: ApiConfig,
-  request: RefreshTokenRequest
+  request: RefreshTokenRequest,
+  platform: ClientPlatformType = 'web'
 ): Promise<RefreshTokenApiResponse> {
   try {
+    let requestBody: any = {};
+
+    // 모바일의 경우 refreshToken과 deviceId를 바디에 포함
+    if (platform === 'app') {
+      if (!request.refreshToken) {
+        return createErrorResponse('모바일에서는 refreshToken이 필요합니다.');
+      }
+      requestBody.refreshToken = request.refreshToken;
+      
+      if (request.deviceId) {
+        requestBody.deviceId = request.deviceId;
+      }
+    }
+
     const response = await makeRequestWithRetry(
       httpClient, 
       config, 
       config.endpoints.googleRefresh,  // refresh → googleRefresh으로 변경
       {
         method: 'POST',
-        // refreshToken은 쿠키로 전송되므로 body 없음
-        // credentials: 'include'는 HttpClient에서 공통 적용됨
+        headers: createPlatformHeaders(platform),
+        body: platform === 'app' ? requestBody : undefined // 웹은 body 없음 (쿠키 사용)
       }
     );
 

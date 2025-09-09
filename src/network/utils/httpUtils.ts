@@ -1,5 +1,5 @@
 // 인증 관련 네트워크 요청을 구성·처리하는 유틸 함수 모음
-import { ApiConfig, RequestOptions, Token, UserInfo, AuthProviderType, ErrorResponse, SuccessResponse } from '../../shared/types';
+import { ApiConfig, RequestOptions, Token, UserInfo, AuthProviderType, ErrorResponse, SuccessResponse, ClientPlatformType } from '../../shared/types';
 import { HttpClient, HttpRequestConfig, HttpResponse } from '../interfaces/HttpClient';
 
 /**
@@ -127,5 +127,16 @@ export function createUserInfo(data: { id: string; email: string; name: string }
     email: data.email,
     nickname: data.name,
     provider
+  };
+}
+
+/**
+ * 플랫폼별 헤더 생성 함수
+ */
+export function createPlatformHeaders(platform: ClientPlatformType, additionalHeaders?: Record<string, string>): Record<string, string> {
+  return {
+    'X-Client-Type': platform,
+    'Content-Type': 'application/json',
+    ...additionalHeaders,
   };
 } 

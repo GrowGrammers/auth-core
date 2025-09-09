@@ -36,6 +36,7 @@ export interface AuthManagerConfig {
   tokenStore?: TokenStore; // 직접 TokenStore 인스턴스 제공 (선택사항)
   tokenStoreType?: 'web' | 'mobile' | 'fake'; // TokenStore 타입으로 팩토리에서 생성 (선택사항)
   providerConfig?: any; // Provider별 추가 설정 (Google의 경우 googleClientId 등)
+  platform?: 'web' | 'app'; // 클라이언트 플랫폼 타입 (기본값: 'web')
 }
 
 export class AuthManager {
@@ -67,8 +68,9 @@ export class AuthManager {
   private createProvider(providerType: 'email' | 'google' | 'fake', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
     // Provider 팩토리 로직 (apiConfig 주입)
     const config = this.config.providerConfig || { timeout: 10000, retryCount: 3 }; // providerConfig 우선, 없으면 기본 설정
+    const platform = this.config.platform || 'web'; // 플랫폼 기본값: 'web'
     
-    const result = createAuthProvider(providerType, config, httpClient, apiConfig);
+    const result = createAuthProvider(providerType, config, httpClient, apiConfig, platform);
     
     // 타입 가드를 사용한 안전한 에러 처리
     if (isAuthProviderFactoryError(result)) {

@@ -2,7 +2,7 @@
 import { HttpClient } from '../../network/interfaces/HttpClient';
 import { AuthProviderConfig, GoogleAuthProviderConfig } from '../interfaces/config/auth-config';
 import { BaseAuthProvider } from '../base/BaseAuthProvider';
-import { Token, UserInfo, BaseResponse, ApiConfig } from '../../shared/types';
+import { Token, UserInfo, BaseResponse, ApiConfig, ClientPlatformType } from '../../shared/types';
 import {
   LoginRequest,
   LogoutRequest,
@@ -18,7 +18,6 @@ import {
 import { ILoginProvider } from '../interfaces';
 import {
   loginByGoogle,
-  logoutByGoogle,
   refreshTokenByGoogle
 } from '../../network';
 import { 
@@ -32,12 +31,14 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
   readonly config: GoogleAuthProviderConfig;
   private httpClient: HttpClient;
   private apiConfig: ApiConfig;
+  private platform: ClientPlatformType;
 
-  constructor(config: GoogleAuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig) {
+  constructor(config: GoogleAuthProviderConfig, httpClient: HttpClient, apiConfig: ApiConfig, platform: ClientPlatformType = 'web') {
     super();
     this.config = config;
     this.httpClient = httpClient;
     this.apiConfig = apiConfig;
+    this.platform = platform;
   }
 
   async login(request: LoginRequest): Promise<LoginApiResponse> {
@@ -50,21 +51,24 @@ export class GoogleAuthProvider extends BaseAuthProvider implements ILoginProvid
     }
 
     // authCode를 직접 사용하여 백엔드 API 호출
-    const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, request);
+    const apiResponse = await loginByGoogle(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;
   }
 
   async logout(request: LogoutRequest): Promise<LogoutApiResponse> {
-    const apiResponse = await logoutByGoogle(this.httpClient, this.apiConfig, request);
-    
-    // 백엔드 응답을 그대로 반환 (성공/실패 모두)
-    return apiResponse;
+    // 소셜 로그아웃은 클라이언트단에서만 처리 (백엔드 요청 없음)
+    // 토큰 파기는 AuthManager에서 수행
+    return {
+      success: true,
+      message: '구글 로그아웃이 완료되었습니다.',
+      data: undefined
+    };
   }
 
   async refreshToken(request: RefreshTokenRequest): Promise<RefreshTokenApiResponse> {
-    const apiResponse = await refreshTokenByGoogle(this.httpClient, this.apiConfig, request);
+    const apiResponse = await refreshTokenByGoogle(this.httpClient, this.apiConfig, request, this.platform);
     
     // 백엔드 응답을 그대로 반환 (성공/실패 모두)
     return apiResponse;

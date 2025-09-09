@@ -17,7 +17,7 @@ import {
   EmailVerificationConfirmRequest,
   EmailVerificationConfirmApiResponse
 } from '../providers/interfaces/dtos/auth.dto';
-import { makeRequest, makeRequestWithRetry, handleHttpResponse, createToken, createUserInfo } from './utils/httpUtils';
+import { makeRequest, makeRequestWithRetry, handleHttpResponse, createToken, createUserInfo, createPlatformHeaders } from './utils/httpUtils';
 import { 
   createErrorResponse, 
   createNetworkErrorResponse, 
@@ -27,7 +27,7 @@ import {
   createServiceAvailabilityErrorResponse,
   createServerErrorResponse
 } from '../shared/utils';
-import { Token, UserInfo } from '../shared/types';
+import { Token, UserInfo, ClientPlatformType } from '../shared/types';
 
 /**
  * 이메일 인증번호 요청
@@ -87,12 +87,13 @@ export async function verifyEmail(
 }
 
 /**
- * 이메일 로그인
+ * 이메일 로그인 (플랫폼별 처리)
  */
 export async function loginByEmail(
   httpClient: HttpClient,
   config: ApiConfig,
-  request: LoginRequest
+  request: LoginRequest,
+  platform: ClientPlatformType = 'web'
 ): Promise<LoginApiResponse> {
   try {
     // 타입 가드로 이메일 로그인 요청인지 확인
@@ -110,12 +111,21 @@ export async function loginByEmail(
       return createErrorResponse('인증번호가 필요합니다.');
     }
 
+    // 플랫폼별 요청 바디 구성
+    const requestBody: any = {
+      email: emailRequest.email,
+      verifyCode: emailRequest.verifyCode
+    };
+
+    // 모바일의 경우 deviceId 추가
+    if (platform === 'app' && emailRequest.deviceId) {
+      requestBody.deviceId = emailRequest.deviceId;
+    }
+
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.login, {
       method: 'POST',
-      body: {
-        email: emailRequest.email,
-        verifyCode: emailRequest.verifyCode
-      }
+      headers: createPlatformHeaders(platform),
+      body: requestBody
     });
 
     const data = await handleHttpResponse<LoginApiResponse>(response, '로그인에 실패했습니다.');
@@ -135,11 +145,18 @@ export async function logoutByEmail(
   request: LogoutRequest
 ): Promise<LogoutApiResponse> {
   try {
+    // 요청 바디 구성 (deviceId가 있는 경우에만 포함)
+    let requestBody: any = undefined;
+    if (request.deviceId) {
+      requestBody = { deviceId: request.deviceId };
+    }
+
     // 쿠키 기반 로그아웃: 쿠키를 헤더로 전송 (백엔드에서 쿠키에서 refreshToken 추출)
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.logout, {
       method: 'POST',
       // 쿠키는 브라우저가 자동으로 전송하므로 별도 설정 불필요
-      // body에 refreshToken을 포함하지 않음
+      // body에 refreshToken을 포함하지 않음, deviceId만 선택적으로 포함
+      body: requestBody
     });
 
     const data = await handleHttpResponse<LogoutApiResponse>(response, '로그아웃에 실패했습니다.');
@@ -151,19 +168,34 @@ export async function logoutByEmail(
 }
 
 /**
- * 토큰 갱신
- * refreshToken은 쿠키로 전송되므로 요청 바디에 포함하지 않음
+ * 토큰 갱신 (플랫폼별 처리)
+ * 웹: refreshToken은 쿠키로 전송, 모바일: refreshToken은 바디에 포함
  */
 export async function refreshTokenByEmail(
   httpClient: HttpClient,
   config: ApiConfig,
-  request: RefreshTokenRequest
+  request: RefreshTokenRequest,
+  platform: ClientPlatformType = 'web'
 ): Promise<RefreshTokenApiResponse> {
   try {
+    let requestBody: any = {};
+
+    // 모바일의 경우 refreshToken과 deviceId를 바디에 포함
+    if (platform === 'app') {
+      if (!request.refreshToken) {
+        return createErrorResponse('모바일에서는 refreshToken이 필요합니다.');
+      }
+      requestBody.refreshToken = request.refreshToken;
+      
+      if (request.deviceId) {
+        requestBody.deviceId = request.deviceId;
+      }
+    }
+
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.refresh, {
       method: 'POST',
-      // refreshToken은 쿠키로 전송되므로 body 없음
-      // credentials: 'include'는 HttpClient에서 공통 적용됨
+      headers: createPlatformHeaders(platform),
+      body: platform === 'app' ? requestBody : undefined // 웹은 body 없음 (쿠키 사용)
     });
 
     const data = await handleHttpResponse<RefreshTokenApiResponse>(response, '토큰 갱신에 실패했습니다.');
