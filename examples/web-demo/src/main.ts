@@ -325,6 +325,7 @@ class AuthDemo {
       const codeVerifierPreview = codeVerifier.substring(0, 10) + '...' + codeVerifier.substring(codeVerifier.length - 10);
       const codeChallengePreview = codeChallenge.substring(0, 10) + '...' + codeChallenge.substring(codeChallenge.length - 10);
       console.log('🔐 PKCE 생성 완료:');
+      // 추후 제거 (민감 정보)
       console.log('  - code_verifier:', codeVerifierPreview);
       console.log('  - code_challenge:', codeChallengePreview);
       this.updateStatus(`🔐 PKCE 보안 파라미터 생성 완료`, 'info');
@@ -410,7 +411,7 @@ class AuthDemo {
       };
 
       const googleConfig = {
-        googleClientId: 'test-google-client-id',
+        googleClientId: '595978705149-i1ulv09pfsbl60r4us8hpmc090hdmi6f.apps.googleusercontent.com',
         timeout: 10000,
         retryCount: 3
       };

@@ -37,7 +37,6 @@ export class FakeHttpClient implements HttpClient {
       headers: {},
       json: async () => ({}),
       text: async () => '',
-      getCookies: () => []
     };
   }
 
