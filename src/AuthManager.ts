@@ -281,14 +281,17 @@ export class AuthManager {
    * @returns Provider별 형식으로 변환된 요청
    */
   private processSocialLoginRequest(request: any): any {
-    const { provider, authCode, redirectUri } = request;
+    const { provider, authCode, redirectUri, codeVerifier } = request;
     
     // 모든 OAuth Provider는 동일한 형식 사용
-    return {
+    const processedRequest = {
       provider: provider,
       authCode: authCode,
-      redirectUri: redirectUri
+      redirectUri: redirectUri,
+      codeVerifier: codeVerifier  // ✅ codeVerifier 추가
     };
+    
+    return processedRequest;
   }
 
   /**

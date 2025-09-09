@@ -30,6 +30,7 @@ export interface EmailLoginRequest extends BaseRequest {
 // OAuth 로그인 요청 DTO (모든 소셜 로그인 통합)
 export interface OAuthLoginRequest extends BaseRequest {
   authCode: string;        // 모든 OAuth에서 공통으로 사용
+  codeVerifier?: string;   // PKCE 검증용 코드 (웹에서 사용)
   redirectUri?: string;    // OAuth 리다이렉트 URI (선택적)
   deviceId?: string;       // 모바일용 디바이스 ID (선택적)
 }
