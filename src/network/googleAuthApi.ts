@@ -40,6 +40,11 @@ export async function loginByGoogle(
     // 플랫폼별 요청 바디 구성
     const requestBody: any = { authCode: request.authCode };
     
+    // PKCE code verifier 추가 (웹 플랫폼에서 사용)
+    if ('codeVerifier' in request && request.codeVerifier) {
+      requestBody.codeVerifier = request.codeVerifier;
+    }
+    
     // 모바일의 경우 deviceId 추가
     if (platform === 'app' && 'deviceId' in request && request.deviceId) {
       requestBody.deviceId = request.deviceId;
