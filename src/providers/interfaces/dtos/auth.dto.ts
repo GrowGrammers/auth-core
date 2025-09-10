@@ -55,6 +55,7 @@ export interface LogoutRequest extends BaseRequest {
   // 모바일: refreshToken을 바디에 포함해서 전송
   refreshToken?: string;   // 모바일용 (앱에서는 바디에 포함)
   deviceId?: string;       // 모바일용 디바이스 ID (선택적)
+  accessToken?: string;    // Authorization 헤더로 전송 (이메일 로그아웃용)
 }
 
 // 로그아웃 응답 DTO
