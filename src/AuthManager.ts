@@ -219,7 +219,6 @@ export class AuthManager {
       } else {
         // 타입 가드를 통해 error 속성에 안전하게 접근
         const errorMessage = 'error' in loginResponse ? loginResponse.error : '알 수 없는 오류';
-        console.log(`[AuthManager] ${this.provider.providerName} 로그인 실패:`, errorMessage);
       }
       
       return loginResponse;
@@ -305,10 +304,17 @@ export class AuthManager {
       const platform = this.config.platform || 'web';
       let logoutRequest = { ...request };
       
-      // 모바일 앱인 경우 저장된 refreshToken을 request에 추가
-      if (platform === 'app') {
-        const tokenResult = await this.tokenStore.getToken();
-        if (tokenResult.success && tokenResult.data?.refreshToken) {
+      // 저장된 토큰 가져오기
+      const tokenResult = await this.tokenStore.getToken();
+      
+      if (tokenResult.success && tokenResult.data) {
+        // 이메일 로그아웃인 경우에만 accessToken을 헤더로 전달
+        if (this.provider.providerName === 'email' && tokenResult.data.accessToken) {
+          logoutRequest.accessToken = tokenResult.data.accessToken;
+        }
+        
+        // 모바일 앱인 경우 저장된 refreshToken을 request에 추가
+        if (platform === 'app' && tokenResult.data.refreshToken) {
           logoutRequest.refreshToken = tokenResult.data.refreshToken;
         }
       }

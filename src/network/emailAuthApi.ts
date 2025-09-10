@@ -139,6 +139,7 @@ export async function loginByEmail(
 /**
  * 이메일 로그아웃 (플랫폼별 처리)
  * 웹: refreshToken은 쿠키로 전송, 모바일: refreshToken은 바디에 포함
+ * accessToken은 Authorization 헤더로 전송
  */
 export async function logoutByEmail(
   httpClient: HttpClient,
@@ -166,9 +167,16 @@ export async function logoutByEmail(
       }
     }
 
+    // 헤더 구성 (accessToken 포함)
+    const headers = createPlatformHeaders(platform);
+    if (request.accessToken) {
+      headers['Authorization'] = `Bearer ${request.accessToken}`;
+    }
+
     // 플랫폼별 로그아웃 요청
     const response = await makeRequestWithRetry(httpClient, config, config.endpoints.logout, {
       method: 'POST',
+      headers,
       // 웹: 쿠키는 브라우저가 자동으로 전송, 모바일: refreshToken을 바디에 포함
       body: requestBody
     });
