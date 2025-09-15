@@ -5,4 +5,4 @@
 export type AuthProviderType = 'email' | 'google' | 'fake';
 
 // 클라이언트 플랫폼 타입
-export type ClientPlatformType = 'web' | 'app';
+export type ClientPlatformType = 'web' | 'app' | 'react-native';

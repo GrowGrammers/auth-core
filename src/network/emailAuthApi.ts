@@ -268,8 +268,10 @@ export async function getUserInfoByEmail(
     }
 
     const response = await makeRequest(httpClient, config, config.endpoints.me, {
-      method: 'POST',
-      body: { accessToken: token.accessToken }
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token.accessToken}`
+      }
     });
 
     const data = await handleHttpResponse<UserInfoApiResponse>(response, '사용자 정보 조회에 실패했습니다.');

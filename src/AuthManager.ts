@@ -5,6 +5,7 @@ import { Token, ApiConfig } from './shared/types';
 import { createAuthProvider, isAuthProviderFactoryError } from './factories/AuthProviderFactory';
 import { createTokenStore, isTokenStoreFactoryError } from './factories/TokenStoreFactory';
 import { HttpClient } from './network/interfaces/HttpClient';
+import { ReactNativeBridge } from './storage/interfaces/ReactNativeBridge';
 import { 
   EmailVerificationRequest,
   EmailVerificationApiResponse, 
@@ -34,9 +35,13 @@ export interface AuthManagerConfig {
   apiConfig: ApiConfig;
   httpClient: HttpClient;  // HttpClient를 필수로 추가
   tokenStore?: TokenStore; // 직접 TokenStore 인스턴스 제공 (선택사항)
-  tokenStoreType?: 'web' | 'mobile' | 'fake'; // TokenStore 타입으로 팩토리에서 생성 (선택사항)
+  tokenStoreType?: 'web' | 'mobile' | 'react-native' | 'fake'; // TokenStore 타입으로 팩토리에서 생성 (선택사항)
   providerConfig?: any; // Provider별 추가 설정 (Google의 경우 googleClientId 등)
-  platform?: 'web' | 'app'; // 클라이언트 플랫폼 타입 (기본값: 'web')
+  platform?: 'web' | 'app' | 'react-native'; // 클라이언트 플랫폼 타입 (기본값: 'web')
+  
+  // React Native 전용 설정
+  nativeBridge?: ReactNativeBridge; // React Native 네이티브 브릿지 (React Native 플랫폼에서 필수)
+  enableNativeDelegation?: boolean; // 네이티브 위임 활성화 여부 (기본값: false)
 }
 
 export class AuthManager {
@@ -51,6 +56,9 @@ export class AuthManager {
     if (!config.provider && !config.providerType) {
       throw new Error('[AuthManager] provider 또는 providerType 중 하나는 반드시 제공되어야 합니다.');
     }
+
+    // React Native 플랫폼별 설정 검증
+    this.validateReactNativeConfig(config);
 
     // 프로덕션 환경에서 직접 Provider 주입 시 경고
     if (process.env.NODE_ENV === 'production' && config.provider) {
@@ -83,10 +91,50 @@ export class AuthManager {
     return result;
   }
 
-  private createTokenStoreFromType(tokenStoreType?: 'web' | 'mobile' | 'fake'): TokenStore {
+  /**
+   * React Native 플랫폼별 설정 검증
+   */
+  private validateReactNativeConfig(config: AuthManagerConfig): void {
+    const isReactNative = config.platform === 'react-native' || 
+                         config.tokenStoreType === 'react-native' ||
+                         config.enableNativeDelegation;
+
+    if (isReactNative) {
+      // React Native 환경에서는 nativeBridge가 필수
+      if (!config.nativeBridge) {
+        throw new Error('[AuthManager] React Native 플랫폼에서는 nativeBridge가 필수입니다.');
+      }
+
+      // tokenStoreType이 react-native가 아닌 경우 경고
+      if (config.tokenStoreType && config.tokenStoreType !== 'react-native') {
+        console.warn(`[AuthManager] React Native 플랫폼에서는 tokenStoreType을 'react-native'로 설정하는 것을 권장합니다. 현재: ${config.tokenStoreType}`);
+      }
+    }
+
+    // nativeBridge가 제공되었지만 React Native 설정이 없는 경우 경고
+    if (config.nativeBridge && !isReactNative) {
+      console.warn('[AuthManager] nativeBridge가 제공되었지만 React Native 플랫폼 설정이 없습니다. platform을 "react-native"로 설정하는 것을 권장합니다.');
+    }
+  }
+
+  private createTokenStoreFromType(tokenStoreType?: 'web' | 'mobile' | 'react-native' | 'fake'): TokenStore {
     // 지정된 타입이 있으면 해당 타입으로, 없으면 기본값 'fake' 사용
     const type = tokenStoreType || 'fake';
     
+    // React Native 타입인 경우 nativeBridge 전달
+    if (type === 'react-native' || type === 'mobile') {
+      const result = createTokenStore(type, undefined, undefined, this.config.nativeBridge);
+      
+      // 타입 가드를 사용한 안전한 에러 처리
+      if (isTokenStoreFactoryError(result)) {
+        console.error('토큰 저장소 생성 실패:', result.error);
+        throw new Error(result.message);
+      }
+      
+      return result;
+    }
+    
+    // 일반적인 TokenStore 생성
     const result = createTokenStore(type);
     
     // 타입 가드를 사용한 안전한 에러 처리
@@ -450,6 +498,131 @@ export class AuthManager {
       console.error('저장소 초기화 중 오류 발생:', error);
       return createErrorResponseFromException(error, '저장소 초기화 중 오류가 발생했습니다.');
     }
+  }
+
+  // ========================================
+  // React Native 전용 메서드들
+  // ========================================
+
+  /**
+   * 현재 플랫폼이 React Native인지 확인
+   * @returns React Native 플랫폼 여부
+   */
+  isReactNativePlatform(): boolean {
+    return this.config.platform === 'react-native' || 
+           this.config.tokenStoreType === 'react-native' ||
+           !!this.config.nativeBridge;
+  }
+
+  /**
+   * 네이티브 브릿지 상태 확인
+   * React Native 플랫폼에서만 사용 가능
+   * @returns 네이티브 브릿지 상태
+   */
+  async isNativeBridgeHealthy(): Promise<boolean> {
+    if (!this.isReactNativePlatform()) {
+      console.warn('[AuthManager] isNativeBridgeHealthy()는 React Native 플랫폼에서만 사용 가능합니다.');
+      return false;
+    }
+
+    if (!this.config.nativeBridge) {
+      return false;
+    }
+
+    // ReactNativeTokenStore의 isNativeBridgeHealthy 메서드 활용
+    if ('isNativeBridgeHealthy' in this.tokenStore) {
+      return await (this.tokenStore as any).isNativeBridgeHealthy();
+    }
+
+    return true; // 기본값
+  }
+
+  /**
+   * 네이티브 OAuth 로그인 시작
+   * React Native 플랫폼에서만 사용 가능
+   * @param provider OAuth 제공자
+   * @returns 로그인 시작 성공 여부
+   */
+  async startNativeOAuth(provider: 'google' | 'kakao' | 'naver' | 'apple'): Promise<SuccessResponse<boolean> | ErrorResponse> {
+    try {
+      if (!this.isReactNativePlatform()) {
+        return createErrorResponse('startNativeOAuth()는 React Native 플랫폼에서만 사용 가능합니다.');
+      }
+
+      if (!this.config.nativeBridge) {
+        return createErrorResponse('네이티브 브릿지가 설정되지 않았습니다.');
+      }
+
+      // ReactNativeTokenStore의 startOAuth 메서드 활용
+      if ('startOAuth' in this.tokenStore) {
+        const result = await (this.tokenStore as any).startOAuth(provider);
+        return createSuccessResponse('네이티브 OAuth 로그인이 시작되었습니다.', result);
+      }
+
+      return createErrorResponse('ReactNativeTokenStore가 아닙니다.');
+    } catch (error) {
+      console.error('네이티브 OAuth 로그인 시작 중 오류 발생:', error);
+      return createErrorResponseFromException(error, '네이티브 OAuth 로그인 시작에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 현재 세션 정보 가져오기
+   * React Native 플랫폼에서만 사용 가능
+   * @returns 현재 세션 정보
+   */
+  async getCurrentSession(): Promise<any> {
+    if (!this.isReactNativePlatform()) {
+      throw new Error('getCurrentSession()는 React Native 플랫폼에서만 사용 가능합니다.');
+    }
+
+    if (!this.config.nativeBridge) {
+      throw new Error('네이티브 브릿지가 설정되지 않았습니다.');
+    }
+
+    // ReactNativeTokenStore의 getSessionInfo 메서드 활용
+    if ('getSessionInfo' in this.tokenStore) {
+      return await (this.tokenStore as any).getSessionInfo();
+    }
+
+    throw new Error('ReactNativeTokenStore가 아닙니다.');
+  }
+
+  /**
+   * 보호된 API 대리호출
+   * React Native 플랫폼에서만 사용 가능 (M2A 패턴)
+   * @param request API 요청 정보
+   * @returns API 응답
+   */
+  async callProtectedAPI(request: { url: string; method: string; headers?: Record<string, string>; body?: string }): Promise<any> {
+    if (!this.isReactNativePlatform()) {
+      throw new Error('callProtectedAPI()는 React Native 플랫폼에서만 사용 가능합니다.');
+    }
+
+    if (!this.config.nativeBridge) {
+      throw new Error('네이티브 브릿지가 설정되지 않았습니다.');
+    }
+
+    // ReactNativeTokenStore의 callWithAuth 메서드 활용
+    if ('callWithAuth' in this.tokenStore) {
+      return await (this.tokenStore as any).callWithAuth(request);
+    }
+
+    throw new Error('ReactNativeTokenStore가 아닙니다.');
+  }
+
+  /**
+   * 네이티브 브릿지 직접 접근 (고급 사용)
+   * React Native 플랫폼에서만 사용 가능
+   * @returns 네이티브 브릿지 인스턴스
+   */
+  getNativeBridge(): ReactNativeBridge | null {
+    if (!this.isReactNativePlatform()) {
+      console.warn('[AuthManager] getNativeBridge()는 React Native 플랫폼에서만 사용 가능합니다.');
+      return null;
+    }
+
+    return this.config.nativeBridge || null;
   }
 
 

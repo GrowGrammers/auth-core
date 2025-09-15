@@ -206,8 +206,10 @@ export async function getUserInfoByGoogle(
       config,
       config.endpoints.googleUserinfo, // /api/auth/google/userinfo
       {
-        method: 'POST',
-        body: { accessToken: token.accessToken }
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token.accessToken}`
+        }
       }
     );
 

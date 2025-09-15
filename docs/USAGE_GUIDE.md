@@ -4,9 +4,10 @@
 
 1. [API 응답 구조](#api-응답-구조)
 2. [기본 사용법](#기본-사용법)
-3. [API 응답 구조 베스트 프랙티스](#-api-응답-구조-베스트-프랙티스)
-4. [테스트 환경 활용](#-테스트-환경-활용)
-5. [유틸리티 함수 활용](#-유틸리티-함수-활용)
+3. [React Native 사용법](#react-native-사용법)
+4. [API 응답 구조 베스트 프랙티스](#-api-응답-구조-베스트-프랙티스)
+5. [테스트 환경 활용](#-테스트-환경-활용)
+6. [유틸리티 함수 활용](#-유틸리티-함수-활용)
 
 ## API 응답 구조
 
@@ -241,6 +242,276 @@ if (clearResult.success) {
 } else {
   console.log('정리 실패:', clearResult.error);
 }
+```
+
+## React Native 사용법
+
+React Native 환경에서는 네이티브 브릿지를 통한 M2(A) 패턴을 사용합니다.
+
+### 1. ReactNativeBridge 구현
+
+```typescript
+import { ReactNativeBridge, SessionInfo, OAuthProvider } from 'auth-core';
+
+// 네이티브 모듈과 연동하는 Bridge 구현
+class MyReactNativeBridge implements ReactNativeBridge {
+  async startOAuth(provider: OAuthProvider): Promise<boolean> {
+    // 네이티브 모듈의 OAuth 시작 메서드 호출
+    return await NativeAuthModule.startOAuth(provider);
+  }
+  
+  async getSession(): Promise<SessionInfo> {
+    // 네이티브에서 현재 세션 정보 조회
+    const session = await NativeAuthModule.getSession();
+    return {
+      isLoggedIn: session.isLoggedIn,
+      userProfile: session.user,
+      expiresAt: session.expiresAt
+    };
+  }
+  
+  async signOut(): Promise<boolean> {
+    // 네이티브 로그아웃 실행
+    return await NativeAuthModule.signOut();
+  }
+  
+  async callWithAuth(request: AuthenticatedRequest): Promise<AuthenticatedResponse> {
+    // 네이티브에서 보호된 API 대리호출 (토큰 자동 주입)
+    return await NativeAuthModule.callWithAuth(request);
+  }
+  
+  addAuthStatusListener(listener: (status: AuthStatus, data?: any) => void): void {
+    // 네이티브 이벤트 리스너 등록
+    NativeAuthModule.addListener('authStatusChanged', listener);
+  }
+  
+  removeAuthStatusListener(listener: (status: AuthStatus, data?: any) => void): void {
+    // 네이티브 이벤트 리스너 제거
+    NativeAuthModule.removeListener('authStatusChanged', listener);
+  }
+}
+```
+
+### 2. React Native용 AuthManager 설정
+
+```typescript
+import { AuthManager } from 'auth-core';
+
+// Bridge 인스턴스 생성
+const nativeBridge = new MyReactNativeBridge();
+
+// HttpClient는 Bridge를 활용한 어댑터로 구현
+class ReactNativeHttpClient implements HttpClient {
+  constructor(private bridge: ReactNativeBridge) {}
+  
+  async request(config: HttpRequestConfig): Promise<HttpResponse> {
+    // 모든 HTTP 요청을 네이티브 Bridge로 위임
+    const response = await this.bridge.callWithAuth({
+      url: config.url,
+      method: config.method,
+      headers: config.headers,
+      body: config.body
+    });
+    
+    return {
+      ok: response.success,
+      status: response.status,
+      statusText: response.statusText || '',
+      headers: response.headers || {},
+      json: () => Promise.resolve(response.data),
+      text: () => Promise.resolve(JSON.stringify(response.data))
+    };
+  }
+}
+
+// AuthManager 생성 (React Native 전용 설정)
+const authManager = new AuthManager({
+  providerType: 'google',
+  apiConfig: {
+    apiBaseUrl: 'https://your-api.com',
+    endpoints: {
+      googleLogin: '/auth/google/login',
+      googleLogout: '/auth/google/logout',
+      // ... 기타 엔드포인트
+    },
+    timeout: 10000,
+    retryCount: 3
+  },
+  httpClient: new ReactNativeHttpClient(nativeBridge),
+  platform: 'react-native',
+  tokenStoreType: 'react-native',
+  nativeBridge: nativeBridge,
+  providerConfig: { 
+    googleClientId: 'your-google-client-id'
+  }
+});
+```
+
+### 3. React Native 전용 인증 플로우
+
+```typescript
+// React 컴포넌트에서 사용
+import React, { useState, useEffect } from 'react';
+import { View, Button, Text } from 'react-native';
+
+const AuthScreen: React.FC = () => {
+  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // 1. 네이티브 OAuth 로그인
+  const handleLogin = async (provider: 'google' | 'kakao' | 'naver') => {
+    setLoading(true);
+    try {
+      const result = await authManager.startNativeOAuth(provider);
+      if (result.success) {
+        console.log('OAuth 로그인 시작됨');
+        // 네이티브에서 OAuth 처리 후 세션 정보 갱신
+        const sessionInfo = await authManager.getCurrentSession();
+        setSession(sessionInfo);
+      } else {
+        console.error('로그인 실패:', result.error);
+      }
+    } catch (error) {
+      console.error('로그인 중 오류:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. 로그아웃
+  const handleLogout = async () => {
+    try {
+      const result = await authManager.logout({ token: null }); // RN에서는 토큰 불필요
+      if (result.success) {
+        setSession(null);
+        console.log('로그아웃 성공');
+      }
+    } catch (error) {
+      console.error('로그아웃 중 오류:', error);
+    }
+  };
+
+  // 3. 보호된 API 호출
+  const fetchUserProfile = async () => {
+    try {
+      const response = await authManager.callProtectedAPI({
+        url: '/api/user/profile',
+        method: 'GET'
+      });
+      
+      if (response.success) {
+        console.log('사용자 프로필:', response.data);
+      }
+    } catch (error) {
+      console.error('프로필 조회 중 오류:', error);
+    }
+  };
+
+  // 4. 세션 상태 확인
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const sessionInfo = await authManager.getCurrentSession();
+        setSession(sessionInfo);
+      } catch (error) {
+        console.error('세션 확인 중 오류:', error);
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  // 5. 네이티브 브릿지 상태 확인
+  const checkBridgeHealth = async () => {
+    const isHealthy = await authManager.isNativeBridgeHealthy();
+    console.log('브릿지 상태:', isHealthy ? '정상' : '오류');
+  };
+
+  return (
+    <View style={{ padding: 20 }}>
+      {session?.isLoggedIn ? (
+        <View>
+          <Text>환영합니다, {session.userProfile?.name}!</Text>
+          <Button title="프로필 조회" onPress={fetchUserProfile} />
+          <Button title="로그아웃" onPress={handleLogout} />
+        </View>
+      ) : (
+        <View>
+          <Button title="Google 로그인" onPress={() => handleLogin('google')} disabled={loading} />
+          <Button title="카카오 로그인" onPress={() => handleLogin('kakao')} disabled={loading} />
+        </View>
+      )}
+      
+      <Button title="브릿지 상태 확인" onPress={checkBridgeHealth} />
+    </View>
+  );
+};
+```
+
+### 4. 네이티브 이벤트 처리
+
+```typescript
+// 인증 상태 변경 이벤트 리스너
+useEffect(() => {
+  const nativeBridge = authManager.getNativeBridge();
+  if (!nativeBridge) return;
+
+  const handleAuthStatus = (status: AuthStatus, data?: any) => {
+    console.log('인증 상태 변경:', status, data);
+    
+    switch (status) {
+      case 'started':
+        console.log('OAuth 로그인 시작');
+        break;
+      case 'callback_received':
+        console.log('OAuth 콜백 수신');
+        break;
+      case 'success':
+        console.log('로그인 성공:', data.user);
+        setSession({ isLoggedIn: true, userProfile: data.user });
+        break;
+      case 'error':
+        console.error('로그인 실패:', data.error);
+        break;
+      case 'cancelled':
+        console.log('로그인 취소');
+        break;
+    }
+  };
+
+  // 이벤트 리스너 등록
+  nativeBridge.addAuthStatusListener(handleAuthStatus);
+
+  // 컴포넌트 언마운트 시 리스너 제거
+  return () => {
+    nativeBridge.removeAuthStatusListener(handleAuthStatus);
+  };
+}, []);
+```
+
+### 5. React Native에서 주의사항
+
+```typescript
+// ✅ 권장: React Native 플랫폼 확인
+if (authManager.isReactNativePlatform()) {
+  // RN 전용 메서드 사용
+  await authManager.startNativeOAuth('google');
+} else {
+  // 일반 웹 로그인 사용
+  await authManager.login(loginRequest);
+}
+
+// ✅ 권장: 브릿지 상태 확인
+const isHealthy = await authManager.isNativeBridgeHealthy();
+if (!isHealthy) {
+  console.warn('네이티브 브릿지 연결에 문제가 있습니다.');
+  // 대체 로직 또는 에러 처리
+}
+
+// ❌ 비권장: 웹용 메서드를 RN에서 직접 사용
+// React Native에서는 네이티브가 토큰을 관리하므로
+// getToken(), saveToken() 등은 가상 토큰만 반환
+const token = await authManager.getToken(); // 가상 토큰 반환
 ```
 
 

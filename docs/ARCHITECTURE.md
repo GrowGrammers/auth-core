@@ -33,7 +33,7 @@
 │  │AuthWebModule│  │  mobile-app  │  │AuthBackend  │        │
 │  │             │  │             │  │  Service    │        │
 │  │FetchHttpClient│  │AxiosHttpClient│  │SpringHttpClient│        │
-│  │WebTokenStore │  │MobileTokenStore│  │ServerTokenStore│        │
+│  │WebTokenStore │  │ReactNativeTokenStore│  │ServerTokenStore│        │
 │  │React 컴포넌트 │  │RN 컴포넌트   │  │Spring 미들웨어│        │
 │  └─────────────┘  └─────────────┘  └─────────────┘        │
 └─────────────────────────────────────────────────────────────┘
@@ -68,7 +68,7 @@ export class AuthManager {
     this.tokenStore = config.tokenStore || this.createTokenStoreFromType(config.tokenStoreType);
   }
 
-  // 인증 플로우 제어 메서드들
+  // 공통 인증 플로우 메서드들
   async login(request: LoginRequest): Promise<LoginApiResponse>
   async logout(request: LogoutRequest): Promise<LogoutApiResponse>
   async requestEmailVerification(request: EmailVerificationRequest): Promise<EmailVerificationApiResponse>
@@ -76,6 +76,14 @@ export class AuthManager {
   async isAuthenticated(): Promise<IsAuthenticatedApiResponse>
   async clear(): Promise<ClearResponse>
   async validateCurrentToken(): Promise<TokenValidationApiResponse>
+  
+  // React Native 플랫폼 전용 메서드들
+  isReactNativePlatform(): boolean
+  async isNativeBridgeHealthy(): Promise<boolean>
+  async startNativeOAuth(provider: OAuthProvider): Promise<SuccessResponse<boolean> | ErrorResponse>
+  async getCurrentSession(): Promise<SessionInfo>
+  async callProtectedAPI(request: AuthenticatedRequest): Promise<AuthenticatedResponse>
+  getNativeBridge(): ReactNativeBridge | null
 }
 ```
 
@@ -247,7 +255,12 @@ export interface AuthManagerConfig {
   apiConfig: ApiConfig;
   httpClient: HttpClient;  // 필수 주입 - 플랫폼별 HTTP 클라이언트
   tokenStore?: TokenStore; // 선택적 주입 - 직접 TokenStore 인스턴스
-  tokenStoreType?: 'web' | 'mobile' | 'fake'; // 선택적 주입 - 타입으로 팩토리 생성
+  tokenStoreType?: 'web' | 'mobile' | 'react-native' | 'fake'; // 선택적 주입 - 타입으로 팩토리 생성
+  platform?: 'web' | 'app' | 'react-native'; // 클라이언트 플랫폼 타입
+  
+  // React Native 전용 설정
+  nativeBridge?: ReactNativeBridge; // React Native 네이티브 브릿지
+  enableNativeDelegation?: boolean; // 네이티브 위임 활성화 여부
 }
 ```
 
