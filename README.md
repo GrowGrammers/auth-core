@@ -155,12 +155,11 @@ await authManager.requestEmailVerification({ email: 'user@example.com' });
 const result = await authManager.login({ email: 'user@example.com', verificationCode: '123456' });
 ```
 
-**더 자세한 사용법은 [사용 가이드](docs/USAGE_GUIDE.md)를 참조하세요.**
-
 ## 📚 주요 기능
 
-### 인증 플로우
+### 공통 인증 플로우
 - 이메일 인증 요청
+- OAuth 로그인인
 - 로그인/로그아웃
 - 토큰 검증 및 갱신
 - 사용자 정보 조회
@@ -169,6 +168,11 @@ const result = await authManager.login({ email: 'user@example.com', verification
 - 토큰 저장/조회/삭제
 - 토큰 만료 확인
 - 자동 토큰 갱신
+
+### React Native 전용 기능
+- 네이티브 브릿지 상태 확인
+- 보호된 API 대리호출
+- 세션 정보 조회
 
 ## 🔌 플랫폼별 구현
 
@@ -184,7 +188,7 @@ interface HttpClient {
 **구현 예시**:
 - **브라우저**: `fetch` 기반 클라이언트
 - **Node.js**: `axios` 기반 클라이언트  
-- **React Native**: `fetch` 또는 `axios` 기반 클라이언트
+- **React Native**: 네이티브 브릿지 기반 클라이언트 (M2A 패턴)
 
 ### 토큰 저장소 (선택)
 ```typescript
@@ -200,8 +204,22 @@ interface TokenStore {
 
 **구현 예시**:
 - **웹**: `localStorage` 기반 저장소
-- **모바일**: `SecureStore` 기반 저장소
+- **모바일**: `SecureStore` 기반 저장소  
+- **React Native**: 네이티브 브릿지를 통한 가상 토큰 저장소
 - **백엔드**: 메모리 또는 Redis 기반 저장소
+
+### React Native Bridge (React Native 전용)
+```typescript
+interface ReactNativeBridge {
+  startOAuth(provider: OAuthProvider): Promise<boolean>;
+  getSession(): Promise<SessionInfo>;
+  signOut(): Promise<boolean>;
+  callWithAuth(request: AuthenticatedRequest): Promise<AuthenticatedResponse>;
+  // 이벤트 리스너 메서드들...
+}
+```
+
+**구현 위치**: React Native 데모 앱에서 네이티브 모듈과 연동하여 구현
 
 ## 🛡️ 타입 안전성
 
