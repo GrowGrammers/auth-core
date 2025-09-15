@@ -3,23 +3,25 @@
 import { TokenStore } from '../storage/TokenStore.interface';
 import { FakeTokenStore } from '../storage/FakeTokenStore';
 import { WebTokenStore } from '../storage/implementations/WebTokenStore';
-import { MobileTokenStore } from '../storage/implementations/MobileTokenStore';
+import { ReactNativeTokenStore } from '../storage/implementations/ReactNativeTokenStore';
 import { createErrorResponse } from '../shared/utils/errorUtils';
 import { FactoryResult, FactoryErrorResponse, isFactorySuccess, isFactoryError } from '../shared/types';
 
-export type TokenStoreType = 'web' | 'mobile' | 'fake' | 'auto';
+export type TokenStoreType = 'web' | 'mobile' | 'react-native' | 'fake' | 'auto';
 
 // 플랫폼별 TokenStore 생성 함수들을 외부에서 주입받기 위한 인터페이스
 export interface TokenStoreRegistry {
   web: () => WebTokenStore;
-  mobile: (storage?: any) => MobileTokenStore;
+  mobile: (storage?: any, nativeBridge?: any) => ReactNativeTokenStore; // mobile을 react-native로 변경
+  'react-native': (storage?: any, nativeBridge?: any) => ReactNativeTokenStore;
   fake: () => typeof FakeTokenStore;
 }
 
 // 기본 레지스트리 (실제 구현체 생성 함수들 포함)
 const defaultRegistry: TokenStoreRegistry = {
   web: () => new WebTokenStore(),
-  mobile: (storage?: any) => new MobileTokenStore(storage),
+  mobile: (storage?: any, nativeBridge?: any) => new ReactNativeTokenStore(nativeBridge), // 간소화된 버전
+  'react-native': (storage?: any, nativeBridge?: any) => new ReactNativeTokenStore(nativeBridge), // 간소화된 버전
   fake: () => FakeTokenStore
 };
 
@@ -41,14 +43,17 @@ export function isTokenStoreFactoryError(result: TokenStoreFactoryResult): resul
 
 /**
  * 토큰 저장소 타입을 받아서 해당하는 토큰 저장소 인스턴스를 반환합니다.
- * @param type - 'web' | 'mobile' | 'fake' 등 저장소 타입
+ * @param type - 'web' | 'mobile' | 'react-native' | 'fake' 등 저장소 타입
  * @param registry - 플랫폼별 TokenStore 구현체 레지스트리 (선택사항)
+ * @param storage - AsyncStorage (React Native용)
+ * @param nativeBridge - Native Bridge 인터페이스 (React Native용)
  * @returns TokenStore 구현체 인스턴스 또는 에러 응답
  */
 export function createTokenStore(
   type: TokenStoreType, 
   registry: TokenStoreRegistry = defaultRegistry,
-  storage?: any
+  storage?: any,
+  nativeBridge?: any
 ): TokenStoreFactoryResult {
   try {
     // auto 타입인 경우 환경 자동 감지
@@ -58,9 +63,9 @@ export function createTokenStore(
         return new WebTokenStore();
       }
       
-      // React Native 환경 (AsyncStorage 제공된 경우)
-      if (storage && typeof storage.setItem === 'function') {
-        return new MobileTokenStore(storage);
+      // React Native 환경 (nativeBridge 제공된 경우)
+      if (nativeBridge) {
+        return new ReactNativeTokenStore(nativeBridge);
       }
       
       // 기본값: 웹 환경
@@ -76,9 +81,9 @@ export function createTokenStore(
       );
     }
     
-    // mobile 타입인 경우 storage 인자 전달
-    if (type === 'mobile') {
-      return storeFactory(storage);
+    // mobile, react-native 타입인 경우 nativeBridge 인자 전달
+    if (type === 'mobile' || type === 'react-native') {
+      return storeFactory(storage, nativeBridge);
     }
     
     // 다른 타입들은 인자 없이 호출

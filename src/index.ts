@@ -43,7 +43,7 @@ export { BaseAuthProvider } from './providers/base/BaseAuthProvider';
 export { TokenStore } from './storage';
 export { FakeTokenStore } from './storage';
 export { WebTokenStore } from './storage/implementations/WebTokenStore';
-export { MobileTokenStore } from './storage/implementations/MobileTokenStore';
+export { ReactNativeTokenStore } from './storage/implementations/ReactNativeTokenStore';
 export { 
   SaveTokenResponse, 
   GetTokenResponse, 
@@ -79,4 +79,23 @@ export {
 export { AuthManagerConfig } from './AuthManager';
 
 // Network 모듈
-export * from './network'; 
+export * from './network';
+
+// React Native 전용 인터페이스들 (실제 합의사항)
+export type { 
+  ReactNativeBridge, 
+  AuthStatus,
+  OAuthProvider,
+  SessionInfo,
+  AuthenticatedRequest,
+  AuthenticatedResponse
+} from './storage/interfaces/ReactNativeBridge';
+export { MockReactNativeBridge } from './storage/interfaces/ReactNativeBridge';
+
+// React Native 이벤트 핸들링
+export { 
+  AuthEventHandler, 
+  createAuthEventHandler, 
+  createDefaultAuthHandlers
+} from './storage/utils/AuthEventHandler';
+export type { AuthEventHandlers } from './storage/utils/AuthEventHandler'; 

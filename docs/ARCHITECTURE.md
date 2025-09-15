@@ -33,7 +33,7 @@
 │  │AuthWebModule│  │  mobile-app  │  │AuthBackend  │        │
 │  │             │  │             │  │  Service    │        │
 │  │FetchHttpClient│  │AxiosHttpClient│  │SpringHttpClient│        │
-│  │WebTokenStore │  │MobileTokenStore│  │ServerTokenStore│        │
+│  │WebTokenStore │  │ReactNativeTokenStore│  │ServerTokenStore│        │
 │  │React 컴포넌트 │  │RN 컴포넌트   │  │Spring 미들웨어│        │
 │  └─────────────┘  └─────────────┘  └─────────────┘        │
 └─────────────────────────────────────────────────────────────┘
