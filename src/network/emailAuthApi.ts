@@ -128,7 +128,8 @@ export async function loginByEmail(
       body: requestBody
     });
 
-    const data = await handleHttpResponse<LoginApiResponse>(response, '로그인에 실패했습니다.');
+    // 이메일 로그인은 Authorization 헤더로 토큰을 받으므로 헤더에서 토큰 추출 옵션 사용
+    const data = await handleHttpResponse<LoginApiResponse>(response, '로그인에 실패했습니다.', true);
     return data;
 
   } catch (error) {
