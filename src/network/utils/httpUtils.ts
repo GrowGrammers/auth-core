@@ -67,16 +67,36 @@ export async function makeRequestWithRetry(
 
 /**
  * 백엔드 BaseResponse 응답 처리 함수 - 백엔드 응답을 그대로 반환
+ * @param response HTTP 응답 객체
+ * @param errorMessage 에러 메시지
+ * @param extractTokenFromHeader 헤더에서 Authorization Bearer 토큰을 추출할지 여부 (로그인 응답용)
  */
 export async function handleHttpResponse<T>(
   response: HttpResponse,
-  errorMessage: string
+  errorMessage: string,
+  extractTokenFromHeader: boolean = false
 ): Promise<T> {
   try {
     const data = await response.json();
   
     // 백엔드가 BaseResponse 형태로 응답을 보내는 경우 (성공/실패 모두 포함)
     if (data && typeof data === 'object' && 'success' in data) {
+      // 로그인 성공 시 헤더에서 accessToken 추출 (옵션)
+      if (extractTokenFromHeader && data.success) {
+        const authHeader = response.headers['authorization'] || response.headers['Authorization'];
+        
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const headerToken = authHeader.substring(7); // 'Bearer ' 제거
+          
+          // data.data가 null인 경우 빈 객체로 초기화
+          if (!data.data) {
+            data.data = {};
+          }
+          
+          data.data.accessToken = headerToken;
+        }
+      }
+      
       return data as T; // 백엔드 응답을 그대로 반환 (success: false인 경우도 포함)
     }
     
