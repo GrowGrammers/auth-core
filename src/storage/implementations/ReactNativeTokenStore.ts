@@ -42,7 +42,7 @@ export class ReactNativeTokenStore implements TokenStore {
   async saveToken(token: Token): Promise<SaveTokenResponse> {
     try {
       // 네이티브가 OAuth 완료 시 자동으로 저장하므로 성공 응답만 반환
-      console.log('[ReactNativeTokenStore] 토큰 저장 요청 - 네이티브에서 이미 처리됨');
+      //console.log('[ReactNativeTokenStore] 토큰 저장 요청 - 네이티브에서 이미 처리됨');
       
       return createStorageSuccessResponse(
         '토큰이 네이티브에서 관리되고 있습니다.', 

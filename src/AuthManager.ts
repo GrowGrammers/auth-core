@@ -260,7 +260,7 @@ export class AuthManager {
         };
         const saveResult = await this.tokenStore.saveToken(token);
         if (saveResult.success) {
-          console.log(`[AuthManager] ${this.provider.providerName} 로그인 성공, 토큰 저장됨`);
+          //console.log(`[AuthManager] ${this.provider.providerName} 로그인 성공, 토큰 저장됨`);
         } else {
           console.error('[AuthManager] 토큰 저장 실패');
         }
