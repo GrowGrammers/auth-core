@@ -1,5 +1,5 @@
 {
-  "name": "@growgrammers/auth-core",
+  "name": "growgrammers-auth-core",
   "version": "2.0.0",
   "description": "플랫폼 독립적인 인증 모듈",
   "main": "dist/index.js",
