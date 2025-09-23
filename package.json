@@ -1,0 +1,52 @@
+{
+  "name": "growgrammers-auth-core",
+  "version": "2.0.0",
+  "description": "플랫폼 독립적인 인증 모듈",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+
+  "scripts": {
+    "build": "tsc",
+    "build:check": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
+    "integration:local": "tsx test/integration/auth-manager-email-integration.test.ts",
+    "integration:deployed": "cross-env BACKEND_URL=https://your-backend-domain.com TEST_MODE=deployed tsx test/integration/auth-manager-email-integration.test.ts",
+    "integration:custom": "tsx test/integration/auth-manager-email-integration.test.ts",
+    "integration:msw": "cross-env TEST_MODE=msw MSW_SIMULATE_LOGIN_ERROR=true MSW_ERROR_VERIFICATION_CODE=999999 tsx test/integration/auth-manager-email-integration.test.ts",
+    "integration:google:msw": "cross-env TEST_MODE=msw tsx test/integration/auth-manager-google-integration.test.ts",
+    "test:all": "npm run test:run && npm run integration:local",
+    "test:all:coverage": "npm run test:coverage && npm run integration:local"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^24.2.1",
+    "@vitest/coverage-v8": "1.6.1",
+    "cross-env": "^10.0.0",
+    "msw": "^2.10.5",
+    "rimraf": "^5.0.0",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2",
+    "vitest": "1.6.1"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1"
+  }
+}

@@ -1,1 +1,0 @@
-// 웹 환경 저장소 (ex: localStorage) 
