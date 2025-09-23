@@ -17,4 +17,10 @@ export interface GoogleAuthProviderConfig extends AuthProviderConfig {
 export interface KakaoAuthProviderConfig extends AuthProviderConfig {
   kakaoClientId: string;
   kakaoClientSecret?: string; // 서버 사이드에서만 필요
+}
+
+// Naver OAuth 전용 설정 인터페이스
+export interface NaverAuthProviderConfig extends AuthProviderConfig {
+  naverClientId: string;
+  naverClientSecret?: string; // 서버 사이드에서만 필요
 } 
