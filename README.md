@@ -1,11 +1,11 @@
-# Auth Core
+# Growgrammers Auth Core
 
 **플랫폼 독립적인 인증 라이브러리**입니다. 웹, 모바일, 백엔드 등 모든 환경에서 동일한 인증 로직을 사용할 수 있도록 설계되었습니다.
 
 
 ## TL;DR
 
-1. `AuthManager` 하나로 이메일/OAuth 로그인 흐름 제어
+1. `AuthManager` 하나로 이메일/Google/Kakao/Naver OAuth 로그인 흐름 제어
 2. **플랫폼 독립**: `HttpClient`, `TokenStore`를 주입해서 웹/모바일/서버 어디서나 동작
 3. **React Native 지원**: 네이티브 브릿지를 통한 M2(A) 패턴 지원
 4. **일관 응답 규격** `{ success, data, message, error? }`
@@ -33,7 +33,7 @@
    AuthManager  ──────────────┐
         │                     │
         ▼                     ▼
- AuthProvider(Email/Google)   TokenStore(웹/모바일/RN)
+ AuthProvider(Email/Google/Kakao/Naver)   TokenStore(웹/모바일/RN)
         │                     │
         ▼                     ▼
    Network Layer (API 호출)   ReactNativeBridge(RN전용)
@@ -44,7 +44,7 @@
 
 ### 모듈 관계
 
-* **auth-core** ← (공통 인증 로직, TypeScript)
+* **growgrammers-auth-core** ← (공통 인증 로직, TypeScript)
 * **AuthWebModule** ← 웹 특화(리디렉션/쿼리 파싱 등) → `HttpClient`/`TokenStore` 주입
 * **mobile-app** ← 모바일 특화(딥링크, SecureStorage 등) → `HttpClient`/`TokenStore` 주입
 * **React Native App** ← RN 특화(네이티브 브릿지, M2A 패턴) → `ReactNativeBridge` 주입
@@ -55,9 +55,9 @@
 ## 주요 기능
 
 ### 공통 인증 플로우
-* 이메일 인증 요청/확인, 로그인/로그아웃
-* OAuth 로그인/로그아웃웃
-* 토큰 검증/갱신, 자동 만료 체크
+* **이메일 인증**: 이메일 인증 요청/확인, 로그인/로그아웃
+* **OAuth 인증**: Google, Kakao, Naver OAuth 로그인/로그아웃
+* **토큰 관리**: 토큰 검증/갱신, 자동 만료 체크
 * **응답 규격 표준화**: `SuccessResponse<T>` / `ErrorResponse`
 * **타입 안전성**: TypeScript 제네릭 + 타입가드
 
@@ -78,9 +78,9 @@
 ## 설치
 
 ```bash
-npm install auth-core
+npm install growgrammers-auth-core
 # 또는
-yarn add auth-core
+yarn add growgrammers-auth-core
 ```
 
 
@@ -89,7 +89,7 @@ yarn add auth-core
 ### 웹 환경
 
 ```ts
-import { AuthManager } from 'auth-core';
+import { AuthManager } from 'growgrammers-auth-core';
 
 // 1. HTTP 클라이언트 구현 (플랫폼별로 다름)
 class FetchHttpClient implements HttpClient {
@@ -111,10 +111,74 @@ await authManager.requestEmailVerification({ email: 'user@example.com' });
 const result = await authManager.login({ email: 'user@example.com', verificationCode: '123456' });
 ```
 
+### OAuth 인증 (Google, Kakao, Naver)
+
+```ts
+import { AuthManager } from 'growgrammers-auth-core';
+
+// Google OAuth 설정
+const googleAuthManager = new AuthManager({
+  providerType: 'google',
+  apiConfig: { 
+    baseUrl: 'https://your-backend.com/api',
+    timeout: 10000 
+  },
+  httpClient: new FetchHttpClient(),
+  tokenStoreType: 'web',
+  providerConfig: { 
+    googleClientId: 'your-google-client-id' 
+  }
+});
+
+// Kakao OAuth 설정
+const kakaoAuthManager = new AuthManager({
+  providerType: 'kakao',
+  apiConfig: { 
+    baseUrl: 'https://your-backend.com/api',
+    timeout: 10000 
+  },
+  httpClient: new FetchHttpClient(),
+  tokenStoreType: 'web',
+  providerConfig: { 
+    kakaoClientId: 'your-kakao-client-id' 
+  }
+});
+
+// Naver OAuth 설정
+const naverAuthManager = new AuthManager({
+  providerType: 'naver',
+  apiConfig: { 
+    baseUrl: 'https://your-backend.com/api',
+    timeout: 10000 
+  },
+  httpClient: new FetchHttpClient(),
+  tokenStoreType: 'web',
+  providerConfig: { 
+    naverClientId: 'your-naver-client-id' 
+  }
+});
+
+// OAuth 로그인 플로우
+const googleResult = await googleAuthManager.login({ 
+  provider: 'google',
+  authorizationCode: 'google-auth-code' 
+});
+
+const kakaoResult = await kakaoAuthManager.login({ 
+  provider: 'kakao',
+  authorizationCode: 'kakao-auth-code' 
+});
+
+const naverResult = await naverAuthManager.login({ 
+  provider: 'naver',
+  authorizationCode: 'naver-auth-code' 
+});
+```
+
 ### React Native 환경
 
 ```ts
-import { AuthManager } from 'auth-core';
+import { AuthManager } from 'growgrammers-auth-core';
 
 // 1. React Native Bridge 구현 (네이티브 모듈과 연동)
 const nativeBridge: ReactNativeBridge = {
@@ -127,17 +191,21 @@ const nativeBridge: ReactNativeBridge = {
 
 // 2. AuthManager 생성 (React Native 전용 설정)
 const authManager = new AuthManager({
-  providerType: 'google',
+  providerType: 'google', // 'kakao', 'naver'도 지원
   apiConfig: { /* API 설정 */ },
   httpClient: new ReactNativeHttpClient(nativeBridge), // Bridge 기반 HTTP 클라이언트
   platform: 'react-native',
   tokenStoreType: 'react-native',
   nativeBridge: nativeBridge,
-  providerConfig: { googleClientId: 'your-google-client-id' }
+  providerConfig: { 
+    googleClientId: 'your-google-client-id',
+    // kakaoClientId: 'your-kakao-client-id',
+    // naverClientId: 'your-naver-client-id'
+  }
 });
 
 // 3. React Native 전용 인증 플로우 (M2A 패턴)
-await authManager.startNativeOAuth('google');  // 네이티브 OAuth 시작
+await authManager.startNativeOAuth('google');  // 'kakao', 'naver'도 지원
 const session = await authManager.getCurrentSession();  // 세션 정보 조회
 const apiResponse = await authManager.callProtectedAPI({  // 보호된 API 대리호출
   url: '/api/user/profile',
@@ -152,16 +220,21 @@ const apiResponse = await authManager.callProtectedAPI({  // 보호된 API 대�
 ## 프로젝트 구조
 
 ```
-auth-core/
+
+growgrammers-auth-core/
 ├─ AuthManager.ts                 # 인증 플로우 제어(핵심)
-├─ providers/                     # 전략 패턴(Email/Google 등)
+├─ providers/                     # 전략 패턴(Email/Google/Kakao/Naver)
 │  ├─ implementations/
 │  │  ├─ EmailAuthProvider.ts
-│  │  └─ GoogleAuthProvider.ts
+│  │  ├─ GoogleAuthProvider.ts
+│  │  ├─ KakaoAuthProvider.ts
+│  │  └─ NaverAuthProvider.ts
 │  └─ interfaces/
 ├─ network/                       # API 호출 레이어
 │  ├─ emailAuthApi.ts
 │  ├─ googleAuthApi.ts
+│  ├─ kakaoAuthApi.ts
+│  ├─ naverAuthApi.ts
 │  └─ interfaces/
 ├─ storage/                       # 토큰 저장소 인터페이스/구현체
 │  ├─ implementations/            # 플랫폼별(web/react-native)

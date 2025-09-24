@@ -1,6 +1,6 @@
 // 주어진 타입과 설정(config)에 따라 적절한 인증 제공자 인스턴스를 생성합니다.
 
-import { AuthProvider, AuthProviderConfig, GoogleAuthProviderConfig, EmailAuthProvider, GoogleAuthProvider } from '../providers';
+import { AuthProvider, AuthProviderConfig, GoogleAuthProviderConfig, KakaoAuthProviderConfig, NaverAuthProviderConfig, EmailAuthProvider, GoogleAuthProvider, KakaoAuthProvider, NaverAuthProvider } from '../providers';
 import { AuthProviderType, ApiConfig, FactoryResult, FactoryErrorResponse, isFactorySuccess, isFactoryError, ClientPlatformType } from '../shared/types';
 import { HttpClient } from '../network/interfaces/HttpClient';
 import { createErrorResponse } from '../shared/utils/errorUtils';
@@ -23,7 +23,8 @@ export function isAuthProviderFactoryError(result: AuthProviderFactoryResult): r
 
 /**
  * 인증 제공자 타입과 설정을 받아서 해당하는 인증 제공자 인스턴스를 반환합니다.
- * @param type - 'email' | 'google' 등 인증 제공자 타입
+
+ * @param type - 'email' | 'google' | 'kakao' | 'naver' 등 인증 제공자 타입
  * @param config - 인증 제공자별 공통 설정 객체
  * @param httpClient - HTTP 클라이언트 인스턴스
  * @param apiConfig - API 설정 객체
@@ -50,6 +51,24 @@ export function createAuthProvider(
           );
         }
         return new GoogleAuthProvider(config, httpClient, apiConfig, platform);
+      case 'kakao':
+        // Kakao 제공자의 경우 KakaoAuthProviderConfig가 필요
+        if (!isKakaoAuthProviderConfig(config)) {
+          return createErrorResponse(
+            'Kakao 인증 제공자에는 kakaoClientId가 필요합니다.',
+            'Kakao 인증 제공자를 생성하려면 kakaoClientId 설정이 필요합니다.'
+          );
+        }
+        return new KakaoAuthProvider(config, httpClient, apiConfig, platform);
+      case 'naver':
+        // Naver 제공자의 경우 NaverAuthProviderConfig가 필요
+        if (!isNaverAuthProviderConfig(config)) {
+          return createErrorResponse(
+            'Naver 인증 제공자에는 naverClientId가 필요합니다.',
+            'Naver 인증 제공자를 생성하려면 naverClientId 설정이 필요합니다.'
+          );
+        }
+        return new NaverAuthProvider(config, httpClient, apiConfig, platform);
       default:
         return createErrorResponse(
           `지원하지 않는 인증 제공자입니다: ${type}`,
@@ -70,4 +89,18 @@ export function createAuthProvider(
  */
 function isGoogleAuthProviderConfig(config: AuthProviderConfig): config is GoogleAuthProviderConfig {
   return 'googleClientId' in config && typeof config.googleClientId === 'string';
+}
+
+/**
+ * 타입 가드: config가 KakaoAuthProviderConfig인지 확인
+ */
+function isKakaoAuthProviderConfig(config: AuthProviderConfig): config is KakaoAuthProviderConfig {
+  return 'kakaoClientId' in config && typeof config.kakaoClientId === 'string';
+}
+
+/**
+ * 타입 가드: config가 NaverAuthProviderConfig인지 확인
+ */
+function isNaverAuthProviderConfig(config: AuthProviderConfig): config is NaverAuthProviderConfig {
+  return 'naverClientId' in config && typeof config.naverClientId === 'string';
 }

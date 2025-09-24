@@ -30,7 +30,7 @@ export type IsAuthenticatedApiResponse = SuccessResponse<boolean> | ErrorRespons
 export type ClearResponse = SuccessResponse<void> | ErrorResponse;
 
 export interface AuthManagerConfig {
-  providerType?: 'email' | 'google' | 'fake'; // 팩토리를 통한 Provider 생성 (권장)
+  providerType?: 'email' | 'google' | 'kakao' | 'naver' | 'fake'; // 팩토리를 통한 Provider 생성 (권장)
   provider?: AuthProvider; // 직접 Provider 인스턴스 주입 (테스트에 유리하나, 프로덕션에서는 DI/팩토리 레이어 통해 주입 권장)
   apiConfig: ApiConfig;
   httpClient: HttpClient;  // HttpClient를 필수로 추가
@@ -73,7 +73,7 @@ export class AuthManager {
     this.tokenStore = config.tokenStore || this.createTokenStoreFromType(config.tokenStoreType);
   }
 
-  private createProvider(providerType: 'email' | 'google' | 'fake', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
+  private createProvider(providerType: 'email' | 'google' | 'kakao' | 'naver' | 'fake', apiConfig: ApiConfig, httpClient: HttpClient): AuthProvider {
     // Provider 팩토리 로직 (apiConfig 주입)
     const config = this.config.providerConfig || { timeout: 10000, retryCount: 3 }; // providerConfig 우선, 없으면 기본 설정
     const platform = this.config.platform || 'web'; // 플랫폼 기본값: 'web'
