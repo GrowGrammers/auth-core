@@ -220,6 +220,7 @@ const apiResponse = await authManager.callProtectedAPI({  // 보호된 API 대�
 ## 프로젝트 구조
 
 ```
+
 growgrammers-auth-core/
 ├─ AuthManager.ts                 # 인증 플로우 제어(핵심)
 ├─ providers/                     # 전략 패턴(Email/Google/Kakao/Naver)

@@ -23,6 +23,7 @@ export function isAuthProviderFactoryError(result: AuthProviderFactoryResult): r
 
 /**
  * 인증 제공자 타입과 설정을 받아서 해당하는 인증 제공자 인스턴스를 반환합니다.
+
  * @param type - 'email' | 'google' | 'kakao' | 'naver' 등 인증 제공자 타입
  * @param config - 인증 제공자별 공통 설정 객체
  * @param httpClient - HTTP 클라이언트 인스턴스
