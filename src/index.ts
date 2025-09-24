@@ -6,7 +6,10 @@ export { AuthManager } from './AuthManager';
 // 인터페이스들
 export { 
   AuthProvider, 
-  AuthProviderConfig
+  AuthProviderConfig,
+  GoogleAuthProviderConfig,
+  KakaoAuthProviderConfig,
+  NaverAuthProviderConfig
 } from './providers';
 
 // DTOs
@@ -36,7 +39,7 @@ export type {
 } from './providers/interfaces/dtos/auth.dto';
 
 // 구현체들
-export { EmailAuthProvider, GoogleAuthProvider } from './providers';
+export { EmailAuthProvider, GoogleAuthProvider, KakaoAuthProvider, NaverAuthProvider } from './providers';
 export { BaseAuthProvider } from './providers/base/BaseAuthProvider';
 
 // 토큰 저장소 관련

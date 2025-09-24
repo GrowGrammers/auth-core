@@ -18,6 +18,18 @@ export interface ApiEndpoints {
   googleRefresh: string;   // 구글 토큰 갱신
   googleValidate: string;  // 구글 토큰 검증
   googleUserinfo: string;  // 구글 사용자 정보 조회
+  // 카카오 인증
+  kakaoLogin: string;      // 카카오 로그인
+  kakaoLogout: string;     // 카카오 로그아웃
+  kakaoRefresh: string;    // 카카오 토큰 갱신
+  kakaoValidate: string;   // 카카오 토큰 검증
+  kakaoUserinfo: string;   // 카카오 사용자 정보 조회
+  // 네이버 인증
+  naverLogin: string;      // 네이버 로그인
+  naverLogout: string;     // 네이버 로그아웃
+  naverRefresh: string;    // 네이버 토큰 갱신
+  naverValidate: string;   // 네이버 토큰 검증
+  naverUserinfo: string;   // 네이버 사용자 정보 조회
   // 공통
   validate: string;
   me: string;
